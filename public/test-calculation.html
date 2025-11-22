@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Calcul Nutrition</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 { color: #2c3e50; }
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        button:hover { background: #2980b9; }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background: #ecf0f1;
+            border-radius: 5px;
+        }
+        .log {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 500px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+        .log div { margin: 2px 0; }
+        .error { color: #e74c3c; }
+        .success { color: #2ecc71; }
+        .warning { color: #f39c12; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔬 Test Calcul Nutrition Direct</h1>
+        <p>Ce test charge les bases de données et calcule la nutrition d'une recette test directement.</p>
+        
+        <button onclick="testCalculation()">🚀 Test Calcul Nutrition</button>
+        <button onclick="clearLogs()">🗑️ Effacer logs</button>
+        
+        <div class="result" id="result"></div>
+        <div class="log" id="logs"></div>
+    </div>
+
+    <script type="module">
+        // Import des utilitaires
+        import { loadAlimentsSimple, calculateRecipeNutritionSimple } from '/src/utils/alimentsSimpleParser.js';
+        import { loadCIQUAL, calculateRecipeNutrition } from '/src/utils/ciqualParser.js';
+        
+        // Intercepter console.log
+        const originalLog = console.log;
+        const originalWarn = console.warn;
+        const originalError = console.error;
+        
+        function addLog(message, type = 'log') {
+            const logsDiv = document.getElementById('logs');
+            const div = document.createElement('div');
+            div.className = type;
+            div.textContent = typeof message === 'object' ? JSON.stringify(message, null, 2) : message;
+            logsDiv.appendChild(div);
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+        }
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addLog(args.join(' '), 'log');
+        };
+        
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            addLog('⚠️ ' + args.join(' '), 'warning');
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addLog('❌ ' + args.join(' '), 'error');
+        };
+        
+        window.clearLogs = function() {
+            document.getElementById('logs').innerHTML = '';
+            document.getElementById('result').innerHTML = '';
+        };
+        
+        window.testCalculation = async function() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p>⏳ Chargement et calcul en cours...</p>';
+            
+            try {
+                console.log('🔍 === DÉBUT TEST CALCUL NUTRITION ===');
+                
+                // Recette test : Bowl d'avoine overnight
+                const recette = {
+                    nom: "Bowl d'avoine overnight",
+                    ingredients: [
+                        { nom: "Flocons d'avoine", quantite: 50, unite: 'g' },
+                        { nom: "Yaourt végétal (coco)", quantite: 150, unite: 'g' },
+                        { nom: "Lait d'amande", quantite: 100, unite: 'ml' },
+                        { nom: "Fruits frais (kiwi, fraises)", quantite: 100, unite: 'g' },
+                        { nom: "Noix de cajou", quantite: 20, unite: 'g' },
+                        { nom: "Graines de lin", quantite: 10, unite: 'g' },
+                        { nom: "Miel", quantite: 1, unite: 'c. à café' }
+                    ]
+                };
+                
+                console.log('🍽️ Recette test:', recette.nom);
+                console.log('📝 Ingrédients:', recette.ingredients);
+                
+                // Test 1: Base simplifiée
+                console.log('\n📦 === TEST 1: Base simplifiée ===');
+                const alimentsSimple = await loadAlimentsSimple();
+                console.log(`✅ Base simplifiée chargée: ${alimentsSimple?.length || 0} aliments`);
+                
+                if (alimentsSimple && alimentsSimple.length > 0) {
+                    console.log('🔬 Calcul avec base simplifiée...');
+                    const resultSimple = calculateRecipeNutritionSimple(recette.ingredients, alimentsSimple);
+                    console.log('📊 Résultat base simplifiée:', resultSimple);
+                    
+                    resultDiv.innerHTML += `
+                        <h3>✅ Base Simplifiée</h3>
+                        <p><strong>Calories:</strong> ${resultSimple.calories} kcal</p>
+                        <p><strong>Protéines:</strong> ${resultSimple.proteines}g</p>
+                        <p><strong>Lipides:</strong> ${resultSimple.lipides}g</p>
+                        <p><strong>Glucides:</strong> ${resultSimple.glucides}g</p>
+                    `;
+                }
+                
+                // Test 2: CIQUAL
+                console.log('\n📦 === TEST 2: CIQUAL ===');
+                try {
+                    const ciqualData = await loadCIQUAL();
+                    console.log(`✅ CIQUAL chargée: ${Object.keys(ciqualData || {}).length} aliments`);
+                    
+                    if (ciqualData && Object.keys(ciqualData).length > 0) {
+                        console.log('🔬 Calcul avec CIQUAL...');
+                        const resultCiqual = calculateRecipeNutrition(recette.ingredients, ciqualData);
+                        console.log('📊 Résultat CIQUAL:', resultCiqual);
+                        
+                        resultDiv.innerHTML += `
+                            <h3>✅ CIQUAL</h3>
+                            <p><strong>Calories:</strong> ${resultCiqual.calories} kcal</p>
+                            <p><strong>Protéines:</strong> ${resultCiqual.proteines}g</p>
+                            <p><strong>Lipides:</strong> ${resultCiqual.lipides}g</p>
+                            <p><strong>Glucides:</strong> ${resultCiqual.glucides}g</p>
+                        `;
+                    }
+                } catch (e) {
+                    console.warn('⚠️ CIQUAL non disponible:', e.message);
+                    resultDiv.innerHTML += '<h3>⚠️ CIQUAL non disponible</h3>';
+                }
+                
+                console.log('\n✅ === FIN TEST CALCUL NUTRITION ===');
+                
+            } catch (error) {
+                console.error('❌ Erreur:', error);
+                resultDiv.innerHTML = `<p class="error">❌ Erreur: ${error.message}</p>`;
+            }
+        };
+    </script>
+</body>
+</html>

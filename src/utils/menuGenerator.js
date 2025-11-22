@@ -331,14 +331,15 @@ const generateDayMenu = (profile, ciqualData, alimentsSimple, nutritionNeeds) =>
     
     const petitDej = {
       ...recette,
-      calories: nutrition.calories,
+      calories: nutrition.calories || 999,  // TEST: valeur par défaut si 0
       caloriesCible: mealDistribution.petitDejeuner,
-      proteines: nutrition.proteines,
-      lipides: nutrition.lipides,
-      glucides: nutrition.glucides,
+      proteines: nutrition.proteines || 99,  // TEST: valeur par défaut si 0
+      lipides: nutrition.lipides || 88,  // TEST: valeur par défaut si 0
+      glucides: nutrition.glucides || 77,  // TEST: valeur par défaut si 0
       moment: 'Petit-déjeuner (8h-10h)'
     };
     console.log(`✅ [generateDayMenu] Objet petitDejeuner créé:`, petitDej);
+    console.log(`🔍 [generateDayMenu] calories=${petitDej.calories}, proteines=${petitDej.proteines}, lipides=${petitDej.lipides}, glucides=${petitDej.glucides}`);
     menu.petitDejeuner = petitDej;
   }
   
@@ -353,15 +354,16 @@ const generateDayMenu = (profile, ciqualData, alimentsSimple, nutritionNeeds) =>
   
   const dejeuner = {
     ...recetteDejeuner,
-    calories: nutritionDejeuner.calories,
+    calories: nutritionDejeuner.calories || 999,  // TEST: valeur par défaut si 0
     caloriesCible: mealDistribution.dejeuner,
-    proteines: nutritionDejeuner.proteines,
-    lipides: nutritionDejeuner.lipides,
-    glucides: nutritionDejeuner.glucides,
+    proteines: nutritionDejeuner.proteines || 99,  // TEST: valeur par défaut si 0
+    lipides: nutritionDejeuner.lipides || 88,  // TEST: valeur par défaut si 0
+    glucides: nutritionDejeuner.glucides || 77,  // TEST: valeur par défaut si 0
     moment: 'Déjeuner (12h-14h)',
     note: 'Repas principal de la journée - Prenez votre temps pour mastiquer (minimum 20 secondes par bouchée)'
   };
   console.log(`✅ [generateDayMenu] Objet dejeuner créé:`, dejeuner);
+  console.log(`🔍 [generateDayMenu] calories=${dejeuner.calories}, proteines=${dejeuner.proteines}, lipides=${dejeuner.lipides}, glucides=${dejeuner.glucides}`);
   menu.dejeuner = dejeuner;
   
   // Dîner - hypocalorique
@@ -384,15 +386,16 @@ const generateDayMenu = (profile, ciqualData, alimentsSimple, nutritionNeeds) =>
   
   const diner = {
     ...recetteDiner,
-    calories: nutritionDiner.calories,
+    calories: nutritionDiner.calories || 999,  // TEST: valeur par défaut si 0
     caloriesCible: mealDistribution.diner,
-    proteines: nutritionDiner.proteines,
-    lipides: nutritionDiner.lipides,
-    glucides: nutritionDiner.glucides,
+    proteines: nutritionDiner.proteines || 99,  // TEST: valeur par défaut si 0
+    lipides: nutritionDiner.lipides || 88,  // TEST: valeur par défaut si 0
+    glucides: nutritionDiner.glucides || 77,  // TEST: valeur par défaut si 0
     moment: 'Dîner (18h-20h)',
     note: 'Repas léger - Pas de protéines animales, pas d\'amidon, pas de graisses'
   };
   console.log(`✅ [generateDayMenu] Objet diner créé:`, diner);
+  console.log(`🔍 [generateDayMenu] calories=${diner.calories}, proteines=${diner.proteines}, lipides=${diner.lipides}, glucides=${diner.glucides}`);
   menu.diner = diner;
   
   return menu;
