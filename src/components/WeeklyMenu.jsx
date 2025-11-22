@@ -1,34 +1,36 @@
 import { useState, useEffect } from 'react'
-import { generateWeeklyMenu, parseAlimentsCSV } from '../utils/menuGenerator'
+import { generateWeeklyMenu } from '../utils/menuGenerator'
 import { calculateIMC } from '../utils/nutritionCalculator'
+import { loadCIQUAL } from '../utils/ciqualParser'
 import './WeeklyMenu.css'
 
 const WeeklyMenu = ({ userProfile, onBack }) => {
   const [weeklyMenu, setWeeklyMenu] = useState(null)
   const [loading, setLoading] = useState(true)
   const [selectedDay, setSelectedDay] = useState(0)
-  const [aliments, setAliments] = useState([])
 
   useEffect(() => {
-    // Charger les aliments depuis le CSV
-    fetch('/aliments.csv')
-      .then(response => response.text())
-      .then(csvText => {
-        const parsedAliments = parseAlimentsCSV(csvText)
-        setAliments(parsedAliments)
+    // Charger la base CIQUAL et générer le menu
+    const loadAndGenerateMenu = async () => {
+      try {
+        console.log('Chargement de la base CIQUAL...')
+        const ciqualData = await loadCIQUAL()
+        console.log(`CIQUAL chargé: ${Object.keys(ciqualData).length} aliments`)
         
-        // Générer le menu hebdomadaire
-        const menu = generateWeeklyMenu(userProfile, parsedAliments)
+        // Générer le menu hebdomadaire avec les données CIQUAL
+        const menu = generateWeeklyMenu(userProfile, ciqualData)
         setWeeklyMenu(menu)
         setLoading(false)
-      })
-      .catch(error => {
-        console.error('Erreur lors du chargement des aliments:', error)
-        // Générer quand même le menu avec une base vide
-        const menu = generateWeeklyMenu(userProfile, [])
+      } catch (error) {
+        console.error('Erreur lors du chargement:', error)
+        // Générer quand même le menu sans CIQUAL
+        const menu = generateWeeklyMenu(userProfile, null)
         setWeeklyMenu(menu)
         setLoading(false)
-      })
+      }
+    }
+    
+    loadAndGenerateMenu()
   }, [userProfile])
 
   if (loading) {
@@ -166,6 +168,15 @@ const MealCard = ({ meal }) => {
         <span className="meal-calories">{meal.calories} kcal</span>
       </div>
       <p className="meal-moment">{meal.moment}</p>
+      
+      {/* Affichage des macronutriments */}
+      {meal.proteines !== undefined && (
+        <div className="meal-macros">
+          <span className="macro-item">🥩 P: {meal.proteines}g</span>
+          <span className="macro-item">🥑 L: {meal.lipides}g</span>
+          <span className="macro-item">🍞 G: {meal.glucides}g</span>
+        </div>
+      )}
       
       {meal.note && (
         <p className="meal-note">💬 {meal.note}</p>

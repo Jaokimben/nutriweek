@@ -223,6 +223,25 @@
   margin-bottom: 0.75rem;
 }
 
+.meal-macros {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+  padding: 0.5rem;
+  background: rgba(76, 175, 80, 0.05);
+  border-radius: 8px;
+  flex-wrap: wrap;
+}
+
+.macro-item {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #555;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
 .meal-note {
   background: rgba(76, 175, 80, 0.1);
   padding: 0.75rem;

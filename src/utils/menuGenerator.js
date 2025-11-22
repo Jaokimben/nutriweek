@@ -1,4 +1,5 @@
 import { calculateCalories, isAlimentAllowed, calculateGI } from './nutritionCalculator';
+import { calculateRecipeNutrition, improveIngredientName } from './ciqualParser';
 
 /**
  * Base de données de recettes par type d'aliment
@@ -265,11 +266,11 @@ const recettesDatabase = {
 /**
  * Génère un menu pour une journée
  * @param {Object} profile - Profil utilisateur
- * @param {Array} alimentsDisponibles - Liste des aliments disponibles
+ * @param {Object} ciqualData - Données CIQUAL pour calcul nutritionnel
  * @param {Object} nutritionNeeds - Besoins nutritionnels
  * @returns {Object} - Menu de la journée
  */
-const generateDayMenu = (profile, alimentsDisponibles, nutritionNeeds) => {
+const generateDayMenu = (profile, ciqualData, nutritionNeeds) => {
   const { objectif, nombreRepas, capaciteDigestive } = profile;
   const { mealDistribution } = nutritionNeeds;
   
@@ -279,9 +280,19 @@ const generateDayMenu = (profile, alimentsDisponibles, nutritionNeeds) => {
   if (nombreRepas === '3') {
     const petitDejRecettes = recettesDatabase.petitDejeuner;
     const recette = petitDejRecettes[Math.floor(Math.random() * petitDejRecettes.length)];
+    
+    // Calculer les vraies calories avec CIQUAL
+    const nutrition = ciqualData ? 
+      calculateRecipeNutrition(recette.ingredients, ciqualData) : 
+      { calories: mealDistribution.petitDejeuner, proteines: 0, lipides: 0, glucides: 0 };
+    
     menu.petitDejeuner = {
       ...recette,
-      calories: mealDistribution.petitDejeuner,
+      calories: nutrition.calories,
+      caloriesCible: mealDistribution.petitDejeuner,
+      proteines: nutrition.proteines,
+      lipides: nutrition.lipides,
+      glucides: nutrition.glucides,
       moment: 'Petit-déjeuner (8h-10h)'
     };
   }
@@ -290,9 +301,18 @@ const generateDayMenu = (profile, alimentsDisponibles, nutritionNeeds) => {
   const dejeunerTypes = [...recettesDatabase.legumineuses, ...recettesDatabase.cereales]
     .filter(r => r.type === 'dejeuner');
   const recetteDejeuner = dejeunerTypes[Math.floor(Math.random() * dejeunerTypes.length)];
+  
+  const nutritionDejeuner = ciqualData ? 
+    calculateRecipeNutrition(recetteDejeuner.ingredients, ciqualData) :
+    { calories: mealDistribution.dejeuner, proteines: 0, lipides: 0, glucides: 0 };
+  
   menu.dejeuner = {
     ...recetteDejeuner,
-    calories: mealDistribution.dejeuner,
+    calories: nutritionDejeuner.calories,
+    caloriesCible: mealDistribution.dejeuner,
+    proteines: nutritionDejeuner.proteines,
+    lipides: nutritionDejeuner.lipides,
+    glucides: nutritionDejeuner.glucides,
     moment: 'Déjeuner (12h-14h)',
     note: 'Repas principal de la journée - Prenez votre temps pour mastiquer (minimum 20 secondes par bouchée)'
   };
@@ -310,9 +330,18 @@ const generateDayMenu = (profile, alimentsDisponibles, nutritionNeeds) => {
   }
   
   const recetteDiner = dinerRecettes[Math.floor(Math.random() * dinerRecettes.length)];
+  
+  const nutritionDiner = ciqualData ? 
+    calculateRecipeNutrition(recetteDiner.ingredients, ciqualData) :
+    { calories: mealDistribution.diner, proteines: 0, lipides: 0, glucides: 0 };
+  
   menu.diner = {
     ...recetteDiner,
-    calories: mealDistribution.diner,
+    calories: nutritionDiner.calories,
+    caloriesCible: mealDistribution.diner,
+    proteines: nutritionDiner.proteines,
+    lipides: nutritionDiner.lipides,
+    glucides: nutritionDiner.glucides,
     moment: 'Dîner (18h-20h)',
     note: 'Repas léger - Pas de protéines animales, pas d\'amidon, pas de graisses'
   };
@@ -323,17 +352,17 @@ const generateDayMenu = (profile, alimentsDisponibles, nutritionNeeds) => {
 /**
  * Génère un menu hebdomadaire complet
  * @param {Object} profile - Profil utilisateur
- * @param {Array} alimentsDisponibles - Liste des aliments du CSV
+ * @param {Object} ciqualData - Données CIQUAL (optionnel)
  * @returns {Object} - Menu hebdomadaire avec conseils
  */
-export const generateWeeklyMenu = (profile, alimentsDisponibles) => {
+export const generateWeeklyMenu = (profile, ciqualData = null) => {
   const nutritionNeeds = calculateCalories(profile);
   const weekMenu = [];
   
   const joursIntermittent = [1, 3, 5, 6]; // Lundi, Mercredi, Vendredi, Samedi pour jeûne intermittent
   
   for (let day = 1; day <= 7; day++) {
-    const dayMenu = generateDayMenu(profile, alimentsDisponibles, nutritionNeeds);
+    const dayMenu = generateDayMenu(profile, ciqualData, nutritionNeeds);
     
     // Appliquer le jeûne intermittent si objectif perte de poids
     const isJeuneIntermittent = profile.objectif === 'perte' && joursIntermittent.includes(day);
