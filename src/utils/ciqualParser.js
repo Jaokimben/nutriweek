@@ -65,14 +65,23 @@ const parseCIQUAL = (csvText) => {
  * @returns {Array} Liste d'aliments correspondants
  */
 export const searchAliment = (ciqualData, searchTerm) => {
+  // Normaliser et nettoyer le terme de recherche
   const normalizedSearch = searchTerm.toLowerCase()
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, ""); // Enlever les accents
+    .replace(/[\u0300-\u036f]/g, "") // Enlever les accents
+    .replace(/[^\w\s]/g, " ") // Remplacer ponctuation par espaces
+    .replace(/\s+/g, " ") // Consolider espaces multiples
+    .trim();
   
   return Object.values(ciqualData).filter(aliment => {
+    // Normaliser et nettoyer le nom de l'aliment
     const normalizedNom = aliment.nom.toLowerCase()
       .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "");
+      .replace(/[\u0300-\u036f]/g, "") // Enlever les accents
+      .replace(/\uFFFD/g, "") // Enlever caractères de remplacement UTF-8 (�)
+      .replace(/[^\w\s]/g, " ") // Remplacer ponctuation par espaces
+      .replace(/\s+/g, " ") // Consolider espaces multiples
+      .trim();
     
     return normalizedNom.includes(normalizedSearch);
   });
@@ -90,9 +99,14 @@ export const calculateRecipeNutrition = (ingredients, ciqualData) => {
   let totalLipides = 0;
   let totalGlucides = 0;
   
+  const details = []; // Pour debug
+  
   ingredients.forEach(ing => {
+    // Améliorer le nom avec le mapping
+    const nomAmeliore = improveIngredientName(ing.nom);
+    
     // Rechercher l'aliment dans CIQUAL
-    const matches = searchAliment(ciqualData, ing.nom);
+    const matches = searchAliment(ciqualData, nomAmeliore);
     
     if (matches.length > 0) {
       const aliment = matches[0]; // Prendre le premier match
@@ -101,35 +115,48 @@ export const calculateRecipeNutrition = (ingredients, ciqualData) => {
       // Calculer pour 100g, puis ajuster à la quantité
       const factor = quantiteGrammes / 100;
       
-      // Calories
-      if (aliment.nutritions.nrj_kcal) {
-        totalCalories += aliment.nutritions.nrj_kcal * factor;
-      }
+      const ingredientCalories = aliment.nutritions.nrj_kcal ? aliment.nutritions.nrj_kcal * factor : 0;
+      const ingredientProteines = aliment.nutritions.proteines_g ? aliment.nutritions.proteines_g * factor : 0;
+      const ingredientLipides = aliment.nutritions.lipides_g ? aliment.nutritions.lipides_g * factor : 0;
+      const ingredientGlucides = aliment.nutritions.glucides_g ? aliment.nutritions.glucides_g * factor : 0;
       
-      // Protéines
-      if (aliment.nutritions.proteines_g) {
-        totalProteines += aliment.nutritions.proteines_g * factor;
-      }
+      // Accumuler
+      totalCalories += ingredientCalories;
+      totalProteines += ingredientProteines;
+      totalLipides += ingredientLipides;
+      totalGlucides += ingredientGlucides;
       
-      // Lipides
-      if (aliment.nutritions.lipides_g) {
-        totalLipides += aliment.nutritions.lipides_g * factor;
-      }
-      
-      // Glucides
-      if (aliment.nutritions.glucides_g) {
-        totalGlucides += aliment.nutritions.glucides_g * factor;
-      }
+      // Log pour debug
+      details.push({
+        original: ing.nom,
+        mapped: nomAmeliore,
+        found: aliment.nom,
+        quantite: `${quantiteGrammes}g`,
+        calories: Math.round(ingredientCalories),
+        kcalPer100g: aliment.nutritions.nrj_kcal
+      });
     } else {
-      console.warn(`Aliment non trouvé dans CIQUAL: ${ing.nom}`);
+      console.warn(`❌ Aliment non trouvé: "${ing.nom}" (recherché: "${nomAmeliore}")`);
+      details.push({
+        original: ing.nom,
+        mapped: nomAmeliore,
+        found: 'NON TROUVÉ',
+        quantite: convertToGrams(ing.quantite, ing.unite) + 'g',
+        calories: 0
+      });
     }
   });
+  
+  // Log du détail complet
+  console.log('📊 Détail nutritionnel:', details);
+  console.log(`📈 Total: ${Math.round(totalCalories)} kcal | P: ${totalProteines.toFixed(1)}g | L: ${totalLipides.toFixed(1)}g | G: ${totalGlucides.toFixed(1)}g`);
   
   return {
     calories: Math.round(totalCalories),
     proteines: parseFloat(totalProteines.toFixed(1)),
     lipides: parseFloat(totalLipides.toFixed(1)),
-    glucides: parseFloat(totalGlucides.toFixed(1))
+    glucides: parseFloat(totalGlucides.toFixed(1)),
+    details // Pour debug si nécessaire
   };
 };
 
@@ -187,41 +214,114 @@ const convertToGrams = (quantite, unite) => {
 
 /**
  * Mapping des noms d'ingrédients vers des termes de recherche CIQUAL
+ * IMPORTANT: Privilégier les aliments CUITS pour les céréales et légumineuses
  */
 export const ingredientMapping = {
-  // Légumineuses
-  'lentilles vertes': 'lentille bouillie',
-  'lentilles corail': 'lentille bouillie',
-  'lentille': 'lentille bouillie',
+  // Légumineuses (TOUJOURS CUITES)
+  'lentilles vertes cuites': 'lentille bouillie cuite',
+  'lentilles vertes': 'lentille bouillie cuite',
+  'lentilles corail': 'lentille bouillie cuite',
+  'lentille': 'lentille bouillie cuite',
+  'pois chiches cuits': 'pois chiche cuit',
   'pois chiches': 'pois chiche cuit',
+  'pois chiche': 'pois chiche cuit',
+  'haricots blancs cuits': 'haricot blanc cuit',
   'haricots blancs': 'haricot blanc cuit',
+  'haricot blanc': 'haricot blanc cuit',
   
-  // Céréales
+  // Céréales (TOUJOURS CUITES sauf flocons)
   'riz complet': 'riz complet cuit',
-  'riz basmati': 'riz cuit',
-  'quinoa': 'quinoa cuit',
-  'flocons d\'avoine': 'avoine flocon',
+  'riz basmati': 'riz thai',
+  'riz': 'riz cuit',
+  'quinoa': 'quinoa bouilli',
+  'flocons d\'avoine': 'flocon avoine',
+  'flocons avoine': 'flocon avoine',
+  'avoine': 'flocon avoine',
   
-  // Légumes
-  'tomates': 'tomate crue',
-  'concombre': 'concombre cru',
-  'courgette': 'courgette crue',
-  'carotte': 'carotte crue',
+  // Légumes (crus sauf mention contraire)
+  'tomates cerises': 'tomate cerise',
+  'tomates concassées': 'tomate cru',
+  'tomates mûres': 'tomate cru',
+  'tomates': 'tomate cru',
+  'tomate': 'tomate cru',
+  'concombre': 'concombre pulpe',
+  'courgette': 'courgette pulpe',
+  'carotte': 'carotte cru',
+  'carottes': 'carotte cru',
+  'oignon rouge': 'oignon cru',
   'oignon': 'oignon cru',
   'ail': 'ail cru',
+  'épinards frais': 'pinard cru',
+  'épinards': 'pinard cru',
+  'salade verte': 'laitue cru',
+  'mesclun': 'laitue cru',
   
-  // Liquides
+  // Légumes cuits
+  'brocoli': 'brocoli cuit',
+  'champignons de paris': 'champignon paris',
+  'champignons': 'champignon paris',
+  
+  // Liquides et produits laitiers végétaux
+  'lait végétal (soja)': 'lait soja',
   'lait d\'amande': 'lait soja',
-  'lait de coco': 'lait coco',
-  'bouillon de légumes': 'bouillon légume',
+  'lait de coco': 'coco lait',
+  'lait soja': 'lait soja',
+  'yaourt végétal (coco)': 'yaourt soja',
+  'crème de soja': 'creme soja',
+  'bouillon de légumes': 'bouillon',
   
   // Huiles et graisses
   'huile d\'olive': 'huile olive',
+  'huile olive': 'huile olive',
   
-  // Herbes et épices
-  'persil': 'persil frais',
-  'basilic': 'basilic frais',
-  'coriandre': 'coriandre fraîche'
+  // Fruits
+  'banane congelée': 'banane cru',
+  'banane': 'banane cru',
+  'fruits rouges mélangés': 'fraise cru',
+  'fruits rouges congelés': 'fraise cru',
+  'fruits rouges': 'fraise cru',
+  'myrtilles': 'myrtille cru',
+  'fraises': 'fraise cru',
+  'fruits frais (kiwi, fraises)': 'fraise cru',
+  'avocat': 'avocat cru',
+  
+  // Fruits secs et graines
+  'raisins secs': 'raisin sec',
+  'amandes effilées': 'amande',
+  'amandes': 'amande',
+  'noix de cajou': 'cajou',
+  'graines de chia': 'chia graine',
+  'graines de lin': 'lin graine',
+  'graines de courge': 'cucurbitacees graine',
+  'graines de tournesol': 'graine',
+  
+  // Herbes et épices (quantités négligeables, mais pour précision)
+  'persil frais': 'persil',
+  'persil': 'persil',
+  'basilic frais': 'basilic',
+  'basilic': 'basilic',
+  'coriandre fraîche': 'coriandre',
+  'coriandre': 'coriandre',
+  'menthe fraîche': 'menthe',
+  'menthe': 'menthe',
+  
+  // Condiments
+  'jus de citron': 'citron',
+  'vinaigre balsamique': 'vinaigre',
+  'feta': 'feta',
+  'olives noires': 'olive noir',
+  'miel': 'miel',
+  
+  // Autres ingrédients
+  'flocons d\'avoine': 'flocon avoine',
+  'graines de chia': 'chia',
+  'graines de lin': 'lin graine',
+  'graines de courge': 'courge graine',
+  'noix de cajou': 'cajou',
+  'lentilles corail': 'lentille bouillie',
+  'gingembre frais râpé': 'gingembre',
+  'pois chiches cuits': 'pois chiche cuit',
+  'poudre de curry': 'curry'
 };
 
 /**
@@ -230,13 +330,26 @@ export const ingredientMapping = {
  * @returns {string} Nom amélioré
  */
 export const improveIngredientName = (nom) => {
-  const nomLower = nom.toLowerCase();
+  const nomLower = nom.toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, ""); // Enlever les accents
   
-  // Chercher dans le mapping
+  // Chercher une correspondance exacte d'abord
+  if (ingredientMapping[nomLower]) {
+    return ingredientMapping[nomLower];
+  }
+  
+  // Chercher une correspondance partielle
   for (const [key, value] of Object.entries(ingredientMapping)) {
-    if (nomLower.includes(key)) {
+    const keyNormalized = key.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    if (nomLower.includes(keyNormalized) || keyNormalized.includes(nomLower)) {
       return value;
     }
+  }
+  
+  // Si aucun mapping trouvé, essayer de détecter si c'est cuit ou cru
+  if (nomLower.includes('cuit') || nomLower.includes('bouilli')) {
+    return nom; // Garder tel quel si déjà marqué comme cuit
   }
   
   return nom;

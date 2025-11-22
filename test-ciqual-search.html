@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Test CIQUAL Search</title>
+</head>
+<body>
+    <h1>Test CIQUAL Search</h1>
+    <div id="results"></div>
+    
+    <script type="module">
+    const normalizeString = (str) => {
+      return str.toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "") // Enlever les accents
+        .replace(/\uFFFD/g, "") // Enlever caractères de remplacement UTF-8 (�)
+        .replace(/[^\w\s]/g, " ") // Remplacer ponctuation par espaces
+        .replace(/\s+/g, " ") // Consolider espaces multiples
+        .trim();
+    };
+    
+    // Tester avec les noms du fichier
+    const ciqualName = "Quinoa, bouilli/cuit � l'eau, non salé";
+    const searchTerm = "quinoa bouilli cuit non sale";
+    
+    const normalized = normalizeString(ciqualName);
+    const normalizedSearch = normalizeString(searchTerm);
+    
+    const results = document.getElementById('results');
+    results.innerHTML = `
+      <h2>Test de normalisation</h2>
+      <p><strong>Nom CIQUAL original:</strong> "${ciqualName}"</p>
+      <p><strong>Nom normalisé:</strong> "${normalized}"</p>
+      <hr>
+      <p><strong>Terme de recherche:</strong> "${searchTerm}"</p>
+      <p><strong>Recherche normalisée:</strong> "${normalizedSearch}"</p>
+      <hr>
+      <p><strong>Match?</strong> ${normalized.includes(normalizedSearch) ? '✅ OUI' : '❌ NON'}</p>
+      <hr>
+      <p><strong>Test avec "quinoa bouilli":</strong> ${normalized.includes(normalizeString("quinoa bouilli")) ? '✅ OUI' : '❌ NON'}</p>
+    `;
+    </script>
+</body>
+</html>
