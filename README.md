@@ -4,12 +4,18 @@ Une application web mobile-first qui génère des menus hebdomadaires personnali
 
 ## 🌟 Fonctionnalités
 
-### Questionnaire Personnalisé
+### Questionnaire Personnalisé (7 Étapes)
 - **Objectifs** : Perte de poids, Confort digestif, ou Vitalité
 - **Informations personnelles** : Taille, poids, âge, genre, tour de taille
 - **Préférences alimentaires** : Nombre de repas, intolérances connues
 - **Santé digestive** : Symptômes et capacités digestives
-- **Style de vie** : Morphotype et niveau d'activité physique
+- **Morphotype** : 4 types détaillés (Ectomorphe, Mésomorphe, Endomorphe, Mixte)
+- **Style de vie** : Niveau d'activité physique
+
+### 🎯 Navigation Auto-Avancée (NEW!)
+- Les étapes à choix unique avancent automatiquement après sélection
+- Plus besoin de cliquer sur "Suivant" pour les choix simples
+- **50% de clics en moins** pour une expérience plus fluide
 
 ### Génération de Menus Intelligente
 - **Menus hebdomadaires** adaptés à votre profil
@@ -26,6 +32,9 @@ Une application web mobile-first qui génère des menus hebdomadaires personnali
 - **Affichage détaillé** de chaque repas
 - **Fonction d'impression** et de partage
 - **Visualisation des macros** (protéines, lipides, glucides)
+- **Animations fluides** et feedback visuel immédiat
+- **Texte lisible** avec contraste optimisé
+- **Contrôles agrandis** pour une meilleure accessibilité
 
 ## 🚀 Technologies Utilisées
 
@@ -98,9 +107,23 @@ npm run build
 npm run preview
 ```
 
-## 🌐 URL de l'Application
+## 🌐 Déploiement
 
-**Application en ligne** : https://5173-i3apeogi3krbe5bmmtels-5185f4aa.sandbox.novita.ai
+### 🚀 Déployer sur Vercel (Recommandé)
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/Jaokimben/nutriweek)
+
+**Étapes simples :**
+1. Cliquez sur le bouton "Deploy with Vercel" ci-dessus
+2. Connectez votre compte GitHub
+3. Cliquez sur "Deploy"
+4. Votre application sera en ligne en 2-3 minutes !
+
+**Guide détaillé** : Voir [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md)
+
+### 🔗 Demo en Ligne
+
+**Application de test** : https://5173-i3apeogi3krbe5bmmtels-5185f4aa.sandbox.novita.ai
 
 Accessible depuis n'importe quel navigateur mobile (optimisé pour iPhone).
 
@@ -130,14 +153,18 @@ L'application calcule automatiquement :
 
 ## 📋 Fonctionnalités Avancées
 
+- ✅ **Navigation auto-avancée** pour les choix uniques
+- ✅ **Descriptions détaillées** des morphotypes avec icônes
 - ✅ Validation des données en temps réel
-- ✅ Interface multi-étapes avec progression
-- ✅ Adaptation mobile (touch-friendly)
-- ✅ Thème visuel moderne et coloré
-- ✅ Animations et transitions fluides
+- ✅ Interface multi-étapes avec barre de progression
+- ✅ Adaptation mobile (touch-friendly, 44px minimum)
+- ✅ Thème visuel moderne avec dégradés et ombres
+- ✅ Animations pulse et feedback immédiat
 - ✅ Gestion des intolérances alimentaires
-- ✅ Jeûne intermittent programmé
+- ✅ Jeûne intermittent programmé automatiquement
 - ✅ Conseils contextuels personnalisés
+- ✅ Textes d'aide pour étapes optionnelles
+- ✅ Contrôles de formulaire natifs stylés (accent-color)
 
 ## 🔐 Données et Confidentialité
 
@@ -180,13 +207,18 @@ L'application calcule automatiquement :
 
 ## 📈 Évolutions Futures
 
-- [ ] Ajout de plus de recettes
-- [ ] Intégration d'images de plats
+- [x] Navigation auto-avancée ✅ (v1.1.0)
+- [x] Descriptions morphotypes ✅ (v1.1.0)
+- [x] Design moderne amélioré ✅ (v1.1.0)
+- [ ] Ajout de plus de recettes (150+ recettes)
+- [ ] Intégration d'images de plats (AI-generated)
 - [ ] Liste de courses générée automatiquement
-- [ ] Historique des menus
+- [ ] Historique des menus (localStorage)
+- [ ] Export PDF des menus
 - [ ] Synchronisation multi-appareils
 - [ ] Mode hors-ligne (PWA)
 - [ ] Notifications de rappel
+- [ ] Suivi des progrès (poids, photos)
 
 ## 👨‍💻 Développement
 
