@@ -36,7 +36,10 @@ const Questionnaire = ({ onComplete }) => {
   const [errors, setErrors] = useState({})
 
   const handleChange = (field, value, autoAdvance = false) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
+    // Update form data
+    const newFormData = { ...formData, [field]: value }
+    setFormData(newFormData)
+    
     // Clear error when user starts typing
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }))
@@ -45,7 +48,14 @@ const Questionnaire = ({ onComplete }) => {
     // Auto-advance to next step if specified
     if (autoAdvance) {
       setTimeout(() => {
-        nextStep()
+        // Validate with the new form data, not the old state
+        if (validateStepWithData(currentStep, newFormData)) {
+          if (currentStep < 7) {
+            setCurrentStep(currentStep + 1)
+          } else {
+            onComplete(newFormData)
+          }
+        }
       }, 300) // Small delay for visual feedback
     }
   }
@@ -60,30 +70,31 @@ const Questionnaire = ({ onComplete }) => {
     })
   }
 
-  const validateStep = (step) => {
+  // Validate with provided data (for auto-advance) or current formData
+  const validateStepWithData = (step, data = formData) => {
     const newErrors = {}
     
     switch(step) {
       case 1:
-        if (!formData.objectif) newErrors.objectif = 'Veuillez sélectionner un objectif'
+        if (!data.objectif) newErrors.objectif = 'Veuillez sélectionner un objectif'
         break
       case 2:
-        if (!formData.taille || formData.taille < 100 || formData.taille > 250) 
+        if (!data.taille || data.taille < 100 || data.taille > 250) 
           newErrors.taille = 'Taille invalide (100-250 cm)'
-        if (!formData.poids || formData.poids < 30 || formData.poids > 300) 
+        if (!data.poids || data.poids < 30 || data.poids > 300) 
           newErrors.poids = 'Poids invalide (30-300 kg)'
-        if (!formData.age || formData.age < 10 || formData.age > 120) 
+        if (!data.age || data.age < 10 || data.age > 120) 
           newErrors.age = 'Âge invalide (10-120 ans)'
-        if (!formData.genre) newErrors.genre = 'Veuillez sélectionner un genre'
-        if (!formData.tourDeTaille || formData.tourDeTaille < 50 || formData.tourDeTaille > 200) 
+        if (!data.genre) newErrors.genre = 'Veuillez sélectionner un genre'
+        if (!data.tourDeTaille || data.tourDeTaille < 50 || data.tourDeTaille > 200) 
           newErrors.tourDeTaille = 'Tour de taille invalide (50-200 cm)'
         break
       case 3:
-        if (!formData.nombreRepas) newErrors.nombreRepas = 'Veuillez sélectionner le nombre de repas'
+        if (!data.nombreRepas) newErrors.nombreRepas = 'Veuillez sélectionner le nombre de repas'
         break
       case 4:
         // Capacité digestive - optional but validates if objectif is confort digestif
-        if (formData.objectif === 'confort' && formData.capaciteDigestive.length === 0) {
+        if (data.objectif === 'confort' && data.capaciteDigestive.length === 0) {
           newErrors.capaciteDigestive = 'Veuillez sélectionner au moins une option'
         }
         break
@@ -91,15 +102,20 @@ const Questionnaire = ({ onComplete }) => {
         // Intolérances - optional
         break
       case 6:
-        if (!formData.morphotype) newErrors.morphotype = 'Veuillez sélectionner un morphotype'
+        if (!data.morphotype) newErrors.morphotype = 'Veuillez sélectionner un morphotype'
         break
       case 7:
-        if (!formData.activitePhysique) newErrors.activitePhysique = 'Veuillez sélectionner votre niveau d\'activité'
+        if (!data.activitePhysique) newErrors.activitePhysique = 'Veuillez sélectionner votre niveau d\'activité'
         break
     }
     
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
+  }
+
+  // Wrapper for backward compatibility
+  const validateStep = (step) => {
+    return validateStepWithData(step, formData)
   }
 
   const nextStep = () => {
