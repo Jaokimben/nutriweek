@@ -31,7 +31,7 @@ const WeeklyMenu = ({ userProfile, onBack }) => {
         
         // Générer le menu avec la base simplifiée en priorité
         console.log('🎯 [WeeklyMenu] Appel generateWeeklyMenu...')
-        const menu = generateWeeklyMenu(userProfile, alimentsSimple, ciqualData)
+        const menu = await generateWeeklyMenu(userProfile, alimentsSimple, ciqualData)
         console.log('📊 [WeeklyMenu] Menu généré reçu:', menu)
         console.log('📊 [WeeklyMenu] Premier jour du menu:', menu.semaine[0])
         setWeeklyMenu(menu)
@@ -40,7 +40,7 @@ const WeeklyMenu = ({ userProfile, onBack }) => {
       } catch (error) {
         console.error('❌ Erreur lors du chargement:', error)
         // Générer quand même le menu sans bases
-        const menu = generateWeeklyMenu(userProfile, null, null)
+        const menu = await generateWeeklyMenu(userProfile, null, null)
         setWeeklyMenu(menu)
         setLoading(false)
       }
