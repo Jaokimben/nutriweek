@@ -282,17 +282,57 @@ const Questionnaire = ({ onComplete }) => {
         )
       
       case 6:
+        const morphotypes = [
+          {
+            id: 'M1',
+            name: 'Ectomorphe',
+            icon: '🏃',
+            description: 'Mince et longiligne',
+            traits: 'Métabolisme rapide, difficulté à prendre du poids'
+          },
+          {
+            id: 'M2',
+            name: 'Mésomorphe',
+            icon: '💪',
+            description: 'Musclé et athlétique',
+            traits: 'Prend facilement du muscle, corps équilibré'
+          },
+          {
+            id: 'M3',
+            name: 'Endomorphe',
+            icon: '🧍',
+            description: 'Corpulence forte',
+            traits: 'Prend facilement du poids, métabolisme lent'
+          },
+          {
+            id: 'M4',
+            name: 'Mixte',
+            icon: '⚖️',
+            description: 'Combinaison de types',
+            traits: 'Caractéristiques mixtes entre morphotypes'
+          }
+        ]
+        
         return (
           <div className="step fade-in">
-            <h2>Morphotype</h2>
-            <div className="options-grid">
-              {['M1', 'M2', 'M3', 'M4'].map(type => (
+            <h2>Quel est votre morphotype ?</h2>
+            <p className="subtitle">Sélectionnez le type qui vous correspond le mieux</p>
+            <div className="morphotype-grid">
+              {morphotypes.map(type => (
                 <button
-                  key={type}
-                  className={`option-card ${formData.morphotype === type ? 'selected' : ''}`}
-                  onClick={() => handleChange('morphotype', type)}
+                  key={type.id}
+                  className={`morphotype-card ${formData.morphotype === type.id ? 'selected' : ''}`}
+                  onClick={() => handleChange('morphotype', type.id)}
                 >
-                  <span className="label">{type}</span>
+                  <div className="morphotype-icon">{type.icon}</div>
+                  <div className="morphotype-content">
+                    <div className="morphotype-title">
+                      <span className="morphotype-id">{type.id}</span>
+                      <span className="morphotype-name">{type.name}</span>
+                    </div>
+                    <p className="morphotype-description">{type.description}</p>
+                    <p className="morphotype-traits">{type.traits}</p>
+                  </div>
                 </button>
               ))}
             </div>
