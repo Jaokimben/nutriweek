@@ -184,7 +184,16 @@ const MealCard = ({ meal }) => {
             <h5>🥗 Ingrédients:</h5>
             <ul>
               {meal.ingredients.map((ing, index) => (
-                <li key={index}>{ing}</li>
+                <li key={index}>
+                  {typeof ing === 'object' ? (
+                    <>
+                      <span className="ingredient-name">{ing.nom}</span>
+                      <span className="ingredient-quantity"> - {ing.quantite} {ing.unite}</span>
+                    </>
+                  ) : (
+                    ing
+                  )}
+                </li>
               ))}
             </ul>
           </div>

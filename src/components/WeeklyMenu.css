@@ -273,9 +273,21 @@
 }
 
 .ingredients-section li {
-  padding: 0.25rem 0;
+  padding: 0.5rem 0;
   padding-left: 1.5rem;
   position: relative;
+  line-height: 1.6;
+}
+
+.ingredient-name {
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.ingredient-quantity {
+  color: #666;
+  font-weight: 500;
+  font-size: 0.95em;
 }
 
 .ingredients-section li::before {
