@@ -469,6 +469,98 @@ const generateDayMenu = async (profile, ciqualData, alimentsSimple, nutritionNee
 };
 
 /**
+ * Régénère un seul repas (pour remplacement)
+ * @param {string} mealType - Type de repas ('petitDejeuner', 'dejeuner', 'diner')
+ * @param {Object} profile - Profil utilisateur
+ * @param {Array} alimentsSimple - Base de données simplifiée
+ * @param {Object} ciqualData - Données CIQUAL
+ * @param {Object} nutritionNeeds - Besoins nutritionnels
+ * @param {Array} excludedRecipes - Noms de recettes à exclure (pour éviter les doublons)
+ * @returns {Object} - Nouveau repas avec nutrition calculée
+ */
+export const regenerateSingleMeal = async (mealType, profile, alimentsSimple, ciqualData, nutritionNeeds, excludedRecipes = []) => {
+  console.log(`🔄 [regenerateSingleMeal] Régénération de ${mealType}...`);
+  console.log(`🚫 [regenerateSingleMeal] Recettes exclues:`, excludedRecipes);
+  
+  const { capaciteDigestive } = profile;
+  const { mealDistribution } = nutritionNeeds;
+  
+  let recettesDisponibles = [];
+  let moment = '';
+  let caloriesCible = 0;
+  let note = '';
+  
+  // Sélectionner les recettes selon le type de repas
+  switch(mealType) {
+    case 'petitDejeuner':
+      recettesDisponibles = recettesDatabase.petitDejeuner;
+      moment = 'Petit-déjeuner (8h-10h)';
+      caloriesCible = mealDistribution.petitDejeuner;
+      break;
+      
+    case 'dejeuner':
+      recettesDisponibles = [...recettesDatabase.legumineuses, ...recettesDatabase.cereales]
+        .filter(r => r.type === 'dejeuner');
+      moment = 'Déjeuner (12h-14h)';
+      caloriesCible = mealDistribution.dejeuner;
+      note = 'Repas principal de la journée - Prenez votre temps pour mastiquer (minimum 20 secondes par bouchée)';
+      break;
+      
+    case 'diner':
+      recettesDisponibles = recettesDatabase.diner;
+      
+      // Si reflux/rôt/nausée, privilégier les soupes et plats cuits
+      if (capaciteDigestive.includes('Reflux gastrique') || 
+          capaciteDigestive.includes('Rôt') || 
+          capaciteDigestive.includes('Nausée')) {
+        recettesDisponibles = recettesDisponibles.filter(r => 
+          r.nom.includes('Soupe') || r.nom.includes('Velouté')
+        );
+      }
+      
+      moment = 'Dîner (18h-20h)';
+      caloriesCible = mealDistribution.diner;
+      note = 'Repas léger - Pas de protéines animales, pas d\'amidon, pas de graisses';
+      break;
+      
+    default:
+      throw new Error(`Type de repas invalide: ${mealType}`);
+  }
+  
+  // Filtrer les recettes déjà utilisées
+  const recettesFiltrees = recettesDisponibles.filter(
+    r => !excludedRecipes.includes(r.nom)
+  );
+  
+  // Si toutes les recettes ont été utilisées, réinitialiser
+  const recettesFinales = recettesFiltrees.length > 0 ? recettesFiltrees : recettesDisponibles;
+  
+  // Sélection aléatoire
+  const recette = recettesFinales[Math.floor(Math.random() * recettesFinales.length)];
+  
+  console.log(`🎲 [regenerateSingleMeal] Recette sélectionnée: ${recette.nom}`);
+  
+  // Calculer nutrition avec système hybride
+  const nutrition = await calculateNutritionHybrid(recette.ingredients, alimentsSimple, ciqualData);
+  console.log(`📊 [regenerateSingleMeal] Nutrition calculée:`, nutrition);
+  
+  // Créer l'objet repas
+  const meal = {
+    ...recette,
+    calories: Math.round(nutrition.calories),
+    caloriesCible,
+    proteines: parseFloat(nutrition.proteines.toFixed(1)),
+    lipides: parseFloat(nutrition.lipides.toFixed(1)),
+    glucides: parseFloat(nutrition.glucides.toFixed(1)),
+    moment,
+    note
+  };
+  
+  console.log(`✅ [regenerateSingleMeal] Nouveau repas créé:`, meal);
+  return meal;
+};
+
+/**
  * Génère un menu hebdomadaire complet
  * @param {Object} profile - Profil utilisateur
  * @param {Array} alimentsSimple - Base de données simplifiée (prioritaire)

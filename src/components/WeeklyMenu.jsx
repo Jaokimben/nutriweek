@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
-import { generateWeeklyMenu } from '../utils/menuGenerator'
-import { calculateIMC } from '../utils/nutritionCalculator'
+import { generateWeeklyMenu, regenerateSingleMeal } from '../utils/menuGenerator'
+import { calculateIMC, calculateCalories } from '../utils/nutritionCalculator'
 import { loadCIQUAL } from '../utils/ciqualParser'
 import { loadAlimentsSimple } from '../utils/alimentsSimpleParser'
+import { saveMenu } from '../utils/storage'
 import ShoppingList from './ShoppingList'
 import './WeeklyMenu.css'
 
@@ -11,6 +12,9 @@ const WeeklyMenu = ({ userProfile, onBack }) => {
   const [loading, setLoading] = useState(true)
   const [selectedDay, setSelectedDay] = useState(0)
   const [showShoppingList, setShowShoppingList] = useState(false)
+  const [regeneratingMeal, setRegeneratingMeal] = useState(null)
+  const [alimentsSimple, setAlimentsSimple] = useState(null)
+  const [ciqualData, setCiqualData] = useState(null)
 
   useEffect(() => {
     // Charger la base simplifiée (prioritaire) et CIQUAL (backup)
@@ -19,31 +23,38 @@ const WeeklyMenu = ({ userProfile, onBack }) => {
         console.log('🔍 Chargement des bases nutritionnelles...')
         
         // Charger la base simplifiée en priorité
-        const alimentsSimple = await loadAlimentsSimple()
-        console.log(`✅ Base simplifiée: ${alimentsSimple?.length || 0} aliments`)
+        const alimentsSimpleData = await loadAlimentsSimple()
+        console.log(`✅ Base simplifiée: ${alimentsSimpleData?.length || 0} aliments`)
+        setAlimentsSimple(alimentsSimpleData)
         
         // Charger CIQUAL en backup
-        let ciqualData = null
+        let ciqualDataLoaded = null
         try {
-          ciqualData = await loadCIQUAL()
-          console.log(`✅ CIQUAL (backup): ${Object.keys(ciqualData || {}).length} aliments`)
+          ciqualDataLoaded = await loadCIQUAL()
+          console.log(`✅ CIQUAL (backup): ${Object.keys(ciqualDataLoaded || {}).length} aliments`)
+          setCiqualData(ciqualDataLoaded)
         } catch (e) {
           console.warn('⚠️ CIQUAL non disponible, utilisation uniquement base simplifiée')
         }
         
         // Générer le menu avec la base simplifiée en priorité
         console.log('🎯 [WeeklyMenu] Appel generateWeeklyMenu...')
-        const menu = await generateWeeklyMenu(userProfile, alimentsSimple, ciqualData)
+        const menu = await generateWeeklyMenu(userProfile, alimentsSimpleData, ciqualDataLoaded)
         console.log('📊 [WeeklyMenu] Menu généré reçu:', menu)
         console.log('📊 [WeeklyMenu] Premier jour du menu:', menu.semaine[0])
         setWeeklyMenu(menu)
         console.log('✅ [WeeklyMenu] setWeeklyMenu appelé')
+        
+        // Sauvegarder automatiquement
+        saveMenu(menu, userProfile)
+        
         setLoading(false)
       } catch (error) {
         console.error('❌ Erreur lors du chargement:', error)
         // Générer quand même le menu sans bases
         const menu = await generateWeeklyMenu(userProfile, null, null)
         setWeeklyMenu(menu)
+        saveMenu(menu, userProfile)
         setLoading(false)
       }
     }
@@ -62,6 +73,51 @@ const WeeklyMenu = ({ userProfile, onBack }) => {
 
   const imc = calculateIMC(userProfile.poids, userProfile.taille)
   const currentDayMenu = weeklyMenu.semaine[selectedDay]
+
+  // Handler pour régénérer un repas
+  const handleRegenerateMeal = async (dayIndex, mealType) => {
+    try {
+      console.log(`🔄 Régénération du repas: Jour ${dayIndex}, Type ${mealType}`)
+      
+      // Marquer le repas en cours de régénération
+      setRegeneratingMeal({ dayIndex, mealType })
+      
+      // Calculer les besoins nutritionnels
+      const nutritionNeeds = calculateCalories(userProfile)
+      
+      // Collecter toutes les recettes utilisées dans la semaine pour éviter les doublons
+      const excludedRecipes = []
+      weeklyMenu.semaine.forEach(day => {
+        if (day.menu.petitDejeuner) excludedRecipes.push(day.menu.petitDejeuner.nom)
+        if (day.menu.dejeuner) excludedRecipes.push(day.menu.dejeuner.nom)
+        if (day.menu.diner) excludedRecipes.push(day.menu.diner.nom)
+      })
+      
+      // Générer un nouveau repas
+      const newMeal = await regenerateSingleMeal(
+        mealType,
+        userProfile,
+        alimentsSimple,
+        ciqualData,
+        nutritionNeeds,
+        excludedRecipes
+      )
+      
+      // Mettre à jour le menu
+      const updatedMenu = { ...weeklyMenu }
+      updatedMenu.semaine[dayIndex].menu[mealType] = newMeal
+      
+      setWeeklyMenu(updatedMenu)
+      saveMenu(updatedMenu, userProfile)
+      
+      console.log('✅ Repas régénéré avec succès')
+    } catch (error) {
+      console.error('❌ Erreur régénération repas:', error)
+      alert('Erreur lors de la régénération du repas')
+    } finally {
+      setRegeneratingMeal(null)
+    }
+  }
 
   return (
     <div className="weekly-menu">
@@ -113,15 +169,27 @@ const WeeklyMenu = ({ userProfile, onBack }) => {
 
         <div className="meals-container">
           {currentDayMenu.menu.petitDejeuner && (
-            <MealCard meal={currentDayMenu.menu.petitDejeuner} />
+            <MealCard 
+              meal={currentDayMenu.menu.petitDejeuner}
+              onRegenerate={() => handleRegenerateMeal(selectedDay, 'petitDejeuner')}
+              isRegenerating={regeneratingMeal?.dayIndex === selectedDay && regeneratingMeal?.mealType === 'petitDejeuner'}
+            />
           )}
           
           {currentDayMenu.menu.dejeuner && (
-            <MealCard meal={currentDayMenu.menu.dejeuner} />
+            <MealCard 
+              meal={currentDayMenu.menu.dejeuner}
+              onRegenerate={() => handleRegenerateMeal(selectedDay, 'dejeuner')}
+              isRegenerating={regeneratingMeal?.dayIndex === selectedDay && regeneratingMeal?.mealType === 'dejeuner'}
+            />
           )}
           
           {currentDayMenu.menu.diner && (
-            <MealCard meal={currentDayMenu.menu.diner} />
+            <MealCard 
+              meal={currentDayMenu.menu.diner}
+              onRegenerate={() => handleRegenerateMeal(selectedDay, 'diner')}
+              isRegenerating={regeneratingMeal?.dayIndex === selectedDay && regeneratingMeal?.mealType === 'diner'}
+            />
           )}
         </div>
       </div>
@@ -187,7 +255,7 @@ const WeeklyMenu = ({ userProfile, onBack }) => {
   )
 }
 
-const MealCard = ({ meal }) => {
+const MealCard = ({ meal, onRegenerate, isRegenerating }) => {
   const [showDetails, setShowDetails] = useState(false)
   
   // DEBUG: Log ce que reçoit MealCard
@@ -203,8 +271,20 @@ const MealCard = ({ meal }) => {
   return (
     <div className="meal-card">
       <div className="meal-header">
-        <h4>{meal.nom}</h4>
-        <span className="meal-calories">{meal.calories} kcal</span>
+        <div>
+          <h4>{meal.nom}</h4>
+          <span className="meal-calories">{meal.calories} kcal</span>
+        </div>
+        {onRegenerate && (
+          <button 
+            className="btn-regenerate"
+            onClick={onRegenerate}
+            disabled={isRegenerating}
+            title="Changer ce repas"
+          >
+            {isRegenerating ? '⏳' : '🔄'}
+          </button>
+        )}
       </div>
       <p className="meal-moment">{meal.moment}</p>
       
