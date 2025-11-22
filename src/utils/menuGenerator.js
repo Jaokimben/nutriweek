@@ -282,6 +282,9 @@ const generateDayMenu = (profile, ciqualData, nutritionNeeds) => {
     const recette = petitDejRecettes[Math.floor(Math.random() * petitDejRecettes.length)];
     
     // Calculer les vraies calories avec CIQUAL
+    if (ciqualData) {
+      console.log(`🍳 Calcul nutrition: ${recette.nom}`);
+    }
     const nutrition = ciqualData ? 
       calculateRecipeNutrition(recette.ingredients, ciqualData) : 
       { calories: mealDistribution.petitDejeuner, proteines: 0, lipides: 0, glucides: 0 };
@@ -302,6 +305,9 @@ const generateDayMenu = (profile, ciqualData, nutritionNeeds) => {
     .filter(r => r.type === 'dejeuner');
   const recetteDejeuner = dejeunerTypes[Math.floor(Math.random() * dejeunerTypes.length)];
   
+  if (ciqualData) {
+    console.log(`🍱 Calcul nutrition: ${recetteDejeuner.nom}`);
+  }
   const nutritionDejeuner = ciqualData ? 
     calculateRecipeNutrition(recetteDejeuner.ingredients, ciqualData) :
     { calories: mealDistribution.dejeuner, proteines: 0, lipides: 0, glucides: 0 };
@@ -331,6 +337,9 @@ const generateDayMenu = (profile, ciqualData, nutritionNeeds) => {
   
   const recetteDiner = dinerRecettes[Math.floor(Math.random() * dinerRecettes.length)];
   
+  if (ciqualData) {
+    console.log(`🌙 Calcul nutrition: ${recetteDiner.nom}`);
+  }
   const nutritionDiner = ciqualData ? 
     calculateRecipeNutrition(recetteDiner.ingredients, ciqualData) :
     { calories: mealDistribution.diner, proteines: 0, lipides: 0, glucides: 0 };

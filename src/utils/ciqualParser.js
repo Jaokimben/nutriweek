@@ -69,6 +69,7 @@ export const searchAliment = (ciqualData, searchTerm) => {
   const normalizedSearch = searchTerm.toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "") // Enlever les accents
+    .replace(/\b[dl]'\s*/g, "") // Enlever d' et l' (d'olive → olive)
     .replace(/[^\w\s]/g, " ") // Remplacer ponctuation par espaces
     .replace(/\s+/g, " ") // Consolider espaces multiples
     .trim();
@@ -79,6 +80,7 @@ export const searchAliment = (ciqualData, searchTerm) => {
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "") // Enlever les accents
       .replace(/\uFFFD/g, "") // Enlever caractères de remplacement UTF-8 (�)
+      .replace(/\b[dl]'\s*/g, "") // Enlever d' et l' (d'olive → olive)
       .replace(/[^\w\s]/g, " ") // Remplacer ponctuation par espaces
       .replace(/\s+/g, " ") // Consolider espaces multiples
       .trim();
