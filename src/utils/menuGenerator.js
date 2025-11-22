@@ -272,25 +272,36 @@ const recettesDatabase = {
  * @returns {Object} Valeurs nutritionnelles
  */
 const calculateNutritionHybrid = (ingredients, alimentsSimple, ciqualData) => {
+  console.log('🔍 [calculateNutritionHybrid] DÉBUT');
+  console.log('📦 [calculateNutritionHybrid] alimentsSimple disponible:', !!alimentsSimple, '| taille:', alimentsSimple?.length || 0);
+  console.log('📦 [calculateNutritionHybrid] ciqualData disponible:', !!ciqualData, '| taille:', Object.keys(ciqualData || {}).length);
+  console.log('🥗 [calculateNutritionHybrid] Ingrédients:', ingredients.map(i => i.nom).join(', '));
+  
   // Essayer avec la base simplifiée
   if (alimentsSimple && alimentsSimple.length > 0) {
+    console.log('✅ [calculateNutritionHybrid] Essai avec base simplifiée...');
     const result = calculateRecipeNutritionSimple(ingredients, alimentsSimple);
+    console.log('📊 [calculateNutritionHybrid] Résultat base simplifiée:', result);
     
     // Si le résultat est valide (calories > 0), le retourner
     if (result.calories > 0) {
+      console.log('✅ [calculateNutritionHybrid] Résultat valide depuis base simplifiée:', result);
       return result;
     }
     
-    console.warn('⚠️ Base simplifiée n\'a pas donné de résultats, essai avec CIQUAL...');
+    console.warn('⚠️ [calculateNutritionHybrid] Base simplifiée n\'a pas donné de résultats, essai avec CIQUAL...');
   }
   
   // Sinon, essayer avec CIQUAL
   if (ciqualData && Object.keys(ciqualData).length > 0) {
-    return calculateRecipeNutrition(ingredients, ciqualData);
+    console.log('✅ [calculateNutritionHybrid] Essai avec CIQUAL...');
+    const result = calculateRecipeNutrition(ingredients, ciqualData);
+    console.log('📊 [calculateNutritionHybrid] Résultat CIQUAL:', result);
+    return result;
   }
   
   // Si rien ne fonctionne, retourner 0
-  console.error('❌ Aucune base de données disponible');
+  console.error('❌ [calculateNutritionHybrid] Aucune base de données disponible');
   return { calories: 0, proteines: 0, lipides: 0, glucides: 0 };
 };
 
@@ -314,10 +325,11 @@ const generateDayMenu = (profile, ciqualData, alimentsSimple, nutritionNeeds) =>
     const recette = petitDejRecettes[Math.floor(Math.random() * petitDejRecettes.length)];
     
     // Calculer avec système hybride (simple + CIQUAL fallback)
-    console.log(`🍳 Calcul nutrition: ${recette.nom}`);
+    console.log(`🍳 [generateDayMenu] Calcul nutrition: ${recette.nom}`);
     const nutrition = calculateNutritionHybrid(recette.ingredients, alimentsSimple, ciqualData);
+    console.log(`📊 [generateDayMenu] Nutrition calculée pour ${recette.nom}:`, nutrition);
     
-    menu.petitDejeuner = {
+    const petitDej = {
       ...recette,
       calories: nutrition.calories,
       caloriesCible: mealDistribution.petitDejeuner,
@@ -326,6 +338,8 @@ const generateDayMenu = (profile, ciqualData, alimentsSimple, nutritionNeeds) =>
       glucides: nutrition.glucides,
       moment: 'Petit-déjeuner (8h-10h)'
     };
+    console.log(`✅ [generateDayMenu] Objet petitDejeuner créé:`, petitDej);
+    menu.petitDejeuner = petitDej;
   }
   
   // Déjeuner - repas principal
@@ -333,10 +347,11 @@ const generateDayMenu = (profile, ciqualData, alimentsSimple, nutritionNeeds) =>
     .filter(r => r.type === 'dejeuner');
   const recetteDejeuner = dejeunerTypes[Math.floor(Math.random() * dejeunerTypes.length)];
   
-  console.log(`🍱 Calcul nutrition: ${recetteDejeuner.nom}`);
+  console.log(`🍱 [generateDayMenu] Calcul nutrition: ${recetteDejeuner.nom}`);
   const nutritionDejeuner = calculateNutritionHybrid(recetteDejeuner.ingredients, alimentsSimple, ciqualData);
+  console.log(`📊 [generateDayMenu] Nutrition calculée pour ${recetteDejeuner.nom}:`, nutritionDejeuner);
   
-  menu.dejeuner = {
+  const dejeuner = {
     ...recetteDejeuner,
     calories: nutritionDejeuner.calories,
     caloriesCible: mealDistribution.dejeuner,
@@ -346,6 +361,8 @@ const generateDayMenu = (profile, ciqualData, alimentsSimple, nutritionNeeds) =>
     moment: 'Déjeuner (12h-14h)',
     note: 'Repas principal de la journée - Prenez votre temps pour mastiquer (minimum 20 secondes par bouchée)'
   };
+  console.log(`✅ [generateDayMenu] Objet dejeuner créé:`, dejeuner);
+  menu.dejeuner = dejeuner;
   
   // Dîner - hypocalorique
   let dinerRecettes = recettesDatabase.diner;
@@ -361,10 +378,11 @@ const generateDayMenu = (profile, ciqualData, alimentsSimple, nutritionNeeds) =>
   
   const recetteDiner = dinerRecettes[Math.floor(Math.random() * dinerRecettes.length)];
   
-  console.log(`🌙 Calcul nutrition: ${recetteDiner.nom}`);
+  console.log(`🌙 [generateDayMenu] Calcul nutrition: ${recetteDiner.nom}`);
   const nutritionDiner = calculateNutritionHybrid(recetteDiner.ingredients, alimentsSimple, ciqualData);
+  console.log(`📊 [generateDayMenu] Nutrition calculée pour ${recetteDiner.nom}:`, nutritionDiner);
   
-  menu.diner = {
+  const diner = {
     ...recetteDiner,
     calories: nutritionDiner.calories,
     caloriesCible: mealDistribution.diner,
@@ -374,6 +392,8 @@ const generateDayMenu = (profile, ciqualData, alimentsSimple, nutritionNeeds) =>
     moment: 'Dîner (18h-20h)',
     note: 'Repas léger - Pas de protéines animales, pas d\'amidon, pas de graisses'
   };
+  console.log(`✅ [generateDayMenu] Objet diner créé:`, diner);
+  menu.diner = diner;
   
   return menu;
 };
@@ -386,6 +406,11 @@ const generateDayMenu = (profile, ciqualData, alimentsSimple, nutritionNeeds) =>
  * @returns {Object} - Menu hebdomadaire avec conseils
  */
 export const generateWeeklyMenu = (profile, alimentsSimple = null, ciqualData = null) => {
+  console.log('🌍 [generateWeeklyMenu] DÉBUT - Génération menu hebdomadaire');
+  console.log('👤 [generateWeeklyMenu] Profile:', profile);
+  console.log('📦 [generateWeeklyMenu] alimentsSimple:', alimentsSimple?.length || 0, 'aliments');
+  console.log('📦 [generateWeeklyMenu] ciqualData:', Object.keys(ciqualData || {}).length, 'aliments');
+  
   const nutritionNeeds = calculateCalories(profile);
   const weekMenu = [];
   
@@ -406,19 +431,23 @@ export const generateWeeklyMenu = (profile, alimentsSimple = null, ciqualData = 
       };
     }
     
-    weekMenu.push({
+    const dayObject = {
       jour: getDayName(day),
       date: getDateForDay(day),
       menu: dayMenu,
       jeune: isJeuneIntermittent
-    });
+    };
+    console.log(`📅 [generateWeeklyMenu] Jour ${day} (${dayObject.jour}):`, dayObject);
+    weekMenu.push(dayObject);
   }
   
-  return {
+  const finalMenu = {
     semaine: weekMenu,
     nutritionNeeds,
     conseils: generateTips(profile)
   };
+  console.log('✅ [generateWeeklyMenu] MENU FINAL COMPLET:', finalMenu);
+  return finalMenu;
 };
 
 /**

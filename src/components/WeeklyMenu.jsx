@@ -30,8 +30,12 @@ const WeeklyMenu = ({ userProfile, onBack }) => {
         }
         
         // Générer le menu avec la base simplifiée en priorité
+        console.log('🎯 [WeeklyMenu] Appel generateWeeklyMenu...')
         const menu = generateWeeklyMenu(userProfile, alimentsSimple, ciqualData)
+        console.log('📊 [WeeklyMenu] Menu généré reçu:', menu)
+        console.log('📊 [WeeklyMenu] Premier jour du menu:', menu.semaine[0])
         setWeeklyMenu(menu)
+        console.log('✅ [WeeklyMenu] setWeeklyMenu appelé')
         setLoading(false)
       } catch (error) {
         console.error('❌ Erreur lors du chargement:', error)
@@ -172,6 +176,16 @@ const WeeklyMenu = ({ userProfile, onBack }) => {
 
 const MealCard = ({ meal }) => {
   const [showDetails, setShowDetails] = useState(false)
+  
+  // DEBUG: Log ce que reçoit MealCard
+  console.log('🍽️ [MealCard] Rendu pour:', meal.nom)
+  console.log('📊 [MealCard] Valeurs nutrition:', {
+    calories: meal.calories,
+    proteines: meal.proteines,
+    lipides: meal.lipides,
+    glucides: meal.glucides
+  })
+  console.log('🔍 [MealCard] Objet meal complet:', meal)
 
   return (
     <div className="meal-card">

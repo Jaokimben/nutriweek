@@ -107,11 +107,12 @@ export const searchAliment = (ciqualData, searchTerm) => {
  * @returns {Object} Valeurs nutritionnelles totales
  */
 export const calculateRecipeNutrition = (ingredients, ciqualData) => {
-  console.log(`🔬 calculateRecipeNutrition appelée avec ${ingredients?.length || 0} ingrédients`);
-  console.log(`📚 ciqualData: ${ciqualData ? Object.keys(ciqualData).length + ' aliments' : 'NULL'}`);
+  console.log('\n🔬 [calculateRecipeNutrition] DÉBUT (CIQUAL)');
+  console.log(`📝 [calculateRecipeNutrition] ${ingredients?.length || 0} ingrédients:`, ingredients?.map(i => i.nom));
+  console.log(`📚 [calculateRecipeNutrition] ciqualData: ${ciqualData ? Object.keys(ciqualData).length + ' aliments' : 'NULL'}`);
   
   if (!ciqualData || Object.keys(ciqualData).length === 0) {
-    console.warn('⚠️ ciqualData est vide ou null, retour valeurs par défaut');
+    console.warn('⚠️ [calculateRecipeNutrition] ciqualData est vide ou null, retour valeurs par défaut');
     return { calories: 0, proteines: 0, lipides: 0, glucides: 0 };
   }
   
@@ -168,17 +169,20 @@ export const calculateRecipeNutrition = (ingredients, ciqualData) => {
     }
   });
   
-  // Log du détail complet
-  console.log('📊 Détail nutritionnel:', details);
-  console.log(`📈 Total: ${Math.round(totalCalories)} kcal | P: ${totalProteines.toFixed(1)}g | L: ${totalLipides.toFixed(1)}g | G: ${totalGlucides.toFixed(1)}g`);
-  
-  return {
+  const result = {
     calories: Math.round(totalCalories),
     proteines: parseFloat(totalProteines.toFixed(1)),
     lipides: parseFloat(totalLipides.toFixed(1)),
     glucides: parseFloat(totalGlucides.toFixed(1)),
     details // Pour debug si nécessaire
   };
+  
+  // Log du détail complet
+  console.log('📊 [calculateRecipeNutrition] Détail nutritionnel:', details);
+  console.log(`📈 [calculateRecipeNutrition] TOTAL: ${result.calories} kcal | P: ${result.proteines}g | L: ${result.lipides}g | G: ${result.glucides}g`);
+  console.log('✅ [calculateRecipeNutrition] Objet retourné:', result);
+  
+  return result;
 };
 
 /**

@@ -125,11 +125,12 @@ const parseCSVLine = (line) => {
  * @returns {Object} Valeurs nutritionnelles
  */
 export const calculateRecipeNutritionSimple = (ingredients, alimentsDB) => {
-  console.log(`🔬 Calcul nutrition avec ${ingredients?.length || 0} ingrédients`);
-  console.log(`📚 Base de données: ${alimentsDB?.length || 0} aliments`);
+  console.log('\n🔬 [calculateRecipeNutritionSimple] DÉBUT');
+  console.log(`📝 [calculateRecipeNutritionSimple] ${ingredients?.length || 0} ingrédients:`, ingredients?.map(i => i.nom));
+  console.log(`📚 [calculateRecipeNutritionSimple] Base de données: ${alimentsDB?.length || 0} aliments`);
   
   if (!alimentsDB || alimentsDB.length === 0) {
-    console.warn('⚠️ Base de données vide');
+    console.warn('⚠️ [calculateRecipeNutritionSimple] Base de données vide');
     return { calories: 0, proteines: 0, lipides: 0, glucides: 0 };
   }
   
@@ -217,15 +218,18 @@ export const calculateRecipeNutritionSimple = (ingredients, alimentsDB) => {
     }
   });
   
-  console.log(`\n📊 TOTAL: ${Math.round(totalCalories)} kcal | P: ${totalProteines.toFixed(1)}g | L: ${totalLipides.toFixed(1)}g | G: ${totalGlucides.toFixed(1)}g`);
-  
-  return {
+  const result = {
     calories: Math.round(totalCalories),
     proteines: parseFloat(totalProteines.toFixed(1)),
     lipides: parseFloat(totalLipides.toFixed(1)),
     glucides: parseFloat(totalGlucides.toFixed(1)),
     details
   };
+  
+  console.log(`\n📊 [calculateRecipeNutritionSimple] TOTAL: ${result.calories} kcal | P: ${result.proteines}g | L: ${result.lipides}g | G: ${result.glucides}g`);
+  console.log('✅ [calculateRecipeNutritionSimple] Objet retourné:', result);
+  
+  return result;
 };
 
 /**
