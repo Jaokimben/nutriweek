@@ -418,6 +418,11 @@
   transition: all 0.3s ease;
 }
 
+.btn-shopping {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
 .btn-print {
   background: var(--secondary-color);
   color: white;

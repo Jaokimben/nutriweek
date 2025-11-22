@@ -3,12 +3,14 @@ import { generateWeeklyMenu } from '../utils/menuGenerator'
 import { calculateIMC } from '../utils/nutritionCalculator'
 import { loadCIQUAL } from '../utils/ciqualParser'
 import { loadAlimentsSimple } from '../utils/alimentsSimpleParser'
+import ShoppingList from './ShoppingList'
 import './WeeklyMenu.css'
 
 const WeeklyMenu = ({ userProfile, onBack }) => {
   const [weeklyMenu, setWeeklyMenu] = useState(null)
   const [loading, setLoading] = useState(true)
   const [selectedDay, setSelectedDay] = useState(0)
+  const [showShoppingList, setShowShoppingList] = useState(false)
 
   useEffect(() => {
     // Charger la base simplifiée (prioritaire) et CIQUAL (backup)
@@ -163,6 +165,9 @@ const WeeklyMenu = ({ userProfile, onBack }) => {
 
       {/* Actions */}
       <div className="actions-section">
+        <button className="btn-action btn-shopping" onClick={() => setShowShoppingList(true)}>
+          🛒 Liste de courses
+        </button>
         <button className="btn-action btn-print" onClick={() => window.print()}>
           🖨️ Imprimer le menu
         </button>
@@ -170,6 +175,14 @@ const WeeklyMenu = ({ userProfile, onBack }) => {
           📤 Partager
         </button>
       </div>
+
+      {/* Shopping List Modal */}
+      {showShoppingList && (
+        <ShoppingList 
+          weeklyMenu={weeklyMenu}
+          onClose={() => setShowShoppingList(false)}
+        />
+      )}
     </div>
   )
 }
