@@ -35,11 +35,18 @@ const Questionnaire = ({ onComplete }) => {
 
   const [errors, setErrors] = useState({})
 
-  const handleChange = (field, value) => {
+  const handleChange = (field, value, autoAdvance = false) => {
     setFormData(prev => ({ ...prev, [field]: value }))
     // Clear error when user starts typing
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }))
+    }
+    
+    // Auto-advance to next step if specified
+    if (autoAdvance) {
+      setTimeout(() => {
+        nextStep()
+      }, 300) // Small delay for visual feedback
     }
   }
 
@@ -121,21 +128,21 @@ const Questionnaire = ({ onComplete }) => {
             <div className="options-grid">
               <button
                 className={`option-card ${formData.objectif === 'perte' ? 'selected' : ''}`}
-                onClick={() => handleChange('objectif', 'perte')}
+                onClick={() => handleChange('objectif', 'perte', true)}
               >
                 <span className="icon">🎯</span>
                 <span className="label">Perdre du poids</span>
               </button>
               <button
                 className={`option-card ${formData.objectif === 'confort' ? 'selected' : ''}`}
-                onClick={() => handleChange('objectif', 'confort')}
+                onClick={() => handleChange('objectif', 'confort', true)}
               >
                 <span className="icon">💚</span>
                 <span className="label">Confort digestif</span>
               </button>
               <button
                 className={`option-card ${formData.objectif === 'vitalite' ? 'selected' : ''}`}
-                onClick={() => handleChange('objectif', 'vitalite')}
+                onClick={() => handleChange('objectif', 'vitalite', true)}
               >
                 <span className="icon">⚡</span>
                 <span className="label">Vitalité</span>
@@ -223,14 +230,14 @@ const Questionnaire = ({ onComplete }) => {
             <div className="options-grid">
               <button
                 className={`option-card ${formData.nombreRepas === '2' ? 'selected' : ''}`}
-                onClick={() => handleChange('nombreRepas', '2')}
+                onClick={() => handleChange('nombreRepas', '2', true)}
               >
                 <span className="icon">🍽️</span>
                 <span className="label">Deux repas</span>
               </button>
               <button
                 className={`option-card ${formData.nombreRepas === '3' ? 'selected' : ''}`}
-                onClick={() => handleChange('nombreRepas', '3')}
+                onClick={() => handleChange('nombreRepas', '3', true)}
               >
                 <span className="icon">🍽️🍽️</span>
                 <span className="label">Trois repas</span>
@@ -245,6 +252,7 @@ const Questionnaire = ({ onComplete }) => {
           <div className="step fade-in">
             <h2>Capacité digestive</h2>
             <p className="subtitle">Sélectionnez vos symptômes (choix multiples)</p>
+            <p className="help-text">💡 Cochez toutes les réponses qui s'appliquent, puis cliquez sur Suivant</p>
             <div className="checkbox-list">
               {['Reflux gastrique', 'Rôt', 'Nausée', 'Ballonnement', 'Transit lent', 'Transit rapide'].map(option => (
                 <label key={option} className="checkbox-label">
@@ -265,7 +273,8 @@ const Questionnaire = ({ onComplete }) => {
         return (
           <div className="step fade-in">
             <h2>Intolérances connues</h2>
-            <p className="subtitle">Sélectionnez vos intolérances (choix multiples)</p>
+            <p className="subtitle-optional">Sélectionnez vos intolérances (choix multiples)</p>
+            <p className="help-text">💡 Cochez toutes les réponses qui s'appliquent, puis cliquez sur Suivant</p>
             <div className="checkbox-list">
               {['Gluten', 'Lait', 'Fruits à coque', 'Œufs'].map(option => (
                 <label key={option} className="checkbox-label">
@@ -322,7 +331,7 @@ const Questionnaire = ({ onComplete }) => {
                 <button
                   key={type.id}
                   className={`morphotype-card ${formData.morphotype === type.id ? 'selected' : ''}`}
-                  onClick={() => handleChange('morphotype', type.id)}
+                  onClick={() => handleChange('morphotype', type.id, true)}
                 >
                   <div className="morphotype-icon">{type.icon}</div>
                   <div className="morphotype-content">
@@ -347,21 +356,21 @@ const Questionnaire = ({ onComplete }) => {
             <div className="options-grid">
               <button
                 className={`option-card ${formData.activitePhysique === 'sedentaire' ? 'selected' : ''}`}
-                onClick={() => handleChange('activitePhysique', 'sedentaire')}
+                onClick={() => handleChange('activitePhysique', 'sedentaire', true)}
               >
                 <span className="icon">🪑</span>
                 <span className="label">Sédentaire</span>
               </button>
               <button
                 className={`option-card ${formData.activitePhysique === 'moderee' ? 'selected' : ''}`}
-                onClick={() => handleChange('activitePhysique', 'moderee')}
+                onClick={() => handleChange('activitePhysique', 'moderee', true)}
               >
                 <span className="icon">🚶</span>
                 <span className="label">Modérée (30 min)</span>
               </button>
               <button
                 className={`option-card ${formData.activitePhysique === 'elevee' ? 'selected' : ''}`}
-                onClick={() => handleChange('activitePhysique', 'elevee')}
+                onClick={() => handleChange('activitePhysique', 'elevee', true)}
               >
                 <span className="icon">🏃</span>
                 <span className="label">Élevée (&gt;1H)</span>

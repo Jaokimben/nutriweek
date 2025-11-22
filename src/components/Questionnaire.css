@@ -95,6 +95,33 @@
   line-height: 1.6;
 }
 
+.subtitle-optional {
+  text-align: center;
+  color: #888;
+  margin-bottom: 2rem;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  font-style: italic;
+}
+
+.subtitle-optional::after {
+  content: ' (optionnel)';
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+.help-text {
+  text-align: center;
+  background: linear-gradient(135deg, rgba(76, 175, 80, 0.08), rgba(33, 150, 243, 0.08));
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  color: #555;
+  margin: -0.5rem 0 1.5rem 0;
+  border-left: 4px solid var(--primary-color);
+  font-weight: 500;
+}
+
 .options-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -158,6 +185,10 @@
   transform: scale(1.1);
 }
 
+.option-card:active {
+  transform: translateY(-2px) scale(0.98);
+}
+
 .option-card .label {
   font-size: 1.05rem;
   font-weight: 600;
@@ -190,6 +221,13 @@
   font-size: 1rem;
   transition: all 0.3s ease;
   background: white;
+  color: var(--text-color);
+  font-weight: 500;
+}
+
+.form-group input::placeholder {
+  color: #999;
+  font-weight: 400;
 }
 
 .form-group input:focus {
@@ -230,9 +268,11 @@
 }
 
 .radio-label input[type="radio"] {
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   cursor: pointer;
+  accent-color: var(--primary-color);
+  flex-shrink: 0;
 }
 
 .radio-label:has(input[type="radio"]:checked) {
@@ -271,9 +311,11 @@
 }
 
 .checkbox-label input[type="checkbox"] {
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   cursor: pointer;
+  accent-color: var(--primary-color);
+  flex-shrink: 0;
 }
 
 .checkbox-label:has(input[type="checkbox"]:checked) {
@@ -414,6 +456,10 @@
   opacity: 1;
 }
 
+.morphotype-card:active {
+  transform: translateY(-2px) scale(0.98);
+}
+
 .morphotype-icon {
   font-size: 3rem;
   flex-shrink: 0;
@@ -470,6 +516,26 @@
   color: #666;
   line-height: 1.4;
   margin: 0;
+}
+
+/* Auto-advance feedback animation */
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(0.95);
+  }
+}
+
+.option-card.selected,
+.morphotype-card.selected {
+  animation: pulse 0.3s ease-in-out;
+}
+
+/* Smooth transitions for better UX */
+.step {
+  transition: opacity 0.2s ease-in-out;
 }
 
 /* Mobile optimizations */
