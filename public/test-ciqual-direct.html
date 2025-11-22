@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test CIQUAL Direct</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        #results { white-space: pre-wrap; background: #f5f5f5; padding: 15px; border-radius: 8px; }
+        button { padding: 10px 20px; margin: 10px 0; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Test Chargement CIQUAL</h1>
+    <button onclick="testLoadCIQUAL()">Charger CIQUAL</button>
+    <button onclick="testSearchLentilles()">Chercher "lentille"</button>
+    <button onclick="testCalculateRecipe()">Calculer Bowl Avoine</button>
+    <div id="results"></div>
+
+    <script>
+        const resultsDiv = document.getElementById('results');
+
+        function log(message) {
+            resultsDiv.textContent += message + '\n';
+            console.log(message);
+        }
+
+        async function testLoadCIQUAL() {
+            resultsDiv.textContent = '';
+            log('🔍 Chargement CIQUAL...');
+            
+            try {
+                const response = await fetch('/ciqual.csv');
+                log(`📡 Status: ${response.status}`);
+                
+                const text = await response.text();
+                log(`📄 Taille: ${text.length} caractères`);
+                log(`📝 Premières lignes:`);
+                log(text.split('\n').slice(0, 5).join('\n'));
+                
+                // Parse
+                const lines = text.split('\n');
+                log(`\n📊 Total lignes: ${lines.length}`);
+                
+                const aliments = {};
+                let count = 0;
+                
+                for (let i = 1; i < Math.min(lines.length, 1000); i++) {
+                    const line = lines[i].trim();
+                    if (!line) continue;
+                    
+                    const cleanLine = line.replace(/,/g, '.');
+                    const parts = cleanLine.split(';');
+                    
+                    if (parts.length >= 8) {
+                        const [alimCode, foodLabel, , , , mb, , constLabel] = parts;
+                        
+                        if (!aliments[alimCode]) {
+                            aliments[alimCode] = {
+                                code: alimCode,
+                                nom: foodLabel.trim(),
+                                nutritions: {}
+                            };
+                            count++;
+                        }
+                        
+                        const value = parseFloat(mb) || 0;
+                        aliments[alimCode].nutritions[constLabel] = value;
+                    }
+                }
+                
+                log(`\n✅ ${count} aliments chargés (premiers 1000 lignes)`);
+                log(`\n🔍 Exemple: ${Object.values(aliments)[0].nom}`);
+                
+                window.ciqualData = aliments;
+                
+            } catch (error) {
+                log(`❌ Erreur: ${error.message}`);
+            }
+        }
+
+        function testSearchLentilles() {
+            resultsDiv.textContent = '';
+            
+            if (!window.ciqualData) {
+                log('❌ Chargez d\'abord CIQUAL avec le bouton ci-dessus');
+                return;
+            }
+            
+            log('🔍 Recherche "lentille" dans la base...\n');
+            
+            const matches = Object.values(window.ciqualData).filter(aliment => {
+                const nom = aliment.nom.toLowerCase();
+                return nom.includes('lentille');
+            });
+            
+            log(`✅ ${matches.length} résultats trouvés:\n`);
+            
+            matches.slice(0, 10).forEach(aliment => {
+                log(`- ${aliment.nom}`);
+                log(`  Calories: ${aliment.nutritions.nrj_kcal || 'N/A'} kcal`);
+                log(`  Protéines: ${aliment.nutritions.proteines_g || 'N/A'} g`);
+                log('');
+            });
+        }
+
+        function testCalculateRecipe() {
+            resultsDiv.textContent = '';
+            
+            if (!window.ciqualData) {
+                log('❌ Chargez d\'abord CIQUAL avec le bouton ci-dessus');
+                return;
+            }
+            
+            log('🍳 Test calcul Bowl d\'avoine overnight:\n');
+            
+            const ingredients = [
+                { nom: 'Flocons d\'avoine', quantite: 50, unite: 'g' },
+                { nom: 'Yaourt végétal (coco)', quantite: 150, unite: 'g' },
+                { nom: 'Lait d\'amande', quantite: 100, unite: 'ml' }
+            ];
+            
+            let totalCalories = 0;
+            let totalProteines = 0;
+            
+            ingredients.forEach(ing => {
+                log(`\n📌 ${ing.nom} (${ing.quantite}${ing.unite})`);
+                
+                // Recherche simple
+                const searchTerm = ing.nom.toLowerCase().replace(/d'|de |végétal|coco/g, '').trim();
+                log(`  Recherche: "${searchTerm}"`);
+                
+                const matches = Object.values(window.ciqualData).filter(aliment => {
+                    const nom = aliment.nom.toLowerCase();
+                    return nom.includes(searchTerm.split(' ')[0]);
+                });
+                
+                if (matches.length > 0) {
+                    const aliment = matches[0];
+                    log(`  ✅ Trouvé: ${aliment.nom}`);
+                    log(`  Calories/100g: ${aliment.nutritions.nrj_kcal}`);
+                    
+                    const factor = ing.quantite / 100;
+                    const cal = (aliment.nutritions.nrj_kcal || 0) * factor;
+                    const prot = (aliment.nutritions.proteines_g || 0) * factor;
+                    
+                    totalCalories += cal;
+                    totalProteines += prot;
+                    
+                    log(`  Pour ${ing.quantite}g: ${cal.toFixed(0)} kcal`);
+                } else {
+                    log(`  ❌ Non trouvé`);
+                }
+            });
+            
+            log(`\n📊 TOTAL:`);
+            log(`Calories: ${totalCalories.toFixed(0)} kcal`);
+            log(`Protéines: ${totalProteines.toFixed(1)} g`);
+        }
+    </script>
+</body>
+</html>
