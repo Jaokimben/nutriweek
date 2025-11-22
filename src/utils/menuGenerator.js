@@ -265,7 +265,7 @@ const recettesDatabase = {
 };
 
 /**
- * Calcul hybride : essaye alimentsSimple d'abord, puis CIQUAL en fallback
+ * Calcul hybride : essaye CIQUAL d'abord (plus complet), puis alimentsSimple en fallback
  * @param {Array} ingredients - Liste d'ingrédients
  * @param {Array} alimentsSimple - Base simplifiée
  * @param {Object} ciqualData - Base CIQUAL
@@ -273,35 +273,39 @@ const recettesDatabase = {
  */
 const calculateNutritionHybrid = (ingredients, alimentsSimple, ciqualData) => {
   console.log('🔍 [calculateNutritionHybrid] DÉBUT');
-  console.log('📦 [calculateNutritionHybrid] alimentsSimple disponible:', !!alimentsSimple, '| taille:', alimentsSimple?.length || 0);
   console.log('📦 [calculateNutritionHybrid] ciqualData disponible:', !!ciqualData, '| taille:', Object.keys(ciqualData || {}).length);
+  console.log('📦 [calculateNutritionHybrid] alimentsSimple disponible:', !!alimentsSimple, '| taille:', alimentsSimple?.length || 0);
   console.log('🥗 [calculateNutritionHybrid] Ingrédients:', ingredients.map(i => i.nom).join(', '));
   
-  // Essayer avec la base simplifiée
+  // PRIORITÉ 1: Essayer avec CIQUAL (plus complet)
+  if (ciqualData && Object.keys(ciqualData).length > 0) {
+    console.log('✅ [calculateNutritionHybrid] Essai avec CIQUAL (prioritaire)...');
+    const result = calculateRecipeNutrition(ingredients, ciqualData);
+    console.log('📊 [calculateNutritionHybrid] Résultat CIQUAL:', result);
+    
+    // Si le résultat est valide (calories > 0), le retourner
+    if (result.calories > 0) {
+      console.log('✅ [calculateNutritionHybrid] ✨ Résultat valide depuis CIQUAL:', result);
+      return result;
+    }
+    
+    console.warn('⚠️ [calculateNutritionHybrid] CIQUAL n\'a pas donné de résultats, essai avec base simplifiée...');
+  }
+  
+  // PRIORITÉ 2: Fallback sur la base simplifiée
   if (alimentsSimple && alimentsSimple.length > 0) {
-    console.log('✅ [calculateNutritionHybrid] Essai avec base simplifiée...');
+    console.log('✅ [calculateNutritionHybrid] Essai avec base simplifiée (fallback)...');
     const result = calculateRecipeNutritionSimple(ingredients, alimentsSimple);
     console.log('📊 [calculateNutritionHybrid] Résultat base simplifiée:', result);
     
-    // Si le résultat est valide (calories > 0), le retourner
     if (result.calories > 0) {
       console.log('✅ [calculateNutritionHybrid] Résultat valide depuis base simplifiée:', result);
       return result;
     }
-    
-    console.warn('⚠️ [calculateNutritionHybrid] Base simplifiée n\'a pas donné de résultats, essai avec CIQUAL...');
-  }
-  
-  // Sinon, essayer avec CIQUAL
-  if (ciqualData && Object.keys(ciqualData).length > 0) {
-    console.log('✅ [calculateNutritionHybrid] Essai avec CIQUAL...');
-    const result = calculateRecipeNutrition(ingredients, ciqualData);
-    console.log('📊 [calculateNutritionHybrid] Résultat CIQUAL:', result);
-    return result;
   }
   
   // Si rien ne fonctionne, retourner 0
-  console.error('❌ [calculateNutritionHybrid] Aucune base de données disponible');
+  console.error('❌ [calculateNutritionHybrid] Aucune base de données n\'a donné de résultats');
   return { calories: 0, proteines: 0, lipides: 0, glucides: 0 };
 };
 
@@ -331,11 +335,11 @@ const generateDayMenu = (profile, ciqualData, alimentsSimple, nutritionNeeds) =>
     
     const petitDej = {
       ...recette,
-      calories: nutrition.calories || 999,  // TEST: valeur par défaut si 0
+      calories: Math.round(nutrition.calories),
       caloriesCible: mealDistribution.petitDejeuner,
-      proteines: nutrition.proteines || 99,  // TEST: valeur par défaut si 0
-      lipides: nutrition.lipides || 88,  // TEST: valeur par défaut si 0
-      glucides: nutrition.glucides || 77,  // TEST: valeur par défaut si 0
+      proteines: parseFloat(nutrition.proteines.toFixed(1)),
+      lipides: parseFloat(nutrition.lipides.toFixed(1)),
+      glucides: parseFloat(nutrition.glucides.toFixed(1)),
       moment: 'Petit-déjeuner (8h-10h)'
     };
     console.log(`✅ [generateDayMenu] Objet petitDejeuner créé:`, petitDej);
@@ -354,11 +358,11 @@ const generateDayMenu = (profile, ciqualData, alimentsSimple, nutritionNeeds) =>
   
   const dejeuner = {
     ...recetteDejeuner,
-    calories: nutritionDejeuner.calories || 999,  // TEST: valeur par défaut si 0
+    calories: Math.round(nutritionDejeuner.calories),
     caloriesCible: mealDistribution.dejeuner,
-    proteines: nutritionDejeuner.proteines || 99,  // TEST: valeur par défaut si 0
-    lipides: nutritionDejeuner.lipides || 88,  // TEST: valeur par défaut si 0
-    glucides: nutritionDejeuner.glucides || 77,  // TEST: valeur par défaut si 0
+    proteines: parseFloat(nutritionDejeuner.proteines.toFixed(1)),
+    lipides: parseFloat(nutritionDejeuner.lipides.toFixed(1)),
+    glucides: parseFloat(nutritionDejeuner.glucides.toFixed(1)),
     moment: 'Déjeuner (12h-14h)',
     note: 'Repas principal de la journée - Prenez votre temps pour mastiquer (minimum 20 secondes par bouchée)'
   };
@@ -386,11 +390,11 @@ const generateDayMenu = (profile, ciqualData, alimentsSimple, nutritionNeeds) =>
   
   const diner = {
     ...recetteDiner,
-    calories: nutritionDiner.calories || 999,  // TEST: valeur par défaut si 0
+    calories: Math.round(nutritionDiner.calories),
     caloriesCible: mealDistribution.diner,
-    proteines: nutritionDiner.proteines || 99,  // TEST: valeur par défaut si 0
-    lipides: nutritionDiner.lipides || 88,  // TEST: valeur par défaut si 0
-    glucides: nutritionDiner.glucides || 77,  // TEST: valeur par défaut si 0
+    proteines: parseFloat(nutritionDiner.proteines.toFixed(1)),
+    lipides: parseFloat(nutritionDiner.lipides.toFixed(1)),
+    glucides: parseFloat(nutritionDiner.glucides.toFixed(1)),
     moment: 'Dîner (18h-20h)',
     note: 'Repas léger - Pas de protéines animales, pas d\'amidon, pas de graisses'
   };
