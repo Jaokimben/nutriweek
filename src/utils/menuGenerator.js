@@ -265,6 +265,36 @@ const recettesDatabase = {
 };
 
 /**
+ * Calcul hybride : essaye alimentsSimple d'abord, puis CIQUAL en fallback
+ * @param {Array} ingredients - Liste d'ingrédients
+ * @param {Array} alimentsSimple - Base simplifiée
+ * @param {Object} ciqualData - Base CIQUAL
+ * @returns {Object} Valeurs nutritionnelles
+ */
+const calculateNutritionHybrid = (ingredients, alimentsSimple, ciqualData) => {
+  // Essayer avec la base simplifiée
+  if (alimentsSimple && alimentsSimple.length > 0) {
+    const result = calculateRecipeNutritionSimple(ingredients, alimentsSimple);
+    
+    // Si le résultat est valide (calories > 0), le retourner
+    if (result.calories > 0) {
+      return result;
+    }
+    
+    console.warn('⚠️ Base simplifiée n\'a pas donné de résultats, essai avec CIQUAL...');
+  }
+  
+  // Sinon, essayer avec CIQUAL
+  if (ciqualData && Object.keys(ciqualData).length > 0) {
+    return calculateRecipeNutrition(ingredients, ciqualData);
+  }
+  
+  // Si rien ne fonctionne, retourner 0
+  console.error('❌ Aucune base de données disponible');
+  return { calories: 0, proteines: 0, lipides: 0, glucides: 0 };
+};
+
+/**
  * Génère un menu pour une journée
  * @param {Object} profile - Profil utilisateur
  * @param {Object} ciqualData - Données CIQUAL pour calcul nutritionnel (legacy)
@@ -283,13 +313,9 @@ const generateDayMenu = (profile, ciqualData, alimentsSimple, nutritionNeeds) =>
     const petitDejRecettes = recettesDatabase.petitDejeuner;
     const recette = petitDejRecettes[Math.floor(Math.random() * petitDejRecettes.length)];
     
-    // Calculer les vraies calories avec la base simplifiée (prioritaire) ou CIQUAL
+    // Calculer avec système hybride (simple + CIQUAL fallback)
     console.log(`🍳 Calcul nutrition: ${recette.nom}`);
-    const nutrition = alimentsSimple && alimentsSimple.length > 0 ?
-      calculateRecipeNutritionSimple(recette.ingredients, alimentsSimple) :
-      (ciqualData ? 
-        calculateRecipeNutrition(recette.ingredients, ciqualData) : 
-        { calories: mealDistribution.petitDejeuner, proteines: 0, lipides: 0, glucides: 0 });
+    const nutrition = calculateNutritionHybrid(recette.ingredients, alimentsSimple, ciqualData);
     
     menu.petitDejeuner = {
       ...recette,
@@ -308,11 +334,7 @@ const generateDayMenu = (profile, ciqualData, alimentsSimple, nutritionNeeds) =>
   const recetteDejeuner = dejeunerTypes[Math.floor(Math.random() * dejeunerTypes.length)];
   
   console.log(`🍱 Calcul nutrition: ${recetteDejeuner.nom}`);
-  const nutritionDejeuner = alimentsSimple && alimentsSimple.length > 0 ?
-    calculateRecipeNutritionSimple(recetteDejeuner.ingredients, alimentsSimple) :
-    (ciqualData ? 
-      calculateRecipeNutrition(recetteDejeuner.ingredients, ciqualData) :
-      { calories: mealDistribution.dejeuner, proteines: 0, lipides: 0, glucides: 0 });
+  const nutritionDejeuner = calculateNutritionHybrid(recetteDejeuner.ingredients, alimentsSimple, ciqualData);
   
   menu.dejeuner = {
     ...recetteDejeuner,
@@ -340,11 +362,7 @@ const generateDayMenu = (profile, ciqualData, alimentsSimple, nutritionNeeds) =>
   const recetteDiner = dinerRecettes[Math.floor(Math.random() * dinerRecettes.length)];
   
   console.log(`🌙 Calcul nutrition: ${recetteDiner.nom}`);
-  const nutritionDiner = alimentsSimple && alimentsSimple.length > 0 ?
-    calculateRecipeNutritionSimple(recetteDiner.ingredients, alimentsSimple) :
-    (ciqualData ? 
-      calculateRecipeNutrition(recetteDiner.ingredients, ciqualData) :
-      { calories: mealDistribution.diner, proteines: 0, lipides: 0, glucides: 0 });
+  const nutritionDiner = calculateNutritionHybrid(recetteDiner.ingredients, alimentsSimple, ciqualData);
   
   menu.diner = {
     ...recetteDiner,

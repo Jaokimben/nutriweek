@@ -62,10 +62,20 @@ const parseAlimentsSimple = (csvText) => {
       value = value.replace(/^"|"$/g, '');
       
       // Convertir en nombre si nécessaire
-      if (index > 0 && value && value !== '-' && value !== 'NaN') {
-        const num = parseFloat(value);
-        if (!isNaN(num)) {
-          value = num;
+      if (index > 0) {
+        // Remplacer les valeurs manquantes par 0
+        if (!value || value === '-' || value === 'NaN' || value.trim() === '' || 
+            value.toLowerCase().includes('traces') || value.startsWith('<')) {
+          value = 0;
+        } else {
+          // Nettoyer et convertir
+          value = value.replace(',', '.'); // Virgule européenne → point
+          const num = parseFloat(value);
+          if (!isNaN(num)) {
+            value = num;
+          } else {
+            value = 0;
+          }
         }
       }
       
@@ -154,10 +164,24 @@ export const calculateRecipeNutritionSimple = (ingredients, alimentsDB) => {
       const lipidesKey = Object.keys(aliment).find(k => k.includes('Lipides'));
       const glucidesKey = Object.keys(aliment).find(k => k.includes('Glucides'));
       
-      const energiePer100g = aliment[energieKey] || 0;
-      const proteinesPer100g = aliment[proteinesKey] || 0;
-      const lipidesPer100g = aliment[lipidesKey] || 0;
-      const glucidesPer100g = aliment[glucidesKey] || 0;
+      let energiePer100g = aliment[energieKey] || 0;
+      let proteinesPer100g = aliment[proteinesKey] || 0;
+      let lipidesPer100g = aliment[lipidesKey] || 0;
+      let glucidesPer100g = aliment[glucidesKey] || 0;
+      
+      // Si l'énergie est manquante mais on a les macros, on peut l'estimer
+      if ((energiePer100g === 0 || energiePer100g === '-' || isNaN(energiePer100g)) && 
+          (proteinesPer100g > 0 || lipidesPer100g > 0 || glucidesPer100g > 0)) {
+        // Formule : Prot * 4 + Lip * 9 + Gluc * 4
+        energiePer100g = (proteinesPer100g * 4) + (lipidesPer100g * 9) + (glucidesPer100g * 4);
+        console.log(`  ⚠️ Énergie estimée: ${energiePer100g.toFixed(0)} kcal`);
+      }
+      
+      // Nettoyer les valeurs (convertir '-' en 0)
+      energiePer100g = parseFloat(energiePer100g) || 0;
+      proteinesPer100g = parseFloat(proteinesPer100g) || 0;
+      lipidesPer100g = parseFloat(lipidesPer100g) || 0;
+      glucidesPer100g = parseFloat(glucidesPer100g) || 0;
       
       // Calculer pour la quantité demandée
       const factor = quantiteGrammes / 100;
