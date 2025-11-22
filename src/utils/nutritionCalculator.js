@@ -1,48 +1,80 @@
 /**
+ * Calcule le métabolisme de base (BMR) avec la formule de Mifflin-St Jeor
+ * @param {Object} profile - Profil utilisateur
+ * @returns {number} - BMR en kcal/jour
+ */
+const calculateBMR = (profile) => {
+  const { poids, taille, age, genre } = profile;
+  
+  // Formule de Mifflin-St Jeor (plus précise que Harris-Benedict)
+  // Homme: BMR = (10 × poids en kg) + (6.25 × taille en cm) - (5 × âge en années) + 5
+  // Femme: BMR = (10 × poids en kg) + (6.25 × taille en cm) - (5 × âge en années) - 161
+  
+  const baseCalc = (10 * parseFloat(poids)) + (6.25 * parseFloat(taille)) - (5 * parseFloat(age));
+  
+  if (genre === 'M') {
+    return baseCalc + 5;
+  } else {
+    return baseCalc - 161;
+  }
+};
+
+/**
+ * Calcule les besoins caloriques totaux (TDEE) selon l'activité
+ * @param {number} bmr - Métabolisme de base
+ * @param {string} activitePhysique - Niveau d'activité
+ * @returns {number} - TDEE en kcal/jour
+ */
+const calculateTDEE = (bmr, activitePhysique) => {
+  // Facteurs d'activité
+  const activityFactors = {
+    sedentaire: 1.2,    // Peu ou pas d'exercice
+    moderee: 1.55,      // Exercice modéré (3-5 jours/semaine)
+    elevee: 1.725       // Exercice intense (6-7 jours/semaine)
+  };
+  
+  return bmr * (activityFactors[activitePhysique] || 1.2);
+};
+
+/**
  * Calcule les besoins caloriques selon les règles définies
  * @param {Object} profile - Profil utilisateur
  * @returns {Object} - Besoins nutritionnels calculés
  */
 export const calculateCalories = (profile) => {
-  const { objectif, activitePhysique, genre, semaineActuelle = 1 } = profile;
+  const { objectif, activitePhysique, genre, semaineActuelle = 1, poids, taille, age } = profile;
 
+  // Calculer le métabolisme de base et les besoins totaux
+  const bmr = calculateBMR(profile);
+  const tdee = calculateTDEE(bmr, activitePhysique);
+  
   let dailyCalories = 0;
 
   // Règles pour la perte de poids
   if (objectif === 'perte') {
     if (semaineActuelle <= 3) {
-      // Les trois premières semaines
-      if (activitePhysique === 'sedentaire') dailyCalories = 1200;
-      else if (activitePhysique === 'moderee') dailyCalories = 1400;
-      else if (activitePhysique === 'elevee') dailyCalories = 1600;
+      // Les trois premières semaines : déficit calorique modéré (25-30%)
+      dailyCalories = Math.round(tdee * 0.70);
+      
+      // Limites de sécurité : minimum 1200 kcal pour femmes, 1500 pour hommes
+      const minCalories = genre === 'M' ? 1500 : 1200;
+      dailyCalories = Math.max(dailyCalories, minCalories);
+      
     } else if (semaineActuelle === 4) {
-      // La 4ème semaine
-      if (activitePhysique === 'sedentaire') dailyCalories = 1000;
-      else if (activitePhysique === 'moderee') dailyCalories = 1200;
-      else if (activitePhysique === 'elevee') dailyCalories = 1400;
+      // La 4ème semaine : déficit plus important (35-40%)
+      dailyCalories = Math.round(tdee * 0.60);
+      
+      // Limites de sécurité
+      const minCalories = genre === 'M' ? 1400 : 1000;
+      dailyCalories = Math.max(dailyCalories, minCalories);
+      
     } else {
-      // Par la suite
-      if (genre === 'M') {
-        if (activitePhysique === 'sedentaire') dailyCalories = 1800;
-        else if (activitePhysique === 'moderee') dailyCalories = 2000;
-        else if (activitePhysique === 'elevee') dailyCalories = 2300;
-      } else {
-        if (activitePhysique === 'sedentaire') dailyCalories = 1600;
-        else if (activitePhysique === 'moderee') dailyCalories = 1800;
-        else if (activitePhysique === 'elevee') dailyCalories = 2100;
-      }
+      // Par la suite : maintenance avec léger déficit (10-15%)
+      dailyCalories = Math.round(tdee * 0.85);
     }
   } else {
-    // Pour confort digestif et vitalité, utiliser les calories normales
-    if (genre === 'M') {
-      if (activitePhysique === 'sedentaire') dailyCalories = 2000;
-      else if (activitePhysique === 'moderee') dailyCalories = 2200;
-      else if (activitePhysique === 'elevee') dailyCalories = 2500;
-    } else {
-      if (activitePhysique === 'sedentaire') dailyCalories = 1800;
-      else if (activitePhysique === 'moderee') dailyCalories = 2000;
-      else if (activitePhysique === 'elevee') dailyCalories = 2300;
-    }
+    // Pour confort digestif et vitalité : utiliser le TDEE complet
+    dailyCalories = Math.round(tdee);
   }
 
   // Répartition des macronutriments
@@ -53,14 +85,14 @@ export const calculateCalories = (profile) => {
     macroRatio = { proteines: 40, lipides: 40, glucides: 20 };
   }
 
-  // Calcul des grammes
+  // Calcul des grammes (plus précis avec 1 décimale)
   const macros = {
-    proteines: Math.round((dailyCalories * macroRatio.proteines / 100) / 4), // 4 cal/g
-    lipides: Math.round((dailyCalories * macroRatio.lipides / 100) / 9), // 9 cal/g
-    glucides: Math.round((dailyCalories * macroRatio.glucides / 100) / 4), // 4 cal/g
+    proteines: parseFloat(((dailyCalories * macroRatio.proteines / 100) / 4).toFixed(1)), // 4 cal/g
+    lipides: parseFloat(((dailyCalories * macroRatio.lipides / 100) / 9).toFixed(1)), // 9 cal/g
+    glucides: parseFloat(((dailyCalories * macroRatio.glucides / 100) / 4).toFixed(1)), // 4 cal/g
   };
 
-  // Répartition des repas
+  // Répartition des repas (arrondi à l'unité supérieure)
   const { nombreRepas } = profile;
   let mealDistribution = {};
 
@@ -68,34 +100,36 @@ export const calculateCalories = (profile) => {
     // Midi: 60%, Soir: 40% (mais soir hypocalorique pour perte de poids)
     if (objectif === 'perte') {
       mealDistribution = {
-        dejeuner: Math.round(dailyCalories * 0.70),
-        diner: Math.round(dailyCalories * 0.30)
+        dejeuner: Math.ceil(dailyCalories * 0.70),
+        diner: Math.ceil(dailyCalories * 0.30)
       };
     } else {
       mealDistribution = {
-        dejeuner: Math.round(dailyCalories * 0.60),
-        diner: Math.round(dailyCalories * 0.40)
+        dejeuner: Math.ceil(dailyCalories * 0.60),
+        diner: Math.ceil(dailyCalories * 0.40)
       };
     }
   } else if (nombreRepas === '3') {
     // Matin: 25%, Midi: 45%, Soir: 30%
     if (objectif === 'perte') {
       mealDistribution = {
-        petitDejeuner: Math.round(dailyCalories * 0.30),
-        dejeuner: Math.round(dailyCalories * 0.50),
-        diner: Math.round(dailyCalories * 0.20)
+        petitDejeuner: Math.ceil(dailyCalories * 0.30),
+        dejeuner: Math.ceil(dailyCalories * 0.50),
+        diner: Math.ceil(dailyCalories * 0.20)
       };
     } else {
       mealDistribution = {
-        petitDejeuner: Math.round(dailyCalories * 0.25),
-        dejeuner: Math.round(dailyCalories * 0.45),
-        diner: Math.round(dailyCalories * 0.30)
+        petitDejeuner: Math.ceil(dailyCalories * 0.25),
+        dejeuner: Math.ceil(dailyCalories * 0.45),
+        diner: Math.ceil(dailyCalories * 0.30)
       };
     }
   }
 
   return {
-    dailyCalories,
+    dailyCalories: Math.round(dailyCalories), // Arrondi à l'unité
+    bmr: Math.round(bmr), // Ajout du BMR dans les résultats
+    tdee: Math.round(tdee), // Ajout du TDEE dans les résultats
     macros,
     macroRatio,
     mealDistribution

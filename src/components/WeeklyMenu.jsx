@@ -53,7 +53,14 @@ const WeeklyMenu = ({ userProfile, onBack }) => {
         <div className="profile-summary">
           <p><strong>Objectif:</strong> {getObjectifLabel(userProfile.objectif)}</p>
           <p><strong>IMC:</strong> {imc.imc} ({imc.categorie})</p>
-          <p><strong>Calories/jour:</strong> {weeklyMenu.nutritionNeeds.dailyCalories} kcal</p>
+          <p><strong>Métabolisme de base (BMR):</strong> {weeklyMenu.nutritionNeeds.bmr || 'N/A'} kcal/jour</p>
+          <p><strong>Dépense totale (TDEE):</strong> {weeklyMenu.nutritionNeeds.tdee || 'N/A'} kcal/jour</p>
+          <p><strong>🎯 Objectif calorique:</strong> {weeklyMenu.nutritionNeeds.dailyCalories} kcal/jour</p>
+          <p className="macro-info">
+            <strong>Macros:</strong> P: {weeklyMenu.nutritionNeeds.macros.proteines}g | 
+            L: {weeklyMenu.nutritionNeeds.macros.lipides}g | 
+            G: {weeklyMenu.nutritionNeeds.macros.glucides}g
+          </p>
         </div>
       </div>
 
