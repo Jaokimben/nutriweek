@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { generateWeeklyMenu } from '../utils/menuGenerator'
 import { calculateIMC } from '../utils/nutritionCalculator'
 import { loadCIQUAL } from '../utils/ciqualParser'
+import { loadAlimentsSimple } from '../utils/alimentsSimpleParser'
 import './WeeklyMenu.css'
 
 const WeeklyMenu = ({ userProfile, onBack }) => {
@@ -10,21 +11,32 @@ const WeeklyMenu = ({ userProfile, onBack }) => {
   const [selectedDay, setSelectedDay] = useState(0)
 
   useEffect(() => {
-    // Charger la base CIQUAL et générer le menu
+    // Charger la base simplifiée (prioritaire) et CIQUAL (backup)
     const loadAndGenerateMenu = async () => {
       try {
-        console.log('Chargement de la base CIQUAL...')
-        const ciqualData = await loadCIQUAL()
-        console.log(`CIQUAL chargé: ${Object.keys(ciqualData).length} aliments`)
+        console.log('🔍 Chargement des bases nutritionnelles...')
         
-        // Générer le menu hebdomadaire avec les données CIQUAL
-        const menu = generateWeeklyMenu(userProfile, ciqualData)
+        // Charger la base simplifiée en priorité
+        const alimentsSimple = await loadAlimentsSimple()
+        console.log(`✅ Base simplifiée: ${alimentsSimple?.length || 0} aliments`)
+        
+        // Charger CIQUAL en backup
+        let ciqualData = null
+        try {
+          ciqualData = await loadCIQUAL()
+          console.log(`✅ CIQUAL (backup): ${Object.keys(ciqualData || {}).length} aliments`)
+        } catch (e) {
+          console.warn('⚠️ CIQUAL non disponible, utilisation uniquement base simplifiée')
+        }
+        
+        // Générer le menu avec la base simplifiée en priorité
+        const menu = generateWeeklyMenu(userProfile, alimentsSimple, ciqualData)
         setWeeklyMenu(menu)
         setLoading(false)
       } catch (error) {
-        console.error('Erreur lors du chargement:', error)
-        // Générer quand même le menu sans CIQUAL
-        const menu = generateWeeklyMenu(userProfile, null)
+        console.error('❌ Erreur lors du chargement:', error)
+        // Générer quand même le menu sans bases
+        const menu = generateWeeklyMenu(userProfile, null, null)
         setWeeklyMenu(menu)
         setLoading(false)
       }

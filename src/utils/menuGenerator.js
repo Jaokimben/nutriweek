@@ -1,5 +1,6 @@
 import { calculateCalories, isAlimentAllowed, calculateGI } from './nutritionCalculator';
 import { calculateRecipeNutrition, improveIngredientName } from './ciqualParser';
+import { calculateRecipeNutritionSimple } from './alimentsSimpleParser';
 
 /**
  * Base de données de recettes par type d'aliment
@@ -266,11 +267,12 @@ const recettesDatabase = {
 /**
  * Génère un menu pour une journée
  * @param {Object} profile - Profil utilisateur
- * @param {Object} ciqualData - Données CIQUAL pour calcul nutritionnel
+ * @param {Object} ciqualData - Données CIQUAL pour calcul nutritionnel (legacy)
+ * @param {Array} alimentsSimple - Base de données simplifiée (prioritaire)
  * @param {Object} nutritionNeeds - Besoins nutritionnels
  * @returns {Object} - Menu de la journée
  */
-const generateDayMenu = (profile, ciqualData, nutritionNeeds) => {
+const generateDayMenu = (profile, ciqualData, alimentsSimple, nutritionNeeds) => {
   const { objectif, nombreRepas, capaciteDigestive } = profile;
   const { mealDistribution } = nutritionNeeds;
   
@@ -281,13 +283,13 @@ const generateDayMenu = (profile, ciqualData, nutritionNeeds) => {
     const petitDejRecettes = recettesDatabase.petitDejeuner;
     const recette = petitDejRecettes[Math.floor(Math.random() * petitDejRecettes.length)];
     
-    // Calculer les vraies calories avec CIQUAL
-    if (ciqualData) {
-      console.log(`🍳 Calcul nutrition: ${recette.nom}`);
-    }
-    const nutrition = ciqualData ? 
-      calculateRecipeNutrition(recette.ingredients, ciqualData) : 
-      { calories: mealDistribution.petitDejeuner, proteines: 0, lipides: 0, glucides: 0 };
+    // Calculer les vraies calories avec la base simplifiée (prioritaire) ou CIQUAL
+    console.log(`🍳 Calcul nutrition: ${recette.nom}`);
+    const nutrition = alimentsSimple && alimentsSimple.length > 0 ?
+      calculateRecipeNutritionSimple(recette.ingredients, alimentsSimple) :
+      (ciqualData ? 
+        calculateRecipeNutrition(recette.ingredients, ciqualData) : 
+        { calories: mealDistribution.petitDejeuner, proteines: 0, lipides: 0, glucides: 0 });
     
     menu.petitDejeuner = {
       ...recette,
@@ -305,12 +307,12 @@ const generateDayMenu = (profile, ciqualData, nutritionNeeds) => {
     .filter(r => r.type === 'dejeuner');
   const recetteDejeuner = dejeunerTypes[Math.floor(Math.random() * dejeunerTypes.length)];
   
-  if (ciqualData) {
-    console.log(`🍱 Calcul nutrition: ${recetteDejeuner.nom}`);
-  }
-  const nutritionDejeuner = ciqualData ? 
-    calculateRecipeNutrition(recetteDejeuner.ingredients, ciqualData) :
-    { calories: mealDistribution.dejeuner, proteines: 0, lipides: 0, glucides: 0 };
+  console.log(`🍱 Calcul nutrition: ${recetteDejeuner.nom}`);
+  const nutritionDejeuner = alimentsSimple && alimentsSimple.length > 0 ?
+    calculateRecipeNutritionSimple(recetteDejeuner.ingredients, alimentsSimple) :
+    (ciqualData ? 
+      calculateRecipeNutrition(recetteDejeuner.ingredients, ciqualData) :
+      { calories: mealDistribution.dejeuner, proteines: 0, lipides: 0, glucides: 0 });
   
   menu.dejeuner = {
     ...recetteDejeuner,
@@ -337,12 +339,12 @@ const generateDayMenu = (profile, ciqualData, nutritionNeeds) => {
   
   const recetteDiner = dinerRecettes[Math.floor(Math.random() * dinerRecettes.length)];
   
-  if (ciqualData) {
-    console.log(`🌙 Calcul nutrition: ${recetteDiner.nom}`);
-  }
-  const nutritionDiner = ciqualData ? 
-    calculateRecipeNutrition(recetteDiner.ingredients, ciqualData) :
-    { calories: mealDistribution.diner, proteines: 0, lipides: 0, glucides: 0 };
+  console.log(`🌙 Calcul nutrition: ${recetteDiner.nom}`);
+  const nutritionDiner = alimentsSimple && alimentsSimple.length > 0 ?
+    calculateRecipeNutritionSimple(recetteDiner.ingredients, alimentsSimple) :
+    (ciqualData ? 
+      calculateRecipeNutrition(recetteDiner.ingredients, ciqualData) :
+      { calories: mealDistribution.diner, proteines: 0, lipides: 0, glucides: 0 });
   
   menu.diner = {
     ...recetteDiner,
@@ -361,17 +363,18 @@ const generateDayMenu = (profile, ciqualData, nutritionNeeds) => {
 /**
  * Génère un menu hebdomadaire complet
  * @param {Object} profile - Profil utilisateur
- * @param {Object} ciqualData - Données CIQUAL (optionnel)
+ * @param {Array} alimentsSimple - Base de données simplifiée (prioritaire)
+ * @param {Object} ciqualData - Données CIQUAL (legacy, optionnel)
  * @returns {Object} - Menu hebdomadaire avec conseils
  */
-export const generateWeeklyMenu = (profile, ciqualData = null) => {
+export const generateWeeklyMenu = (profile, alimentsSimple = null, ciqualData = null) => {
   const nutritionNeeds = calculateCalories(profile);
   const weekMenu = [];
   
   const joursIntermittent = [1, 3, 5, 6]; // Lundi, Mercredi, Vendredi, Samedi pour jeûne intermittent
   
   for (let day = 1; day <= 7; day++) {
-    const dayMenu = generateDayMenu(profile, ciqualData, nutritionNeeds);
+    const dayMenu = generateDayMenu(profile, ciqualData, alimentsSimple, nutritionNeeds);
     
     // Appliquer le jeûne intermittent si objectif perte de poids
     const isJeuneIntermittent = profile.objectif === 'perte' && joursIntermittent.includes(day);
