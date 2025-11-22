@@ -9,8 +9,8 @@
  */
 export const loadCIQUAL = async () => {
   try {
-    console.log('🔍 Tentative de chargement de /ciqual.csv...');
-    const response = await fetch('/ciqual.csv');
+    console.log('🔍 Tentative de chargement de /ciqual_lite.csv (version optimisée)...');
+    const response = await fetch('/ciqual_lite.csv');
     console.log(`📡 Response status: ${response.status}`);
     
     if (!response.ok) {
@@ -18,7 +18,7 @@ export const loadCIQUAL = async () => {
     }
     
     const text = await response.text();
-    console.log(`📄 Fichier chargé: ${text.length} caractères`);
+    console.log(`📄 Fichier chargé: ${(text.length / 1024 / 1024).toFixed(2)} MB`);
     
     const parsed = parseCIQUAL(text);
     console.log(`✅ Parsing terminé: ${Object.keys(parsed).length} aliments`);
