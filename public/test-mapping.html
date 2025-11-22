@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Système de Mapping</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; max-width: 1200px; margin: 0 auto; }
+        h1 { color: #4CAF50; }
+        .test-section { background: #f5f5f5; padding: 20px; margin: 20px 0; border-radius: 8px; }
+        .result { background: white; padding: 15px; margin: 10px 0; border-left: 4px solid #4CAF50; }
+        .error { border-left-color: #f44336; }
+        .success { color: #4CAF50; font-weight: bold; }
+        .warning { color: #FF9800; }
+        button { padding: 10px 20px; margin: 10px 5px; cursor: pointer; background: #4CAF50; color: white; border: none; border-radius: 4px; }
+        button:hover { background: #45a049; }
+        pre { background: #263238; color: #aed581; padding: 15px; border-radius: 4px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test du Système de Mapping Intelligent</h1>
+    
+    <div class="test-section">
+        <h2>1️⃣ Charger la Base Simplifiée</h2>
+        <button onclick="testLoadAliments()">Charger aliments_simple.csv</button>
+        <div id="result1"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>2️⃣ Test Recherche d'Aliments</h2>
+        <button onclick="testSearch('lentilles vertes')">Chercher "lentilles vertes"</button>
+        <button onclick="testSearch('flocons avoine')">Chercher "flocons avoine"</button>
+        <button onclick="testSearch('pois chiches')">Chercher "pois chiches"</button>
+        <button onclick="testSearch('riz complet')">Chercher "riz complet"</button>
+        <div id="result2"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3️⃣ Test Calcul Recette Complète</h2>
+        <button onclick="testRecipe()">Calculer "Bowl d'avoine overnight"</button>
+        <div id="result3"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>4️⃣ Test Tous les Ingrédients des Recettes</h2>
+        <button onclick="testAllIngredients()">Tester tous les ingrédients</button>
+        <div id="result4"></div>
+    </div>
+
+    <script type="module">
+        window.alimentsDB = null;
+
+        // Import des fonctions (simulation)
+        window.normalizeAlimentName = (nom) => {
+            if (!nom) return '';
+            return nom.toLowerCase()
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "")
+                .replace(/['']/g, ' ')
+                .replace(/\b(d|l|de|du|des|la|le|les)\s+/g, ' ')
+                .replace(/[^\w\s]/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+        };
+
+        window.extractKeywords = (nom) => {
+            const normalized = normalizeAlimentName(nom);
+            const stopwords = new Set(['cru', 'cuit', 'cuite', 'frais', 'bouillie', 'bouilli', 'sec', 'seche']);
+            return normalized.split(' ').filter(w => w.length > 2 && !stopwords.has(w));
+        };
+
+        window.calculateSimilarity = (name1, name2) => {
+            const keywords1 = extractKeywords(name1);
+            const keywords2 = extractKeywords(name2);
+            if (keywords1.length === 0 || keywords2.length === 0) return 0;
+            
+            let exactMatches = 0;
+            keywords1.forEach(kw1 => {
+                keywords2.forEach(kw2 => {
+                    if (kw1 === kw2) exactMatches++;
+                    else if (kw1.includes(kw2) || kw2.includes(kw1)) exactMatches += 0.5;
+                });
+            });
+            
+            const maxPossibleMatches = Math.min(keywords1.length, keywords2.length);
+            return Math.min(100, (exactMatches / maxPossibleMatches) * 100);
+        };
+
+        window.findBestMatch = (ingredientName, alimentsDB, threshold = 40) => {
+            if (!ingredientName || !alimentsDB) return null;
+            
+            const alimentsArray = Object.values(alimentsDB);
+            let bestMatch = null;
+            let bestScore = 0;
+            
+            alimentsArray.forEach(aliment => {
+                const score = calculateSimilarity(ingredientName, aliment.alim_nom_fr);
+                if (score > bestScore) {
+                    bestMatch = aliment;
+                    bestScore = score;
+                }
+            });
+            
+            if (bestScore >= threshold) {
+                return { aliment: bestMatch, score: bestScore };
+            }
+            return null;
+        };
+
+        window.testLoadAliments = async () => {
+            const result = document.getElementById('result1');
+            result.innerHTML = '<p>⏳ Chargement...</p>';
+            
+            try {
+                const response = await fetch('/aliments_simple.csv');
+                const text = await response.text();
+                
+                const lines = text.split('\n');
+                const header = lines[0].split(',');
+                
+                const aliments = {};
+                for (let i = 1; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    if (!line) continue;
+                    
+                    const values = line.split(',');
+                    if (values.length < header.length) continue;
+                    
+                    const nom = values[0]?.replace(/^"|"$/g, '').trim();
+                    if (!nom || nom === 'NaN' || nom === '') continue;
+                    
+                    aliments[nom] = {
+                        alim_nom_fr: nom,
+                        energie: parseFloat(values[1]) || 0,
+                        proteines: parseFloat(values[2]) || 0,
+                        glucides: parseFloat(values[3]) || 0,
+                        lipides: parseFloat(values[4]) || 0
+                    };
+                }
+                
+                window.alimentsDB = aliments;
+                
+                result.innerHTML = `
+                    <div class="result">
+                        <p class="success">✅ ${Object.keys(aliments).length} aliments chargés</p>
+                        <p><strong>Exemples:</strong></p>
+                        <pre>${Object.keys(aliments).slice(0, 10).join('\n')}</pre>
+                    </div>
+                `;
+            } catch (error) {
+                result.innerHTML = `<div class="result error">❌ Erreur: ${error.message}</div>`;
+            }
+        };
+
+        window.testSearch = (term) => {
+            const result = document.getElementById('result2');
+            
+            if (!window.alimentsDB) {
+                result.innerHTML = '<p class="warning">⚠️ Chargez d\'abord la base de données</p>';
+                return;
+            }
+            
+            const match = findBestMatch(term, window.alimentsDB);
+            
+            if (match) {
+                const a = match.aliment;
+                result.innerHTML += `
+                    <div class="result">
+                        <p class="success">✅ Trouvé (score: ${match.score.toFixed(0)}%)</p>
+                        <p><strong>Recherche:</strong> "${term}"</p>
+                        <p><strong>Trouvé:</strong> ${a.alim_nom_fr}</p>
+                        <p><strong>Nutrition (100g):</strong> ${a.energie} kcal | P: ${a.proteines}g | L: ${a.lipides}g | G: ${a.glucides}g</p>
+                    </div>
+                `;
+            } else {
+                result.innerHTML += `<div class="result error">❌ Aucun match pour "${term}"</div>`;
+            }
+        };
+
+        window.testRecipe = () => {
+            const result = document.getElementById('result3');
+            
+            if (!window.alimentsDB) {
+                result.innerHTML = '<p class="warning">⚠️ Chargez d\'abord la base de données</p>';
+                return;
+            }
+            
+            const recipe = {
+                nom: "Bowl d'avoine overnight",
+                ingredients: [
+                    { nom: "Flocons d'avoine", quantite: 50, unite: "g" },
+                    { nom: "Lait d'amande", quantite: 100, unite: "ml" },
+                    { nom: "Banane", quantite: 1, unite: "moyenne" }
+                ]
+            };
+            
+            let total = { cal: 0, prot: 0, lip: 0, gluc: 0 };
+            let details = '';
+            
+            recipe.ingredients.forEach(ing => {
+                const match = findBestMatch(ing.nom, window.alimentsDB);
+                if (match) {
+                    const a = match.aliment;
+                    const qte = ing.quantite;
+                    const factor = qte / 100;
+                    
+                    const cal = (a.energie || 0) * factor;
+                    const prot = (a.proteines || 0) * factor;
+                    const lip = (a.lipides || 0) * factor;
+                    const gluc = (a.glucides || 0) * factor;
+                    
+                    total.cal += cal;
+                    total.prot += prot;
+                    total.lip += lip;
+                    total.gluc += gluc;
+                    
+                    details += `<p>✅ ${ing.nom} (${qte}${ing.unite}) → ${a.alim_nom_fr}: ${cal.toFixed(0)} kcal</p>`;
+                } else {
+                    details += `<p>❌ ${ing.nom}: non trouvé</p>`;
+                }
+            });
+            
+            result.innerHTML = `
+                <div class="result">
+                    <h3>${recipe.nom}</h3>
+                    ${details}
+                    <hr>
+                    <p class="success"><strong>TOTAL:</strong> ${total.cal.toFixed(0)} kcal | P: ${total.prot.toFixed(1)}g | L: ${total.lip.toFixed(1)}g | G: ${total.gluc.toFixed(1)}g</p>
+                </div>
+            `;
+        };
+
+        window.testAllIngredients = () => {
+            const result = document.getElementById('result4');
+            
+            if (!window.alimentsDB) {
+                result.innerHTML = '<p class="warning">⚠️ Chargez d\'abord la base de données</p>';
+                return;
+            }
+            
+            const testIngredients = [
+                "Lentilles vertes cuites", "Pois chiches cuits", "Haricots blancs",
+                "Riz complet", "Quinoa", "Flocons d'avoine",
+                "Tomates", "Concombre", "Courgette", "Oignon",
+                "Banane", "Fraises", "Myrtilles",
+                "Huile d'olive", "Lait d'amande"
+            ];
+            
+            let found = 0;
+            let notFound = 0;
+            let details = '';
+            
+            testIngredients.forEach(ing => {
+                const match = findBestMatch(ing, window.alimentsDB, 30);
+                if (match) {
+                    found++;
+                    details += `<p>✅ ${ing} → ${match.aliment.alim_nom_fr} (${match.score.toFixed(0)}%)</p>`;
+                } else {
+                    notFound++;
+                    details += `<p>❌ ${ing} → Non trouvé</p>`;
+                }
+            });
+            
+            result.innerHTML = `
+                <div class="result">
+                    <p class="success">✅ Trouvés: ${found}/${testIngredients.length}</p>
+                    <p class="warning">❌ Non trouvés: ${notFound}/${testIngredients.length}</p>
+                    <hr>
+                    ${details}
+                </div>
+            `;
+        };
+    </script>
+</body>
+</html>
