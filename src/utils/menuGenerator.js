@@ -1,6 +1,7 @@
 import { calculateCalories, isAlimentAllowed, calculateGI } from './nutritionCalculator';
 import { calculateRecipeNutrition, improveIngredientName } from './ciqualParser';
 import { calculateRecipeNutritionSimple } from './alimentsSimpleParser';
+import { findNutritionData } from './externalNutritionAPI';
 
 /**
  * Base de données de recettes par type d'aliment
@@ -265,13 +266,13 @@ const recettesDatabase = {
 };
 
 /**
- * Calcul hybride : essaye CIQUAL d'abord (plus complet), puis alimentsSimple en fallback
+ * Calcul hybride : essaye CIQUAL d'abord, puis alimentsSimple, puis valeurs moyennes
  * @param {Array} ingredients - Liste d'ingrédients
  * @param {Array} alimentsSimple - Base simplifiée
  * @param {Object} ciqualData - Base CIQUAL
- * @returns {Object} Valeurs nutritionnelles
+ * @returns {Promise<Object>} Valeurs nutritionnelles
  */
-const calculateNutritionHybrid = (ingredients, alimentsSimple, ciqualData) => {
+const calculateNutritionHybrid = async (ingredients, alimentsSimple, ciqualData) => {
   console.log('🔍 [calculateNutritionHybrid] DÉBUT');
   console.log('📦 [calculateNutritionHybrid] ciqualData disponible:', !!ciqualData, '| taille:', Object.keys(ciqualData || {}).length);
   console.log('📦 [calculateNutritionHybrid] alimentsSimple disponible:', !!alimentsSimple, '| taille:', alimentsSimple?.length || 0);
@@ -304,9 +305,71 @@ const calculateNutritionHybrid = (ingredients, alimentsSimple, ciqualData) => {
     }
   }
   
-  // Si rien ne fonctionne, retourner 0
-  console.error('❌ [calculateNutritionHybrid] Aucune base de données n\'a donné de résultats');
-  return { calories: 0, proteines: 0, lipides: 0, glucides: 0 };
+  // PRIORITÉ 3: Utiliser valeurs moyennes (dernier recours)
+  console.log('💡 [calculateNutritionHybrid] Calcul avec valeurs moyennes...');
+  return await calculateWithAverages(ingredients);
+};
+
+/**
+ * Calcule avec les valeurs nutritionnelles moyennes
+ * @param {Array} ingredients - Liste des ingrédients
+ * @returns {Promise<Object>} Valeurs nutritionnelles
+ */
+const calculateWithAverages = async (ingredients) => {
+  let totalCalories = 0;
+  let totalProteines = 0;
+  let totalLipides = 0;
+  let totalGlucides = 0;
+  
+  for (const ing of ingredients) {
+    console.log(`🔍 [Averages] Recherche: "${ing.nom}"`);
+    
+    // Convertir quantité en grammes
+    const quantiteG = convertToGramsSimple(ing.quantite, ing.unite);
+    
+    // Chercher valeurs moyennes
+    const nutritionData = await findNutritionData(ing.nom);
+    
+    if (nutritionData) {
+      const factor = quantiteG / 100; // Pour 100g
+      
+      totalCalories += nutritionData.energie_kcal * factor;
+      totalProteines += nutritionData.proteines_g * factor;
+      totalLipides += nutritionData.lipides_g * factor;
+      totalGlucides += nutritionData.glucides_g * factor;
+      
+      console.log(`✅ [Averages] ${ing.nom}: ${quantiteG}g = ${Math.round(nutritionData.energie_kcal * factor)} kcal`);
+    } else {
+      console.warn(`⚠️ [Averages] Pas de données pour "${ing.nom}"`);
+    }
+  }
+  
+  const result = {
+    calories: Math.round(totalCalories),
+    proteines: parseFloat(totalProteines.toFixed(1)),
+    lipides: parseFloat(totalLipides.toFixed(1)),
+    glucides: parseFloat(totalGlucides.toFixed(1))
+  };
+  
+  console.log('📊 [Averages] TOTAL:', result);
+  return result;
+};
+
+/**
+ * Conversion simple unité → grammes
+ */
+const convertToGramsSimple = (quantite, unite) => {
+  const uniteClean = unite.toLowerCase();
+  
+  if (uniteClean.includes('g') && !uniteClean.includes('kg')) return quantite;
+  if (uniteClean.includes('ml')) return quantite;
+  if (uniteClean.includes('soupe')) return quantite * 15;
+  if (uniteClean.includes('café')) return quantite * 5;
+  if (uniteClean.includes('gousse')) return quantite * 5;
+  if (uniteClean.includes('moyen')) return quantite * 120;
+  if (uniteClean.includes('branche')) return quantite * 2;
+  
+  return quantite;
 };
 
 /**
@@ -317,7 +380,7 @@ const calculateNutritionHybrid = (ingredients, alimentsSimple, ciqualData) => {
  * @param {Object} nutritionNeeds - Besoins nutritionnels
  * @returns {Object} - Menu de la journée
  */
-const generateDayMenu = (profile, ciqualData, alimentsSimple, nutritionNeeds) => {
+const generateDayMenu = async (profile, ciqualData, alimentsSimple, nutritionNeeds) => {
   const { objectif, nombreRepas, capaciteDigestive } = profile;
   const { mealDistribution } = nutritionNeeds;
   
@@ -328,9 +391,9 @@ const generateDayMenu = (profile, ciqualData, alimentsSimple, nutritionNeeds) =>
     const petitDejRecettes = recettesDatabase.petitDejeuner;
     const recette = petitDejRecettes[Math.floor(Math.random() * petitDejRecettes.length)];
     
-    // Calculer avec système hybride (simple + CIQUAL fallback)
+    // Calculer avec système hybride (simple + CIQUAL fallback + valeurs moyennes)
     console.log(`🍳 [generateDayMenu] Calcul nutrition: ${recette.nom}`);
-    const nutrition = calculateNutritionHybrid(recette.ingredients, alimentsSimple, ciqualData);
+    const nutrition = await calculateNutritionHybrid(recette.ingredients, alimentsSimple, ciqualData);
     console.log(`📊 [generateDayMenu] Nutrition calculée pour ${recette.nom}:`, nutrition);
     
     const petitDej = {
@@ -353,7 +416,7 @@ const generateDayMenu = (profile, ciqualData, alimentsSimple, nutritionNeeds) =>
   const recetteDejeuner = dejeunerTypes[Math.floor(Math.random() * dejeunerTypes.length)];
   
   console.log(`🍱 [generateDayMenu] Calcul nutrition: ${recetteDejeuner.nom}`);
-  const nutritionDejeuner = calculateNutritionHybrid(recetteDejeuner.ingredients, alimentsSimple, ciqualData);
+  const nutritionDejeuner = await calculateNutritionHybrid(recetteDejeuner.ingredients, alimentsSimple, ciqualData);
   console.log(`📊 [generateDayMenu] Nutrition calculée pour ${recetteDejeuner.nom}:`, nutritionDejeuner);
   
   const dejeuner = {
@@ -385,7 +448,7 @@ const generateDayMenu = (profile, ciqualData, alimentsSimple, nutritionNeeds) =>
   const recetteDiner = dinerRecettes[Math.floor(Math.random() * dinerRecettes.length)];
   
   console.log(`🌙 [generateDayMenu] Calcul nutrition: ${recetteDiner.nom}`);
-  const nutritionDiner = calculateNutritionHybrid(recetteDiner.ingredients, alimentsSimple, ciqualData);
+  const nutritionDiner = await calculateNutritionHybrid(recetteDiner.ingredients, alimentsSimple, ciqualData);
   console.log(`📊 [generateDayMenu] Nutrition calculée pour ${recetteDiner.nom}:`, nutritionDiner);
   
   const diner = {
@@ -412,7 +475,7 @@ const generateDayMenu = (profile, ciqualData, alimentsSimple, nutritionNeeds) =>
  * @param {Object} ciqualData - Données CIQUAL (legacy, optionnel)
  * @returns {Object} - Menu hebdomadaire avec conseils
  */
-export const generateWeeklyMenu = (profile, alimentsSimple = null, ciqualData = null) => {
+export const generateWeeklyMenu = async (profile, alimentsSimple = null, ciqualData = null) => {
   console.log('🌍 [generateWeeklyMenu] DÉBUT - Génération menu hebdomadaire');
   console.log('👤 [generateWeeklyMenu] Profile:', profile);
   console.log('📦 [generateWeeklyMenu] alimentsSimple:', alimentsSimple?.length || 0, 'aliments');
@@ -424,7 +487,7 @@ export const generateWeeklyMenu = (profile, alimentsSimple = null, ciqualData = 
   const joursIntermittent = [1, 3, 5, 6]; // Lundi, Mercredi, Vendredi, Samedi pour jeûne intermittent
   
   for (let day = 1; day <= 7; day++) {
-    const dayMenu = generateDayMenu(profile, ciqualData, alimentsSimple, nutritionNeeds);
+    const dayMenu = await generateDayMenu(profile, ciqualData, alimentsSimple, nutritionNeeds);
     
     // Appliquer le jeûne intermittent si objectif perte de poids
     const isJeuneIntermittent = profile.objectif === 'perte' && joursIntermittent.includes(day);
