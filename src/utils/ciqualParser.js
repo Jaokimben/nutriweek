@@ -9,12 +9,23 @@
  */
 export const loadCIQUAL = async () => {
   try {
+    console.log('🔍 Tentative de chargement de /ciqual.csv...');
     const response = await fetch('/ciqual.csv');
-    const text = await response.text();
+    console.log(`📡 Response status: ${response.status}`);
     
-    return parseCIQUAL(text);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const text = await response.text();
+    console.log(`📄 Fichier chargé: ${text.length} caractères`);
+    
+    const parsed = parseCIQUAL(text);
+    console.log(`✅ Parsing terminé: ${Object.keys(parsed).length} aliments`);
+    
+    return parsed;
   } catch (error) {
-    console.error('Erreur lors du chargement de CIQUAL:', error);
+    console.error('❌ Erreur lors du chargement de CIQUAL:', error);
     return {};
   }
 };
@@ -96,6 +107,14 @@ export const searchAliment = (ciqualData, searchTerm) => {
  * @returns {Object} Valeurs nutritionnelles totales
  */
 export const calculateRecipeNutrition = (ingredients, ciqualData) => {
+  console.log(`🔬 calculateRecipeNutrition appelée avec ${ingredients?.length || 0} ingrédients`);
+  console.log(`📚 ciqualData: ${ciqualData ? Object.keys(ciqualData).length + ' aliments' : 'NULL'}`);
+  
+  if (!ciqualData || Object.keys(ciqualData).length === 0) {
+    console.warn('⚠️ ciqualData est vide ou null, retour valeurs par défaut');
+    return { calories: 0, proteines: 0, lipides: 0, glucides: 0 };
+  }
+  
   let totalCalories = 0;
   let totalProteines = 0;
   let totalLipides = 0;
