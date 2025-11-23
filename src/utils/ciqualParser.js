@@ -3,6 +3,8 @@
  * Format: ALIM_CODE;FOOD_LABEL;indic_combl;LB;UB;MB;CONST_CODE;CONST_LABEL
  */
 
+import { findCiqualCodeFromMapping } from './nutritionMappings';
+
 /**
  * Charge et parse la base de données CIQUAL
  * @returns {Promise<Object>} Map d'aliments avec leurs valeurs nutritionnelles
@@ -124,14 +126,29 @@ export const calculateRecipeNutrition = (ingredients, ciqualData) => {
   const details = []; // Pour debug
   
   ingredients.forEach(ing => {
-    // Améliorer le nom avec le mapping
-    const nomAmeliore = improveIngredientName(ing.nom);
+    // ÉTAPE 1: Chercher d'abord dans les mappings manuels (264 mappings précis)
+    const ciqualCode = findCiqualCodeFromMapping(ing.nom);
+    let aliment = null;
+    let mappingUsed = 'none';
     
-    // Rechercher l'aliment dans CIQUAL
-    const matches = searchAliment(ciqualData, nomAmeliore);
+    if (ciqualCode && ciqualData[ciqualCode]) {
+      // Mapping trouvé !
+      aliment = ciqualData[ciqualCode];
+      mappingUsed = 'manual-mapping';
+      console.log(`✅ [CIQUAL] Mapping manuel: "${ing.nom}" → code ${ciqualCode} → "${aliment.nom}"`);
+    } else {
+      // ÉTAPE 2: Fallback sur l'ancienne méthode (amélioration + recherche)
+      const nomAmeliore = improveIngredientName(ing.nom);
+      const matches = searchAliment(ciqualData, nomAmeliore);
+      
+      if (matches.length > 0) {
+        aliment = matches[0]; // Prendre le premier match
+        mappingUsed = 'fuzzy-search';
+        console.log(`⚠️ [CIQUAL] Recherche floue: "${ing.nom}" → "${nomAmeliore}" → "${aliment.nom}"`);
+      }
+    }
     
-    if (matches.length > 0) {
-      const aliment = matches[0]; // Prendre le premier match
+    if (aliment) {
       const quantiteGrammes = convertToGrams(ing.quantite, ing.unite);
       
       // Calculer pour 100g, puis ajuster à la quantité
@@ -151,17 +168,18 @@ export const calculateRecipeNutrition = (ingredients, ciqualData) => {
       // Log pour debug
       details.push({
         original: ing.nom,
-        mapped: nomAmeliore,
+        code: ciqualCode || 'fuzzy',
+        method: mappingUsed,
         found: aliment.nom,
         quantite: `${quantiteGrammes}g`,
         calories: Math.round(ingredientCalories),
         kcalPer100g: aliment.nutritions.nrj_kcal
       });
     } else {
-      console.warn(`❌ Aliment non trouvé: "${ing.nom}" (recherché: "${nomAmeliore}")`);
+      console.warn(`❌ [CIQUAL] Aliment non trouvé: "${ing.nom}"`);
       details.push({
         original: ing.nom,
-        mapped: nomAmeliore,
+        method: 'not-found',
         found: 'NON TROUVÉ',
         quantite: convertToGrams(ing.quantite, ing.unite) + 'g',
         calories: 0
