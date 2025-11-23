@@ -5,30 +5,30 @@ const Questionnaire = ({ onComplete }) => {
   const [currentStep, setCurrentStep] = useState(1)
   const [formData, setFormData] = useState({
     // Objectifs
-    objectif: '',
+    objectif: 'perte', // Par défaut: perte de poids
     
-    // Général
-    taille: '',
-    poids: '',
-    age: '',
-    genre: '',
-    tourDeTaille: '',
+    // Général - Profil type adulte
+    taille: '170',      // 170 cm
+    poids: '75',        // 75 kg
+    age: '30',          // 30 ans
+    genre: 'homme',     // Homme
+    tourDeTaille: '85', // 85 cm
     
     // Nombre de repas
-    nombreRepas: '',
+    nombreRepas: '3',   // 3 repas par jour
     
     // Capacité digestive
-    capaciteDigestive: [],
+    capaciteDigestive: [], // Aucun problème par défaut
     
     // Intolérances
-    intolerances: [],
+    intolerances: [],      // Aucune intolérance par défaut
     
     // Morphotype
-    morphotype: '',
+    morphotype: 'mesomorphe', // Morphologie équilibrée
     
     // Activité physique
-    activitePhysique: '',
-
+    activitePhysique: 'moderee', // Activité modérée
+    
     // Semaine actuelle (pour calcul calories)
     semaineActuelle: 1
   })
