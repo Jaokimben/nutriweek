@@ -255,7 +255,7 @@ export const NUTRITION_MAPPINGS = {
   // Huiles et matières grasses
   'huile': '17000',
   'huile d\'olive': '17270',
-  'huile d'olive': '17270',
+  'huile d\'olive': '17270',
   'huile de colza': '17130',
   'huile de tournesol': '17440',
   'huile de coco': '16040',
