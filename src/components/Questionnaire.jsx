@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import './Questionnaire.css'
 
-const Questionnaire = ({ onComplete }) => {
+const Questionnaire = ({ onComplete, initialData = null }) => {
   const [currentStep, setCurrentStep] = useState(1)
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState(initialData || {
     // Objectifs
     objectif: 'perte', // Par défaut: perte de poids
     

@@ -7,9 +7,9 @@ import { saveMenu } from '../utils/storage'
 import ShoppingList from './ShoppingList'
 import './WeeklyMenu.css'
 
-const WeeklyMenu = ({ userProfile, onBack }) => {
-  const [weeklyMenu, setWeeklyMenu] = useState(null)
-  const [loading, setLoading] = useState(true)
+const WeeklyMenu = ({ userProfile, initialMenu = null, onMenuGenerated, onBack }) => {
+  const [weeklyMenu, setWeeklyMenu] = useState(initialMenu)
+  const [loading, setLoading] = useState(!initialMenu)
   const [selectedDay, setSelectedDay] = useState(0)
   const [showShoppingList, setShowShoppingList] = useState(false)
   const [regeneratingMeal, setRegeneratingMeal] = useState(null)
@@ -17,6 +17,11 @@ const WeeklyMenu = ({ userProfile, onBack }) => {
   const [ciqualData, setCiqualData] = useState(null)
 
   useEffect(() => {
+    // Si on a déjà un menu initial, ne pas générer
+    if (initialMenu) {
+      return
+    }
+
     // Charger la base simplifiée (prioritaire) et CIQUAL (backup)
     const loadAndGenerateMenu = async () => {
       try {
@@ -47,6 +52,11 @@ const WeeklyMenu = ({ userProfile, onBack }) => {
         
         // Sauvegarder automatiquement
         saveMenu(menu, userProfile)
+        
+        // Notifier le parent
+        if (onMenuGenerated) {
+          onMenuGenerated(menu)
+        }
         
         setLoading(false)
       } catch (error) {

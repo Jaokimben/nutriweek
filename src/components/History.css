@@ -1,0 +1,189 @@
+/* ========== HISTORY CONTAINER ========== */
+.history-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+  padding-bottom: 100px; /* Space for bottom nav */
+}
+
+.history-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.history-header h1 {
+  font-size: 2rem;
+  color: #2c3e50;
+  margin-bottom: 0.5rem;
+}
+
+.history-subtitle {
+  color: #7f8c8d;
+  font-size: 0.95rem;
+}
+
+/* ========== EMPTY STATE ========== */
+.empty-history {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+.empty-icon {
+  font-size: 4rem;
+  display: block;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.empty-history h3 {
+  color: #2c3e50;
+  margin-bottom: 0.5rem;
+}
+
+.empty-history p {
+  color: #7f8c8d;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+/* ========== HISTORY LIST ========== */
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.history-item {
+  background: white;
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s;
+}
+
+.history-item:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+}
+
+.history-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.history-number {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #667eea;
+}
+
+.history-date {
+  color: #7f8c8d;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+/* ========== MENU PREVIEW ========== */
+.history-preview h3 {
+  font-size: 1.1rem;
+  color: #2c3e50;
+  margin-bottom: 1rem;
+}
+
+.menu-days-preview {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.day-preview {
+  background: #f8f9fa;
+  padding: 0.75rem;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  border: 2px solid #e0e0e0;
+}
+
+.day-name {
+  font-weight: 600;
+  color: #2c3e50;
+  font-size: 0.85rem;
+}
+
+.meals-count {
+  font-size: 1.2rem;
+}
+
+.day-preview.more {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  justify-content: center;
+  font-weight: 600;
+  border-color: #667eea;
+}
+
+/* ========== ACTIONS ========== */
+.history-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+.btn-load,
+.btn-details {
+  flex: 1;
+  padding: 0.875rem;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-load {
+  background: linear-gradient(135deg, #56ab2f 0%, #a8e063 100%);
+  color: white;
+}
+
+.btn-load:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(86, 171, 47, 0.3);
+}
+
+.btn-details {
+  background: #f8f9fa;
+  color: #667eea;
+  border: 2px solid #e0e0e0;
+}
+
+.btn-details:hover {
+  background: #667eea;
+  color: white;
+  border-color: #667eea;
+}
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 768px) {
+  .history-container {
+    padding: 1rem;
+    padding-bottom: 100px;
+  }
+
+  .menu-days-preview {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .history-actions {
+    flex-direction: column;
+  }
+}

@@ -1,0 +1,86 @@
+/* ========== BOTTOM NAVIGATION ========== */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: white;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: space-around;
+  padding: 0.5rem 0;
+  z-index: 1000;
+  border-top: 1px solid #e0e0e0;
+}
+
+.nav-tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.75rem 0.5rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s;
+  color: #7f8c8d;
+  position: relative;
+}
+
+.nav-tab::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 3px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  transition: width 0.3s;
+  border-radius: 0 0 3px 3px;
+}
+
+.nav-tab.active::before {
+  width: 60%;
+}
+
+.nav-tab.active {
+  color: #667eea;
+}
+
+.tab-icon {
+  font-size: 1.5rem;
+  transition: transform 0.3s;
+}
+
+.nav-tab:active .tab-icon {
+  transform: scale(0.9);
+}
+
+.nav-tab.active .tab-icon {
+  transform: scale(1.1);
+}
+
+.tab-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* Animation on hover */
+.nav-tab:hover:not(.active) {
+  color: #667eea;
+  background: rgba(102, 126, 234, 0.05);
+}
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 480px) {
+  .tab-label {
+    font-size: 0.7rem;
+  }
+
+  .tab-icon {
+    font-size: 1.25rem;
+  }
+}

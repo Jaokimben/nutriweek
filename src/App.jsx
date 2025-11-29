@@ -2,28 +2,92 @@ import { useState, useEffect } from 'react'
 import Questionnaire from './components/Questionnaire'
 import WeeklyMenu from './components/WeeklyMenu'
 import AdminPortal from './components/AdminPortal'
+import Login from './components/auth/Login'
+import Register from './components/auth/Register'
+import Profile from './components/Profile'
+import History from './components/History'
+import BottomNav from './components/BottomNav'
+import { getCurrentUser, isAuthenticated, initializeDemoAccount, updateUserProfile, saveUserMenu } from './utils/authService'
 import './App.css'
 
 function App() {
-  const [userProfile, setUserProfile] = useState(null)
-  const [showMenu, setShowMenu] = useState(false)
+  const [user, setUser] = useState(null)
+  const [authMode, setAuthMode] = useState('login') // 'login' or 'register'
+  const [activeTab, setActiveTab] = useState('questionnaire')
+  const [weeklyMenu, setWeeklyMenu] = useState(null)
   const [showAdmin, setShowAdmin] = useState(false)
 
-  // Détecter si l'URL contient /admin pour afficher le backoffice
+  // Initialiser au chargement
   useEffect(() => {
+    // Créer le compte démo si nécessaire
+    initializeDemoAccount()
+
+    // Vérifier si l'URL contient /admin
     const path = window.location.pathname
     if (path === '/admin' || path.includes('/admin')) {
       setShowAdmin(true)
+      return
+    }
+
+    // Charger l'utilisateur connecté
+    const currentUser = getCurrentUser()
+    if (currentUser) {
+      setUser(currentUser)
+      // Déterminer l'onglet à afficher selon le profil
+      if (currentUser.profile) {
+        setActiveTab('menu')
+      } else {
+        setActiveTab('questionnaire')
+      }
     }
   }, [])
 
-  const handleProfileComplete = (profile) => {
-    setUserProfile(profile)
-    setShowMenu(true)
+  // Gestion de la connexion réussie
+  const handleAuthSuccess = (userData) => {
+    setUser(userData)
+    // Si l'utilisateur a déjà un profil, aller au menu
+    if (userData.profile) {
+      setActiveTab('menu')
+    } else {
+      setActiveTab('questionnaire')
+    }
   }
 
-  const handleBack = () => {
-    setShowMenu(false)
+  // Gestion de la déconnexion
+  const handleLogout = () => {
+    setUser(null)
+    setWeeklyMenu(null)
+    setActiveTab('questionnaire')
+  }
+
+  // Gestion de la completion du questionnaire
+  const handleProfileComplete = (profile) => {
+    // Sauvegarder le profil
+    updateUserProfile(profile)
+    // Mettre à jour l'utilisateur
+    setUser(getCurrentUser())
+    // Aller au menu avec le profil
+    setActiveTab('menu')
+  }
+
+  // Gestion du menu généré
+  const handleMenuGenerated = (menu) => {
+    setWeeklyMenu(menu)
+    // Sauvegarder le menu pour l'utilisateur
+    if (user) {
+      saveUserMenu(menu)
+    }
+  }
+
+  // Chargement d'un menu depuis l'historique
+  const handleLoadMenuFromHistory = (menu) => {
+    setWeeklyMenu(menu)
+    setActiveTab('menu')
+  }
+
+  // Changement d'onglet
+  const handleTabChange = (tab) => {
+    setActiveTab(tab)
   }
 
   const handleBackFromAdmin = () => {
@@ -36,10 +100,76 @@ function App() {
     return <AdminPortal onBack={handleBackFromAdmin} />
   }
 
+  // Si l'utilisateur n'est pas connecté, afficher l'authentification
+  if (!user) {
+    return (
+      <div className="app">
+        {authMode === 'login' ? (
+          <Login 
+            onSuccess={handleAuthSuccess}
+            onSwitchToRegister={() => setAuthMode('register')}
+          />
+        ) : (
+          <Register 
+            onSuccess={handleAuthSuccess}
+            onSwitchToLogin={() => setAuthMode('login')}
+          />
+        )}
+      </div>
+    )
+  }
+
+  // Déterminer le contenu à afficher selon l'onglet actif
+  const renderContent = () => {
+    switch(activeTab) {
+      case 'questionnaire':
+        return (
+          <Questionnaire 
+            onComplete={handleProfileComplete}
+            initialData={user.profile}
+          />
+        )
+      
+      case 'menu':
+        if (weeklyMenu) {
+          return (
+            <WeeklyMenu 
+              userProfile={user.profile}
+              initialMenu={weeklyMenu}
+              onMenuGenerated={handleMenuGenerated}
+              onBack={() => setActiveTab('questionnaire')}
+            />
+          )
+        } else if (user.profile) {
+          // Générer automatiquement le menu
+          return (
+            <WeeklyMenu 
+              userProfile={user.profile}
+              onMenuGenerated={handleMenuGenerated}
+              onBack={() => setActiveTab('questionnaire')}
+            />
+          )
+        } else {
+          // Pas de profil, rediriger vers questionnaire
+          setActiveTab('questionnaire')
+          return null
+        }
+      
+      case 'history':
+        return <History onLoadMenu={handleLoadMenuFromHistory} />
+      
+      case 'profile':
+        return <Profile onLogout={handleLogout} />
+      
+      default:
+        return null
+    }
+  }
+
   return (
     <div className="app">
-      {/* Bouton d'accès admin (coin en bas à droite) */}
-      {!showMenu && (
+      {/* Bouton d'accès admin (visible seulement sur questionnaire) */}
+      {activeTab === 'questionnaire' && (
         <button 
           className="admin-access-btn"
           onClick={() => {
@@ -52,11 +182,13 @@ function App() {
         </button>
       )}
 
-      {!showMenu ? (
-        <Questionnaire onComplete={handleProfileComplete} />
-      ) : (
-        <WeeklyMenu userProfile={userProfile} onBack={handleBack} />
-      )}
+      {/* Contenu principal */}
+      <div className="app-content">
+        {renderContent()}
+      </div>
+
+      {/* Menu de navigation en bas */}
+      <BottomNav activeTab={activeTab} onTabChange={handleTabChange} />
     </div>
   )
 }
