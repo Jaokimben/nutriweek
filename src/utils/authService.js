@@ -47,7 +47,22 @@ const getAllUsers = () => {
  */
 const saveUsers = (users) => {
   try {
+    // Sauvegarder dans la liste globale
     localStorage.setItem(USERS_KEY, JSON.stringify(users));
+    
+    // Sauvegarder aussi individuellement pour le backoffice
+    users.forEach(user => {
+      localStorage.setItem(`user_${user.id}`, JSON.stringify({
+        id: user.id,
+        email: user.email,
+        displayName: `${user.firstName} ${user.lastName}`.trim() || user.email,
+        provider: user.provider,
+        profile: user.profile,
+        createdAt: user.createdAt,
+        lastLogin: user.lastLogin
+      }));
+    });
+    
     return true;
   } catch (error) {
     console.error('Erreur sauvegarde utilisateurs:', error);
@@ -168,6 +183,9 @@ export const login = (email, password) => {
     user.lastLogin = new Date().toISOString();
     updateUser(user);
 
+    // Enregistrer l'historique de connexion
+    logLogin(user.id, 'email');
+
     // Sauvegarder la session
     setCurrentUser(user);
 
@@ -217,6 +235,9 @@ export const loginWithGoogle = () => {
         user.lastLogin = new Date().toISOString();
         updateUser(user);
       }
+
+      // Enregistrer l'historique de connexion
+      logLogin(user.id, 'google');
 
       setCurrentUser(user);
       console.log('✅ Connexion Google réussie:', user.email);
@@ -366,6 +387,11 @@ export const saveUserMenu = (menu) => {
     user.menus = user.menus.slice(0, 10);
 
     updateUser(user);
+    
+    // Sauvegarder aussi pour le backoffice
+    const menuHistoryKey = `menu_history_${user.id}`;
+    localStorage.setItem(menuHistoryKey, JSON.stringify(user.menus));
+    
     console.log('✅ Menu sauvegardé pour l\'utilisateur');
     return { success: true };
   } catch (error) {
@@ -496,5 +522,53 @@ export const getUserStats = () => {
   } catch (error) {
     console.error('Erreur stats utilisateur:', error);
     return null;
+  }
+};
+
+// ========== Historique des connexions ==========
+
+/**
+ * Enregistre une connexion dans l'historique
+ */
+const logLogin = (userId, method = 'email') => {
+  try {
+    const key = `login_history_${userId}`;
+    let history = [];
+    
+    try {
+      const stored = localStorage.getItem(key);
+      history = stored ? JSON.parse(stored) : [];
+    } catch {
+      history = [];
+    }
+
+    // Ajouter la nouvelle connexion
+    history.unshift({
+      timestamp: new Date().toISOString(),
+      method: method,
+      userAgent: navigator.userAgent,
+      ip: 'N/A' // En production, obtenir l'IP réelle côté serveur
+    });
+
+    // Garder seulement les 50 dernières connexions
+    history = history.slice(0, 50);
+
+    localStorage.setItem(key, JSON.stringify(history));
+  } catch (error) {
+    console.error('Erreur lors de l\'enregistrement de la connexion:', error);
+  }
+};
+
+/**
+ * Récupère l'historique des connexions d'un utilisateur
+ */
+export const getLoginHistory = (userId) => {
+  try {
+    const key = `login_history_${userId}`;
+    const stored = localStorage.getItem(key);
+    return stored ? JSON.parse(stored) : [];
+  } catch (error) {
+    console.error('Erreur lors de la récupération de l\'historique:', error);
+    return [];
   }
 };

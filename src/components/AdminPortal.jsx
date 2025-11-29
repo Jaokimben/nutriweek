@@ -3,6 +3,7 @@ import AdminDashboard from './admin/AdminDashboard'
 import RecipeManager from './admin/RecipeManager'
 import MappingsViewer from './admin/MappingsViewer'
 import SettingsPanel from './admin/SettingsPanel'
+import UserManager from './admin/UserManager'
 import './AdminPortal.css'
 
 const AdminPortal = ({ onBack }) => {
@@ -95,6 +96,14 @@ const AdminPortal = ({ onBack }) => {
           </button>
           
           <button
+            className={`nav-item ${currentTab === 'users' ? 'active' : ''}`}
+            onClick={() => setCurrentTab('users')}
+          >
+            <span className="nav-icon">👥</span>
+            <span className="nav-label">Utilisateurs</span>
+          </button>
+          
+          <button
             className={`nav-item ${currentTab === 'recipes' ? 'active' : ''}`}
             onClick={() => setCurrentTab('recipes')}
           >
@@ -140,6 +149,7 @@ const AdminPortal = ({ onBack }) => {
 
         <div className="content-body">
           {currentTab === 'dashboard' && <AdminDashboard />}
+          {currentTab === 'users' && <UserManager />}
           {currentTab === 'recipes' && <RecipeManager />}
           {currentTab === 'mappings' && <MappingsViewer />}
           {currentTab === 'settings' && <SettingsPanel />}
@@ -152,6 +162,7 @@ const AdminPortal = ({ onBack }) => {
 const getTabTitle = (tab) => {
   const titles = {
     dashboard: '📊 Tableau de bord',
+    users: '👥 Gestion des utilisateurs',
     recipes: '🍽️ Gestion des recettes',
     mappings: '🗺️ Mappings nutritionnels',
     settings: '⚙️ Paramètres'
