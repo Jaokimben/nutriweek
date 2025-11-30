@@ -54,11 +54,14 @@ const Login = ({ onSuccess, onSwitchToRegister }) => {
             <input
               type="email"
               id="email"
+              name="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="votre@email.com"
               required
               autoFocus
+              autoComplete="email"
+              style={{ color: '#2c3e50' }}
             />
           </div>
 
@@ -67,10 +70,13 @@ const Login = ({ onSuccess, onSwitchToRegister }) => {
             <input
               type="password"
               id="password"
+              name="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
               required
+              autoComplete="current-password"
+              style={{ color: '#2c3e50' }}
             />
           </div>
 

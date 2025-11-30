@@ -91,9 +91,12 @@ const Register = ({ onSuccess, onSwitchToLogin }) => {
               <input
                 type="text"
                 id="firstName"
+                name="firstName"
                 value={formData.firstName}
                 onChange={(e) => handleChange('firstName', e.target.value)}
                 placeholder="Jean"
+                autoComplete="given-name"
+                style={{ color: '#2c3e50' }}
               />
             </div>
 
@@ -102,9 +105,12 @@ const Register = ({ onSuccess, onSwitchToLogin }) => {
               <input
                 type="text"
                 id="lastName"
+                name="lastName"
                 value={formData.lastName}
                 onChange={(e) => handleChange('lastName', e.target.value)}
                 placeholder="Dupont"
+                autoComplete="family-name"
+                style={{ color: '#2c3e50' }}
               />
             </div>
           </div>
@@ -114,11 +120,14 @@ const Register = ({ onSuccess, onSwitchToLogin }) => {
             <input
               type="email"
               id="email"
+              name="email"
               value={formData.email}
               onChange={(e) => handleChange('email', e.target.value)}
               placeholder="votre@email.com"
               required
               autoFocus
+              autoComplete="email"
+              style={{ color: '#2c3e50' }}
             />
           </div>
 
@@ -127,10 +136,13 @@ const Register = ({ onSuccess, onSwitchToLogin }) => {
             <input
               type="password"
               id="password"
+              name="password"
               value={formData.password}
               onChange={(e) => handleChange('password', e.target.value)}
               placeholder="••••••••"
               required
+              autoComplete="new-password"
+              style={{ color: '#2c3e50' }}
             />
             <span className="input-hint">Minimum 6 caractères</span>
           </div>
@@ -140,10 +152,13 @@ const Register = ({ onSuccess, onSwitchToLogin }) => {
             <input
               type="password"
               id="confirmPassword"
+              name="confirmPassword"
               value={formData.confirmPassword}
               onChange={(e) => handleChange('confirmPassword', e.target.value)}
               placeholder="••••••••"
               required
+              autoComplete="new-password"
+              style={{ color: '#2c3e50' }}
             />
           </div>
 

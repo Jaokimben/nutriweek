@@ -87,6 +87,17 @@
   font-size: 0.9rem;
   transition: all 0.3s;
   background: #f8f9fa;
+  color: #2c3e50 !important;
+}
+
+/* Force text color for autofilled inputs */
+.form-group input:-webkit-autofill,
+.form-group input:-webkit-autofill:hover,
+.form-group input:-webkit-autofill:focus,
+.form-group input:-webkit-autofill:active {
+  -webkit-text-fill-color: #2c3e50 !important;
+  -webkit-box-shadow: 0 0 0 30px #f8f9fa inset !important;
+  transition: background-color 5000s ease-in-out 0s;
 }
 
 .form-group input:focus {
@@ -94,6 +105,23 @@
   border-color: #667eea;
   background: white;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  color: #2c3e50 !important;
+}
+
+/* Placeholder styles for better visibility */
+.form-group input::placeholder {
+  color: #95a5a6;
+  opacity: 1;
+}
+
+.form-group input::-webkit-input-placeholder {
+  color: #95a5a6;
+  opacity: 1;
+}
+
+.form-group input::-moz-placeholder {
+  color: #95a5a6;
+  opacity: 1;
 }
 
 .input-hint {
