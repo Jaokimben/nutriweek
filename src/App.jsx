@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import Questionnaire from './components/Questionnaire'
 import WeeklyMenu from './components/WeeklyMenu'
 import AdminPortal from './components/AdminPortal'
+import Welcome from './components/Welcome'
 import Login from './components/auth/Login'
 import Register from './components/auth/Register'
 import Profile from './components/Profile'
@@ -12,7 +13,8 @@ import './App.css'
 
 function App() {
   const [user, setUser] = useState(null)
-  const [authMode, setAuthMode] = useState('login') // 'login' or 'register'
+  const [guestMode, setGuestMode] = useState(false)
+  const [authMode, setAuthMode] = useState('welcome') // 'welcome', 'login' or 'register'
   const [activeTab, setActiveTab] = useState('questionnaire')
   const [weeklyMenu, setWeeklyMenu] = useState(null)
   const [showAdmin, setShowAdmin] = useState(false)
@@ -56,16 +58,23 @@ function App() {
   // Gestion de la déconnexion
   const handleLogout = () => {
     setUser(null)
+    setGuestMode(false)
     setWeeklyMenu(null)
     setActiveTab('questionnaire')
+    setAuthMode('welcome')
   }
 
   // Gestion de la completion du questionnaire
   const handleProfileComplete = (profile) => {
-    // Sauvegarder le profil
-    updateUserProfile(profile)
-    // Mettre à jour l'utilisateur
-    setUser(getCurrentUser())
+    // Sauvegarder le profil (sauf en mode invité)
+    if (!user.isGuest) {
+      updateUserProfile(profile)
+      // Mettre à jour l'utilisateur
+      setUser(getCurrentUser())
+    } else {
+      // En mode invité, juste mettre à jour localement
+      setUser({ ...user, profile })
+    }
     // Aller au menu avec le profil
     setActiveTab('menu')
   }
@@ -73,8 +82,8 @@ function App() {
   // Gestion du menu généré
   const handleMenuGenerated = (menu) => {
     setWeeklyMenu(menu)
-    // Sauvegarder le menu pour l'utilisateur
-    if (user) {
+    // Sauvegarder le menu pour l'utilisateur (sauf en mode invité)
+    if (user && !user.isGuest) {
       saveUserMenu(menu)
     }
   }
@@ -100,11 +109,30 @@ function App() {
     return <AdminPortal onBack={handleBackFromAdmin} />
   }
 
-  // Si l'utilisateur n'est pas connecté, afficher l'authentification
-  if (!user) {
+  // Gestion du mode invité
+  const handleContinueAsGuest = () => {
+    setGuestMode(true)
+    setUser({
+      id: 'guest',
+      email: 'guest@nutriweek.app',
+      displayName: 'Utilisateur Invité',
+      profile: null,
+      isGuest: true
+    })
+    setActiveTab('questionnaire')
+  }
+
+  // Si l'utilisateur n'est pas connecté et pas en mode invité, afficher l'authentification
+  if (!user && !guestMode) {
     return (
       <div className="app">
-        {authMode === 'login' ? (
+        {authMode === 'welcome' ? (
+          <Welcome 
+            onLogin={() => setAuthMode('login')}
+            onRegister={() => setAuthMode('register')}
+            onContinueAsGuest={handleContinueAsGuest}
+          />
+        ) : authMode === 'login' ? (
           <Login 
             onSuccess={handleAuthSuccess}
             onSwitchToRegister={() => setAuthMode('register')}

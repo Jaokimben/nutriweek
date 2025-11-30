@@ -1,13 +1,20 @@
 import { useState, useEffect } from 'react'
-import { getUserMenus } from '../utils/authService'
+import { getUserMenus, getCurrentUser } from '../utils/authService'
 import { formatSavedDate } from '../utils/storage'
 import './History.css'
 
 const History = ({ onLoadMenu }) => {
   const [menus, setMenus] = useState([])
+  const [user, setUser] = useState(null)
 
   useEffect(() => {
-    loadMenus()
+    const currentUser = getCurrentUser()
+    setUser(currentUser)
+    
+    // Ne charger les menus que si pas en mode invité
+    if (!currentUser?.isGuest) {
+      loadMenus()
+    }
   }, [])
 
   const loadMenus = () => {
@@ -19,6 +26,28 @@ const History = ({ onLoadMenu }) => {
     if (confirm('Charger ce menu ? Cela remplacera le menu actuel.')) {
       onLoadMenu(menuData.menu)
     }
+  }
+
+  // Message pour le mode invité
+  if (user?.isGuest) {
+    return (
+      <div className="history-container">
+        <div className="history-header">
+          <h1>📚 Historique des Menus</h1>
+        </div>
+        <div className="guest-mode-message">
+          <span className="guest-icon">👤</span>
+          <h3>Fonctionnalité non disponible en mode invité</h3>
+          <p>
+            L'historique des menus est uniquement disponible pour les utilisateurs connectés.
+          </p>
+          <p>
+            <strong>💡 Créez un compte gratuit</strong> pour sauvegarder automatiquement 
+            vos menus et y accéder depuis n'importe quel appareil.
+          </p>
+        </div>
+      </div>
+    )
   }
 
   if (menus.length === 0) {

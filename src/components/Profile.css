@@ -35,6 +35,63 @@
   box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
 }
 
+/* ========== GUEST WARNING ========== */
+.guest-warning {
+  display: flex;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #fff3cd 0%, #fff8e1 100%);
+  border: 2px solid #ffc107;
+  border-radius: 12px;
+  margin-bottom: 2rem;
+  animation: slideIn 0.5s ease;
+}
+
+.warning-icon {
+  font-size: 3rem;
+  flex-shrink: 0;
+}
+
+.warning-content {
+  flex: 1;
+}
+
+.warning-content h3 {
+  margin: 0 0 0.75rem 0;
+  color: #856404;
+  font-size: 1.25rem;
+}
+
+.warning-content p {
+  margin-bottom: 0.75rem;
+  color: #664d03;
+  line-height: 1.6;
+}
+
+.warning-content p:last-of-type {
+  margin-bottom: 1rem;
+}
+
+.warning-actions {
+  margin-top: 1rem;
+}
+
+.btn-create-account {
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-create-account:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
 /* ========== MESSAGE BANNER ========== */
 .message-banner {
   padding: 1rem;

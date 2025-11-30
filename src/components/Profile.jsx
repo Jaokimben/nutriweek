@@ -52,7 +52,11 @@ const Profile = ({ onLogout }) => {
     const currentUser = getCurrentUser()
     if (currentUser) {
       setUser(currentUser)
-      setStats(getUserStats())
+      
+      // Ne charger les stats que si pas en mode invité
+      if (!currentUser.isGuest) {
+        setStats(getUserStats())
+      }
       
       // Charger les données du formulaire
       if (currentUser.profile) {
@@ -164,9 +168,36 @@ const Profile = ({ onLogout }) => {
       <div className="profile-header">
         <h1>👤 Mon Profil</h1>
         <button className="btn-logout" onClick={handleLogout}>
-          🚪 Déconnexion
+          🚪 {user.isGuest ? 'Quitter' : 'Déconnexion'}
         </button>
       </div>
+
+      {user.isGuest && (
+        <div className="guest-warning">
+          <div className="warning-icon">⚠️</div>
+          <div className="warning-content">
+            <h3>Mode Invité</h3>
+            <p>
+              Vous utilisez NutriWeek en mode invité. Vos données ne sont pas sauvegardées 
+              et seront perdues si vous fermez l'application.
+            </p>
+            <p>
+              <strong>💡 Conseil :</strong> Créez un compte gratuit pour sauvegarder vos menus 
+              et accéder à votre historique depuis n'importe quel appareil.
+            </p>
+            <div className="warning-actions">
+              <button className="btn-create-account" onClick={() => {
+                if (confirm('Vous allez être redirigé vers la page de création de compte. Vos données actuelles seront perdues. Continuer ?')) {
+                  logout()
+                  onLogout()
+                }
+              }}>
+                ✨ Créer un compte maintenant
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {message.text && (
         <div className={`message-banner ${message.type}`}>
