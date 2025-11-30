@@ -1,0 +1,128 @@
+[
+  {
+    "nom": "Fève, bouillie/cuite à l'eau",
+    "energie": 82.9,
+    "proteines": 8.06,
+    "glucides": 9.35,
+    "lipides": 0.8
+  },
+  {
+    "nom": "Haricot blanc, bouilli/cuit à l'eau",
+    "energie": 112.0,
+    "proteines": 6.75,
+    "glucides": 12.0,
+    "lipides": 1.1
+  },
+  {
+    "nom": "Lentille, bouillie/cuite à l'eau",
+    "energie": 0,
+    "proteines": 9.02,
+    "glucides": 12.2,
+    "lipides": 0.38
+  },
+  {
+    "nom": "Pois cassé, bouilli/cuit à l'eau",
+    "energie": 0,
+    "proteines": 8.6,
+    "glucides": 16.3,
+    "lipides": 1.49
+  },
+  {
+    "nom": "Pois chiche, appertisé, égoutté",
+    "energie": 0,
+    "proteines": 6.74,
+    "glucides": 15.0,
+    "lipides": 2.68
+  },
+  {
+    "nom": "Fève, pelée, surgelée, cuite à l'eau",
+    "energie": 0,
+    "proteines": 6.4,
+    "glucides": 9.0,
+    "lipides": 0.5
+  },
+  {
+    "nom": "Lentille corail, bouillie/cuite à l'eau",
+    "energie": 0,
+    "proteines": 10.6,
+    "glucides": 15.0,
+    "lipides": 0.5
+  },
+  {
+    "nom": "Légume sec, cuit (aliment moyen)",
+    "energie": 0,
+    "proteines": 8.38,
+    "glucides": 12.1,
+    "lipides": 0.62
+  },
+  {
+    "nom": "Riz complet, cuit, non salé",
+    "energie": 157.0,
+    "proteines": 3.21,
+    "glucides": 32.6,
+    "lipides": 1.0
+  },
+  {
+    "nom": "Riz blanc, cuit, non salé",
+    "energie": 144.0,
+    "proteines": 2.92,
+    "glucides": 31.8,
+    "lipides": 0.41
+  },
+  {
+    "nom": "Riz thaï, cuit, non salé",
+    "energie": 142.0,
+    "proteines": 2.92,
+    "glucides": 30.5,
+    "lipides": 0.7
+  },
+  {
+    "nom": "Riz basmati, cuit, non salé",
+    "energie": 116.0,
+    "proteines": 2.74,
+    "glucides": 24.4,
+    "lipides": 0.6
+  },
+  {
+    "nom": "Flocons d'avoine, bouillis/cuits à l'eau",
+    "energie": 74.7,
+    "proteines": 2.54,
+    "glucides": 11.9,
+    "lipides": 1.52
+  },
+  {
+    "nom": "Orge perlée, bouilli/cuite à l'eau, non salée",
+    "energie": 118.0,
+    "proteines": 2.26,
+    "glucides": 24.4,
+    "lipides": 0.44
+  },
+  {
+    "nom": "Quinoa, bouilli/cuit à l'eau, non salé",
+    "energie": 148.0,
+    "proteines": 4.66,
+    "glucides": 27.9,
+    "lipides": 1.1
+  },
+  {
+    "nom": "Boulgour de blé, cuit, non salé",
+    "energie": 110.0,
+    "proteines": 3.73,
+    "glucides": 21.7,
+    "lipides": 0.5
+  },
+  {
+    "nom": "Pâtes sèches standard, cuites, non salées",
+    "energie": 125.0,
+    "proteines": 3.99,
+    "glucides": 25.0,
+    "lipides": 0.55
+  },
+  {
+    "nom": "Bagette céréales",
+    "energie": 283.0,
+    "proteines": 10.0,
+    "glucides": 46.0,
+    "lipides": 5.5
+  }
+]
