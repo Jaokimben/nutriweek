@@ -1,302 +1,211 @@
 /**
- * Base de données de recettes utilisant UNIQUEMENT les aliments autorisés
- * du fichier Excel "Composition Aliments version simplifiee"
+ * BASE DE DONNÉES DE RECETTES STRICTES
  * 
- * Liste des 18 aliments autorisés :
- * - Fève, bouillie/cuite à l'eau
- * - Haricot blanc, bouilli/cuit à l'eau
- * - Lentille, bouillie/cuite à l'eau
- * - Pois cassé, bouilli/cuit à l'eau
- * - Pois chiche, appertisé, égoutté
- * - Fève, pelée, surgelée, cuite à l'eau
- * - Lentille corail, bouillie/cuite à l'eau
- * - Légume sec, cuit (aliment moyen)
- * - Riz complet, cuit, non salé
- * - Riz blanc, cuit, non salé
- * - Riz thaï, cuit, non salé
- * - Riz basmati, cuit, non salé
- * - Flocons d'avoine, bouillis/cuits à l'eau
- * - Orge perlée, bouilli/cuite à l'eau, non salée
- * - Quinoa, bouilli/cuit à l'eau, non salé
- * - Boulgour de blé, cuit, non salé
- * - Pâtes sèches standard, cuites, non salées
- * - Baguette céréales
+ * Utilise UNIQUEMENT les aliments du fichier Excel autorisé
+ * Chaque recette est validée pour les calculs nutritionnels
  */
 
-export const recettesStrictesDatabase = {
-  // ========== PETIT-DÉJEUNER ==========
-  petitDejeuner: [
-    {
-      nom: "Porridge d'avoine",
-      type: "dejeuner",
-      ingredients: {
-        "Flocons d'avoine, bouillis/cuits à l'eau": { quantite: 200, unite: "g" }
-      },
-      preparation: "Servir les flocons d'avoine cuits chauds."
-    },
-    {
-      nom: "Tartines de baguette céréales",
-      type: "dejeuner",
-      ingredients: {
-        "Baguette céréales": { quantite: 60, unite: "g" }
-      },
-      preparation: "Couper la baguette en tranches et servir."
-    }
-  ],
+import { calculerNutritionRecette } from '../utils/nutritionStricte.js';
 
-  // ========== DÉJEUNER - LÉGUMINEUSES ==========
-  legumineuses: [
-    {
-      nom: "Salade de lentilles",
-      type: "diner",
-      ingredients: {
-        "Lentille, bouillie/cuite à l'eau": { quantite: 200, unite: "g" }
-      },
-      preparation: "Servir les lentilles cuites en salade."
-    },
-    {
-      nom: "Lentilles corail",
-      type: "diner",
-      ingredients: {
-        "Lentille corail, bouillie/cuite à l'eau": { quantite: 200, unite: "g" }
-      },
-      preparation: "Servir les lentilles corail cuites."
-    },
-    {
-      nom: "Haricots blancs",
-      type: "diner",
-      ingredients: {
-        "Haricot blanc, bouilli/cuit à l'eau": { quantite: 200, unite: "g" }
-      },
-      preparation: "Servir les haricots blancs cuits."
-    },
-    {
-      nom: "Pois chiches",
-      type: "diner",
-      ingredients: {
-        "Pois chiche, appertisé, égoutté": { quantite: 200, unite: "g" }
-      },
-      preparation: "Égoutter et servir les pois chiches."
-    },
-    {
-      nom: "Pois cassés",
-      type: "diner",
-      ingredients: {
-        "Pois cassé, bouilli/cuit à l'eau": { quantite: 200, unite: "g" }
-      },
-      preparation: "Servir les pois cassés cuits."
-    },
-    {
-      nom: "Fèves cuites",
-      type: "diner",
-      ingredients: {
-        "Fève, bouillie/cuite à l'eau": { quantite: 200, unite: "g" }
-      },
-      preparation: "Servir les fèves cuites."
-    },
-    {
-      nom: "Fèves surgelées",
-      type: "diner",
-      ingredients: {
-        "Fève, pelée, surgelée, cuite à l'eau": { quantite: 200, unite: "g" }
-      },
-      preparation: "Cuire les fèves surgelées et servir."
-    },
-    {
-      nom: "Mélange de légumes secs",
-      type: "diner",
-      ingredients: {
-        "Légume sec, cuit (aliment moyen)": { quantite: 200, unite: "g" }
-      },
-      preparation: "Servir le mélange de légumes secs cuits."
-    }
-  ],
-
-  // ========== DÉJEUNER - CÉRÉALES ==========
-  cereales: [
-    {
-      nom: "Riz complet nature",
-      type: "diner",
-      ingredients: {
-        "Riz complet, cuit, non salé": { quantite: 200, unite: "g" }
-      },
-      preparation: "Servir le riz complet cuit."
-    },
-    {
-      nom: "Riz blanc nature",
-      type: "diner",
-      ingredients: {
-        "Riz blanc, cuit, non salé": { quantite: 200, unite: "g" }
-      },
-      preparation: "Servir le riz blanc cuit."
-    },
-    {
-      nom: "Riz thaï",
-      type: "diner",
-      ingredients: {
-        "Riz thaï, cuit, non salé": { quantite: 200, unite: "g" }
-      },
-      preparation: "Servir le riz thaï cuit."
-    },
-    {
-      nom: "Riz basmati",
-      type: "diner",
-      ingredients: {
-        "Riz basmati, cuit, non salé": { quantite: 200, unite: "g" }
-      },
-      preparation: "Servir le riz basmati cuit."
-    },
-    {
-      nom: "Quinoa nature",
-      type: "diner",
-      ingredients: {
-        "Quinoa, bouilli/cuit à l'eau, non salé": { quantite: 200, unite: "g" }
-      },
-      preparation: "Servir le quinoa cuit."
-    },
-    {
-      nom: "Boulgour",
-      type: "diner",
-      ingredients: {
-        "Boulgour de blé, cuit, non salé": { quantite: 200, unite: "g" }
-      },
-      preparation: "Servir le boulgour cuit."
-    },
-    {
-      nom: "Orge perlée",
-      type: "diner",
-      ingredients: {
-        "Orge perlée, bouilli/cuite à l'eau, non salée": { quantite: 200, unite: "g" }
-      },
-      preparation: "Servir l'orge perlée cuite."
-    },
-    {
-      nom: "Pâtes nature",
-      type: "diner",
-      ingredients: {
-        "Pâtes sèches standard, cuites, non salées": { quantite: 200, unite: "g" }
-      },
-      preparation: "Servir les pâtes cuites."
-    }
-  ],
-
-  // ========== RECETTES COMPOSÉES ==========
-  recettesComposees: [
-    {
-      nom: "Riz aux lentilles",
-      type: "diner",
-      ingredients: {
-        "Riz complet, cuit, non salé": { quantite: 100, unite: "g" },
-        "Lentille, bouillie/cuite à l'eau": { quantite: 100, unite: "g" }
-      },
-      preparation: "Mélanger le riz et les lentilles cuits."
-    },
-    {
-      nom: "Quinoa aux pois chiches",
-      type: "diner",
-      ingredients: {
-        "Quinoa, bouilli/cuit à l'eau, non salé": { quantite: 100, unite: "g" },
-        "Pois chiche, appertisé, égoutté": { quantite: 100, unite: "g" }
-      },
-      preparation: "Mélanger le quinoa et les pois chiches."
-    },
-    {
-      nom: "Boulgour aux fèves",
-      type: "diner",
-      ingredients: {
-        "Boulgour de blé, cuit, non salé": { quantite: 100, unite: "g" },
-        "Fève, bouillie/cuite à l'eau": { quantite: 100, unite: "g" }
-      },
-      preparation: "Mélanger le boulgour et les fèves."
-    },
-    {
-      nom: "Pâtes aux haricots blancs",
-      type: "diner",
-      ingredients: {
-        "Pâtes sèches standard, cuites, non salées": { quantite: 100, unite: "g" },
-        "Haricot blanc, bouilli/cuit à l'eau": { quantite: 100, unite: "g" }
-      },
-      preparation: "Mélanger les pâtes et les haricots blancs."
-    },
-    {
-      nom: "Riz basmati aux lentilles corail",
-      type: "diner",
-      ingredients: {
-        "Riz basmati, cuit, non salé": { quantite: 100, unite: "g" },
-        "Lentille corail, bouillie/cuite à l'eau": { quantite: 100, unite: "g" }
-      },
-      preparation: "Mélanger le riz basmati et les lentilles corail."
-    }
-  ],
-
-  // ========== DÎNER LÉGER ==========
-  dinerLeger: [
-    {
-      nom: "Porridge d'avoine du soir",
-      type: "diner",
-      ingredients: {
-        "Flocons d'avoine, bouillis/cuits à l'eau": { quantite: 150, unite: "g" }
-      },
-      preparation: "Servir les flocons d'avoine cuits."
-    },
-    {
-      nom: "Lentilles légères",
-      type: "diner",
-      ingredients: {
-        "Lentille corail, bouillie/cuite à l'eau": { quantite: 150, unite: "g" }
-      },
-      preparation: "Servir les lentilles corail cuites."
-    },
-    {
-      nom: "Riz blanc léger",
-      type: "diner",
-      ingredients: {
-        "Riz blanc, cuit, non salé": { quantite: 150, unite: "g" }
-      },
-      preparation: "Servir le riz blanc cuit."
-    },
-    {
-      nom: "Quinoa léger",
-      type: "diner",
-      ingredients: {
-        "Quinoa, bouilli/cuit à l'eau, non salé": { quantite: 150, unite: "g" }
-      },
-      preparation: "Servir le quinoa cuit."
-    }
-  ]
-}
-
-// Fonction pour obtenir toutes les recettes
-export const getToutesLesRecettes = () => {
-  return [
-    ...recettesStrictesDatabase.petitDejeuner,
-    ...recettesStrictesDatabase.legumineuses,
-    ...recettesStrictesDatabase.cereales,
-    ...recettesStrictesDatabase.recettesComposees,
-    ...recettesStrictesDatabase.dinerLeger
-  ]
-}
-
-// Fonction pour obtenir les recettes par type de repas
-export const getRecettesParType = (type) => {
-  const toutesRecettes = getToutesLesRecettes()
-  return toutesRecettes.filter(r => r.type === type)
-}
-
-// Fonction pour obtenir une recette aléatoire
-export const getRecetteAleatoire = (type = null, excludeNames = []) => {
-  let recettes = type ? getRecettesParType(type) : getToutesLesRecettes()
-  
-  // Exclure les recettes déjà utilisées
-  if (excludeNames.length > 0) {
-    recettes = recettes.filter(r => !excludeNames.includes(r.nom))
+// RECETTES PETIT-DÉJEUNER
+export const recettesPetitDejeuner = [
+  {
+    id: 'pd_avocat_toast',
+    nom: 'Tartine d\'avocat',
+    type: 'petit_dejeuner',
+    ingredients: [
+      { nom: 'Avocat, pulpe, cru', quantite: 50, unite: 'g' },
+      { nom: 'Pomme Golden, pulpe et peau, crue', quantite: 100, unite: 'g' }
+    ],
+    preparation: 'Écrasez l\'avocat et étalez-le sur le pain. Ajoutez la pomme en tranches.',
+    tags: ['végétarien', 'rapide', 'santé']
+  },
+  {
+    id: 'pd_fruits_rouges',
+    nom: 'Bol de fruits rouges et pomme',
+    type: 'petit_dejeuner',
+    ingredients: [
+      { nom: 'Fruits rouges, crus (framboises, fraises, groseilles, cassis)', quantite: 100, unite: 'g' },
+      { nom: 'Pomme Golden, pulpe et peau, crue', quantite: 150, unite: 'g' },
+      { nom: 'Raisin noir Muscat, cru', quantite: 50, unite: 'g' }
+    ],
+    preparation: 'Mélangez tous les fruits dans un bol.',
+    tags: ['végétarien', 'léger', 'antioxydants']
+  },
+  {
+    id: 'pd_salade_fruits',
+    nom: 'Salade de fruits mixte',
+    type: 'petit_dejeuner',
+    ingredients: [
+      { nom: 'Pomme Golden, pulpe et peau, crue', quantite: 100, unite: 'g' },
+      { nom: 'Framboise, surgelée, crue', quantite: 50, unite: 'g' },
+      { nom: 'Myrtille, surgelée, crue', quantite: 50, unite: 'g' },
+      { nom: 'Raisin noir Muscat, cru', quantite: 50, unite: 'g' }
+    ],
+    preparation: 'Décongeler les fruits surgelés et mélanger avec les fruits frais.',
+    tags: ['végétarien', 'vitaminé', 'coloré']
   }
-  
-  if (recettes.length === 0) {
-    // Si toutes les recettes ont été utilisées, réinitialiser
-    recettes = type ? getRecettesParType(type) : getToutesLesRecettes()
+];
+
+// RECETTES DÉJEUNER AVEC LÉGUMES
+export const recettesDejeunerLegumes = [
+  {
+    id: 'dej_salade_avocat',
+    nom: 'Grande salade d\'avocat et légumes',
+    type: 'dejeuner',
+    ingredients: [
+      { nom: 'Avocat, pulpe, cru', quantite: 100, unite: 'g' },
+      { nom: 'Carotte, crue', quantite: 80, unite: 'g' },
+      { nom: 'Concombre, pulpe et peau, cru', quantite: 100, unite: 'g' },
+      { nom: 'Laitue, crue', quantite: 50, unite: 'g' },
+      { nom: 'Tomate, séchée, à l\'huile', quantite: 30, unite: 'g' }
+    ],
+    preparation: 'Coupez tous les légumes en dés ou tranches. Mélangez dans un saladier.',
+    tags: ['végétarien', 'complet', 'frais']
+  },
+  {
+    id: 'dej_brocoli_vapeur',
+    nom: 'Brocoli vapeur et pommes de terre',
+    type: 'dejeuner',
+    ingredients: [
+      { nom: 'Brocoli, cuit à la vapeur', quantite: 200, unite: 'g' },
+      { nom: 'Pomme de terre, appertisée, égouttée', quantite: 150, unite: 'g' },
+      { nom: 'Carotte, bouillie/cuite à l\'eau, croquante', quantite: 100, unite: 'g' }
+    ],
+    preparation: 'Réchauffez le brocoli vapeur. Servez avec les pommes de terre et les carottes.',
+    tags: ['végétarien', 'chaud', 'simple']
+  },
+  {
+    id: 'dej_puree_legumes',
+    nom: 'Purée de légumes mélangés',
+    type: 'dejeuner',
+    ingredients: [
+      { nom: 'Légumes (3-4 sortes en mélange), purée', quantite: 200, unite: 'g' },
+      { nom: 'Carotte, purée', quantite: 100, unite: 'g' },
+      { nom: 'Brocoli, purée', quantite: 100, unite: 'g' }
+    ],
+    preparation: 'Réchauffez toutes les purées et mélangez-les ensemble.',
+    tags: ['végétarien', 'onctueux', 'réconfortant']
+  },
+  {
+    id: 'dej_champignons_shiitake',
+    nom: 'Sauté de champignons shiitaké',
+    type: 'dejeuner',
+    ingredients: [
+      { nom: 'Champignon, lentin comestible ou shiitaké, séché', quantite: 30, unite: 'g' },
+      { nom: 'Champignon, tout type, cru', quantite: 150, unite: 'g' },
+      { nom: 'Oignon, cru', quantite: 50, unite: 'g' },
+      { nom: 'Courgette, pulpe et peau, crue', quantite: 100, unite: 'g' }
+    ],
+    preparation: 'Réhydratez les shiitaké. Faites sauter tous les champignons avec l\'oignon et la courgette.',
+    tags: ['végétarien', 'umami', 'protéiné']
   }
-  
-  const randomIndex = Math.floor(Math.random() * recettes.length)
-  return recettes[randomIndex]
-}
+];
+
+// RECETTES DÎNER LÉGER
+export const recettesDinerLeger = [
+  {
+    id: 'din_soupe_legumes',
+    nom: 'Soupe de légumes mixtes',
+    type: 'diner',
+    ingredients: [
+      { nom: 'Carotte, crue', quantite: 100, unite: 'g' },
+      { nom: 'Courgette, pulpe et peau, crue', quantite: 100, unite: 'g' },
+      { nom: 'Céleri branche, cru', quantite: 50, unite: 'g' },
+      { nom: 'Oignon, cru', quantite: 50, unite: 'g' },
+      { nom: 'Tomate, coulis, appertisé (purée de tomates mi-réduite à 11%)', quantite: 50, unite: 'g' }
+    ],
+    preparation: 'Coupez les légumes en morceaux. Faites cuire dans l\'eau bouillante 20 minutes. Mixez.',
+    tags: ['végétarien', 'léger', 'chaud']
+  },
+  {
+    id: 'din_salade_chou',
+    nom: 'Salade de chou rouge et endives',
+    type: 'diner',
+    ingredients: [
+      { nom: 'Chou rouge, cru', quantite: 100, unite: 'g' },
+      { nom: 'Endive, crue', quantite: 100, unite: 'g' },
+      { nom: 'Carotte, crue', quantite: 80, unite: 'g' },
+      { nom: 'Pomme Golden, pulpe et peau, crue', quantite: 50, unite: 'g' }
+    ],
+    preparation: 'Râpez le chou et les carottes. Coupez les endives. Ajoutez la pomme en dés.',
+    tags: ['végétarien', 'croquant', 'frais']
+  },
+  {
+    id: 'din_champignons_light',
+    nom: 'Champignons de Paris légers',
+    type: 'diner',
+    ingredients: [
+      { nom: 'Champignon de Paris ou champignon de couche, surgelé, cru', quantite: 150, unite: 'g' },
+      { nom: 'Champignon, tout type, cru', quantite: 100, unite: 'g' },
+      { nom: 'Fenouil, cru', quantite: 80, unite: 'g' }
+    ],
+    preparation: 'Faites cuire les champignons avec le fenouil émincé.',
+    tags: ['végétarien', 'léger', 'parfumé']
+  },
+  {
+    id: 'din_concombre_fraicheur',
+    nom: 'Concombre et légumes croquants',
+    type: 'diner',
+    ingredients: [
+      { nom: 'Concombre, pulpe et peau, cru', quantite: 200, unite: 'g' },
+      { nom: 'Concombre, pulpe, cru', quantite: 100, unite: 'g' },
+      { nom: 'Roquette, crue', quantite: 50, unite: 'g' },
+      { nom: 'Tomate, séchée', quantite: 20, unite: 'g' }
+    ],
+    preparation: 'Coupez les concombres en rondelles. Ajoutez la roquette et les tomates séchées réhydratées.',
+    tags: ['végétarien', 'très léger', 'hydratant']
+  }
+];
+
+// RECETTES AVANCÉES AVEC POMMES DE TERRE
+export const recettesAvancees = [
+  {
+    id: 'adv_pdt_noisette',
+    nom: 'Pommes de terre noisette et légumes grillés',
+    type: 'dejeuner',
+    ingredients: [
+      { nom: 'Pomme de terre noisette, surgelée, crue', quantite: 150, unite: 'g' },
+      { nom: 'Carotte, crue', quantite: 100, unite: 'g' },
+      { nom: 'Courgette, pulpe et peau, crue', quantite: 100, unite: 'g' },
+      { nom: 'Champignon, tout type, cru', quantite: 80, unite: 'g' }
+    ],
+    preparation: 'Faites cuire les pommes de terre au four. Grillez les légumes.',
+    tags: ['végétarien', 'consistant', 'savoureux']
+  },
+  {
+    id: 'adv_melange_surgeles',
+    nom: 'Mélange de légumes surgelés',
+    type: 'dejeuner',
+    ingredients: [
+      { nom: 'Brocoli, surgelé, cru', quantite: 100, unite: 'g' },
+      { nom: 'Chou de Bruxelles, surgelé, cru', quantite: 100, unite: 'g' },
+      { nom: 'Petits pois et carottes, surgelés, crus', quantite: 100, unite: 'g' },
+      { nom: 'Maïs doux, surgelé, cru', quantite: 50, unite: 'g' }
+    ],
+    preparation: 'Faites cuire tous les légumes surgelés ensemble à la vapeur.',
+    tags: ['végétarien', 'pratique', 'coloré']
+  }
+];
+
+// COMBINER TOUTES LES RECETTES
+export const toutesLesRecettes = [
+  ...recettesPetitDejeuner,
+  ...recettesDejeunerLegumes,
+  ...recettesDinerLeger,
+  ...recettesAvancees
+];
+
+// Ajouter les calculs nutritionnels à chaque recette au chargement
+toutesLesRecettes.forEach(recette => {
+  const nutrition = calculerNutritionRecette(recette.ingredients);
+  recette.nutrition = nutrition;
+});
+
+export default {
+  petitDejeuner: recettesPetitDejeuner,
+  dejeunerLegumes: recettesDejeunerLegumes,
+  dinerLeger: recettesDinerLeger,
+  avancees: recettesAvancees,
+  toutes: toutesLesRecettes
+};

@@ -8,6 +8,79 @@ import { saveMenu } from '../utils/storage'
 import ShoppingList from './ShoppingList'
 import './WeeklyMenu.css'
 
+// Fonction pour transformer le format du menu strict vers le format d'affichage
+function transformerMenuPourAffichage(menuData) {
+  const { menu, metadata } = menuData
+  const jours = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche']
+  
+  const semaine = jours.map((jour, index) => {
+    const jourData = menu[jour]
+    const date = new Date()
+    date.setDate(date.getDate() + index)
+    
+    return {
+      jour,
+      date: date.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }),
+      jeune: false,
+      menu: {
+        petitDejeuner: transformerRepasPourAffichage(jourData.repas.find(r => r.type === 'petit_dejeuner')),
+        dejeuner: transformerRepasPourAffichage(jourData.repas.find(r => r.type === 'dejeuner')),
+        diner: transformerRepasPourAffichage(jourData.repas.find(r => r.type === 'diner'))
+      },
+      totaux: jourData.totaux
+    }
+  })
+  
+  return {
+    semaine,
+    nutritionNeeds: {
+      bmr: metadata.besoins.bmr,
+      tdee: metadata.besoins.tdee,
+      dailyCalories: metadata.besoins.caloriesJournalieres,
+      macros: {
+        proteines: Math.round(metadata.besoins.caloriesJournalieres * 0.25 / 4),
+        lipides: Math.round(metadata.besoins.caloriesJournalieres * 0.30 / 9),
+        glucides: Math.round(metadata.besoins.caloriesJournalieres * 0.45 / 4)
+      },
+      macroRatio: {
+        proteines: 25,
+        lipides: 30,
+        glucides: 45
+      }
+    },
+    conseils: [
+      '🥗 Tous les aliments utilisés proviennent de votre liste autorisée',
+      '💧 N\'oubliez pas de boire 1,5 à 2L d\'eau par jour',
+      '🏃 Combinez votre alimentation avec une activité physique régulière',
+      '😴 Privilégiez un sommeil de qualité (7-8h par nuit)'
+    ],
+    rawMenu: menu, // Garder le menu brut pour les régénérations
+    metadata
+  }
+}
+
+function transformerRepasPourAffichage(repas) {
+  if (!repas) return null
+  
+  const momentLabels = {
+    'petit_dejeuner': '🌅 Petit-déjeuner',
+    'dejeuner': '☀️ Déjeuner',
+    'diner': '🌙 Dîner'
+  }
+  
+  return {
+    nom: repas.nom,
+    moment: momentLabels[repas.type] || repas.type,
+    calories: repas.nutrition.calories,
+    proteines: repas.nutrition.proteines,
+    glucides: repas.nutrition.glucides,
+    lipides: repas.nutrition.lipides,
+    ingredients: repas.ingredients,
+    preparation: repas.preparation,
+    tags: repas.tags || []
+  }
+}
+
 const WeeklyMenu = ({ userProfile, initialMenu = null, onMenuGenerated, onBack }) => {
   const [weeklyMenu, setWeeklyMenu] = useState(initialMenu)
   const [loading, setLoading] = useState(!initialMenu)
@@ -28,21 +101,23 @@ const WeeklyMenu = ({ userProfile, initialMenu = null, onMenuGenerated, onBack }
       try {
         console.log('🎯 Génération du menu avec ALIMENTS AUTORISÉS uniquement...')
         
-        // Utiliser le générateur strict qui utilise uniquement les 18 aliments autorisés
-        const menu = genererMenuHebdomadaire(userProfile)
+        // Utiliser le générateur strict qui utilise uniquement les aliments autorisés de l'Excel
+        const menuData = await genererMenuHebdomadaire(userProfile)
         
-        console.log('📊 [WeeklyMenu] Menu strict généré:', menu)
-        console.log('📊 [WeeklyMenu] Premier jour du menu:', menu.semaine[0])
+        console.log('📊 [WeeklyMenu] Menu strict généré:', menuData)
         
-        setWeeklyMenu(menu)
+        // Transformer le format pour être compatible avec l'interface
+        const formattedMenu = transformerMenuPourAffichage(menuData)
+        
+        setWeeklyMenu(formattedMenu)
         console.log('✅ [WeeklyMenu] Menu sauvegardé')
         
         // Sauvegarder automatiquement
-        saveMenu(menu, userProfile)
+        saveMenu(formattedMenu, userProfile)
         
         // Notifier le parent
         if (onMenuGenerated) {
-          onMenuGenerated(menu)
+          onMenuGenerated(formattedMenu)
         }
         
         setLoading(false)
@@ -75,15 +150,22 @@ const WeeklyMenu = ({ userProfile, initialMenu = null, onMenuGenerated, onBack }
       // Marquer le repas en cours de régénération
       setRegeneratingMeal({ dayIndex, mealType })
       
+      // Obtenir le jour correspondant
+      const jourNames = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche']
+      const jourName = jourNames[dayIndex]
+      
       // Utiliser le générateur strict pour régénérer le repas
-      const menuActuel = weeklyMenu.semaine[dayIndex].menu
-      const newMeal = regenererRepas(mealType, userProfile, menuActuel)
+      const menuActuel = weeklyMenu.rawMenu // Menu brut du générateur
+      const newMeal = await regenererRepas(jourName, mealType, menuActuel, userProfile)
       
       console.log('✅ Nouveau repas généré:', newMeal)
       
+      // Transformer le repas pour l'affichage
+      const formattedMeal = transformerRepasPourAffichage(newMeal)
+      
       // Mettre à jour le menu
       const updatedMenu = { ...weeklyMenu }
-      updatedMenu.semaine[dayIndex].menu[mealType] = newMeal
+      updatedMenu.semaine[dayIndex].menu[mealType] = formattedMeal
       
       setWeeklyMenu(updatedMenu)
       saveMenu(updatedMenu, userProfile)

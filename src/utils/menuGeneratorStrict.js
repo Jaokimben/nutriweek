@@ -1,316 +1,230 @@
 /**
- * Générateur de menus utilisant UNIQUEMENT les aliments autorisés
+ * GÉNÉRATEUR DE MENUS STRICT
+ * 
+ * Génère des menus uniquement avec les aliments autorisés
+ * Calculs caloriques précis basés sur les données Excel
  */
 
-import { recettesStrictesDatabase, getRecetteAleatoire, getRecettesParType } from '../data/recettes_strictes.js'
-import { calculerNutritionRecette, calculerBesoinsRepas } from './nutritionStricte.js'
+import recettesDatabase from '../data/recettes_strictes.js';
+
+const JOURS_SEMAINE = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
 
 /**
- * Génère un menu pour une journée
+ * Calcule le métabolisme de base (BMR)
  */
-export const genererMenuJour = (profile, nutritionNeeds) => {
-  const { objectif, capaciteDigestive = [] } = profile
+function calculerBMR(profil) {
+  const { poids, taille, age, sexe } = profil;
   
-  // Petit-déjeuner
-  const petitDejeuner = getRecetteAleatoire('dejeuner', [])
-  const nutritionPetitDej = calculerNutritionRecette(petitDejeuner.ingredients)
-  
-  // Déjeuner - toujours un repas complet
-  const dejeuner = choisirRecetteDejeuner([petitDejeuner.nom])
-  const nutritionDejeuner = calculerNutritionRecette(dejeuner.ingredients)
-  
-  // Dîner - adapté selon capacité digestive
-  let diner = null
-  let nutritionDiner = null
-  
-  const besoinDiner = capaciteDigestive.includes('Digestion lente le soir')
-  
-  if (besoinDiner) {
-    // Choisir un dîner léger
-    diner = choisirRecetteDinerLeger([petitDejeuner.nom, dejeuner.nom])
+  if (sexe === 'homme') {
+    return 88.362 + (13.397 * poids) + (4.799 * taille) - (5.677 * age);
   } else {
-    // Dîner normal
-    diner = choisirRecetteDiner([petitDejeuner.nom, dejeuner.nom])
+    return 447.593 + (9.247 * poids) + (3.098 * taille) - (4.330 * age);
+  }
+}
+
+/**
+ * Calcule les besoins caloriques totaux (TDEE)
+ */
+function calculerTDEE(bmr, niveauActivite) {
+  const facteurs = {
+    sedentaire: 1.2,
+    leger: 1.375,
+    modere: 1.55,
+    actif: 1.725,
+    tres_actif: 1.9
+  };
+  
+  return bmr * (facteurs[niveauActivite] || 1.2);
+}
+
+/**
+ * Ajuste les calories selon l'objectif
+ */
+function ajusterCaloriesObjectif(tdee, objectif) {
+  switch(objectif) {
+    case 'perte':
+      return tdee - 500; // Déficit de 500 kcal/jour
+    case 'prise':
+      return tdee + 300; // Excédent de 300 kcal/jour
+    case 'maintien':
+    default:
+      return tdee;
+  }
+}
+
+/**
+ * Sélectionne une recette aléatoire d'une liste
+ */
+function choisirRecetteAleatoire(recettes, recettesDejaChoisies = []) {
+  const recettesFiltrees = recettes.filter(r => !recettesDejaChoisies.includes(r.id));
+  
+  if (recettesFiltrees.length === 0) {
+    // Si toutes les recettes ont été choisies, on réinitialise
+    return recettes[Math.floor(Math.random() * recettes.length)];
   }
   
-  nutritionDiner = calculerNutritionRecette(diner.ingredients)
+  return recettesFiltrees[Math.floor(Math.random() * recettesFiltrees.length)];
+}
+
+/**
+ * Génère un repas
+ */
+function genererRepas(type, caloriesCible, recettesDejaUtilisees = []) {
+  let recettes;
+  
+  switch(type) {
+    case 'petit_dejeuner':
+      recettes = recettesDatabase.petitDejeuner;
+      break;
+    case 'dejeuner':
+      recettes = [...recettesDatabase.dejeunerLegumes, ...recettesDatabase.avancees];
+      break;
+    case 'diner':
+      recettes = recettesDatabase.dinerLeger;
+      break;
+    default:
+      recettes = recettesDatabase.toutes;
+  }
+
+  const recette = choisirRecetteAleatoire(recettes, recettesDejaUtilisees);
+  
+  return {
+    id: `${type}_${Date.now()}_${Math.random().toString(36).substring(7)}`,
+    type,
+    nom: recette.nom,
+    recette: recette.id,
+    ingredients: recette.ingredients,
+    preparation: recette.preparation,
+    tags: recette.tags,
+    nutrition: recette.nutrition
+  };
+}
+
+/**
+ * Génère un menu pour un jour
+ */
+function genererMenuJour(caloriesJournalieres, jeuneIntermittent, recettesUtilisees) {
+  const repas = [];
+  let caloriesDistribuees = {
+    petit_dejeuner: 0,
+    dejeuner: 0,
+    diner: 0
+  };
+
+  if (jeuneIntermittent) {
+    // 16:8 - Pas de petit-déjeuner
+    caloriesDistribuees.dejeuner = caloriesJournalieres * 0.6; // 60% au déjeuner
+    caloriesDistribuees.diner = caloriesJournalieres * 0.4;     // 40% au dîner
+  } else {
+    // Distribution classique
+    caloriesDistribuees.petit_dejeuner = caloriesJournalieres * 0.25; // 25%
+    caloriesDistribuees.dejeuner = caloriesJournalieres * 0.45;       // 45%
+    caloriesDistribuees.diner = caloriesJournalieres * 0.30;          // 30%
+  }
+
+  // Générer les repas
+  if (!jeuneIntermittent) {
+    const petitDej = genererRepas('petit_dejeuner', caloriesDistribuees.petit_dejeuner, recettesUtilisees);
+    repas.push(petitDej);
+    recettesUtilisees.push(petitDej.recette);
+  }
+
+  const dejeuner = genererRepas('dejeuner', caloriesDistribuees.dejeuner, recettesUtilisees);
+  repas.push(dejeuner);
+  recettesUtilisees.push(dejeuner.recette);
+
+  const diner = genererRepas('diner', caloriesDistribuees.diner, recettesUtilisees);
+  repas.push(diner);
+  recettesUtilisees.push(diner.recette);
+
+  // Calculer les totaux du jour
+  const caloriesTotal = repas.reduce((sum, r) => sum + r.nutrition.calories, 0);
+  const proteinesTotal = repas.reduce((sum, r) => sum + r.nutrition.proteines, 0);
+  const glucidesTotal = repas.reduce((sum, r) => sum + r.nutrition.glucides, 0);
+  const lipidesTotal = repas.reduce((sum, r) => sum + r.nutrition.lipides, 0);
 
   return {
-    petitDejeuner: {
-      ...petitDejeuner,
-      ...nutritionPetitDej
-    },
-    dejeuner: {
-      ...dejeuner,
-      ...nutritionDejeuner
-    },
-    diner: {
-      ...diner,
-      ...nutritionDiner
+    repas,
+    totaux: {
+      calories: Math.round(caloriesTotal),
+      proteines: Math.round(proteinesTotal * 10) / 10,
+      glucides: Math.round(glucidesTotal * 10) / 10,
+      lipides: Math.round(lipidesTotal * 10) / 10
     }
-  }
-}
-
-/**
- * Choisit une recette pour le déjeuner
- */
-const choisirRecetteDejeuner = (excludeNames = []) => {
-  // Alterner entre légumineuses, céréales et recettes composées
-  const rand = Math.random()
-  
-  if (rand < 0.4) {
-    // 40% légumineuses
-    const recettes = recettesStrictesDatabase.legumineuses.filter(
-      r => !excludeNames.includes(r.nom)
-    )
-    return recettes[Math.floor(Math.random() * recettes.length)]
-  } else if (rand < 0.7) {
-    // 30% céréales
-    const recettes = recettesStrictesDatabase.cereales.filter(
-      r => !excludeNames.includes(r.nom)
-    )
-    return recettes[Math.floor(Math.random() * recettes.length)]
-  } else {
-    // 30% recettes composées
-    const recettes = recettesStrictesDatabase.recettesComposees.filter(
-      r => !excludeNames.includes(r.nom)
-    )
-    return recettes[Math.floor(Math.random() * recettes.length)]
-  }
-}
-
-/**
- * Choisit une recette pour le dîner
- */
-const choisirRecetteDiner = (excludeNames = []) => {
-  // Mélange de toutes les catégories sauf petit-déjeuner
-  const toutesRecettes = [
-    ...recettesStrictesDatabase.legumineuses,
-    ...recettesStrictesDatabase.cereales,
-    ...recettesStrictesDatabase.recettesComposees
-  ].filter(r => !excludeNames.includes(r.nom))
-  
-  return toutesRecettes[Math.floor(Math.random() * toutesRecettes.length)]
-}
-
-/**
- * Choisit une recette légère pour le dîner
- */
-const choisirRecetteDinerLeger = (excludeNames = []) => {
-  const recettes = recettesStrictesDatabase.dinerLeger.filter(
-    r => !excludeNames.includes(r.nom)
-  )
-  
-  if (recettes.length === 0) {
-    // Fallback sur une recette normale
-    return choisirRecetteDiner(excludeNames)
-  }
-  
-  return recettes[Math.floor(Math.random() * recettes.length)]
+  };
 }
 
 /**
  * Génère un menu hebdomadaire complet
  */
-export const genererMenuHebdomadaire = (profile) => {
-  const { objectif, taille, poids, age, genre, activitePhysique } = profile
-  
+export async function genererMenuHebdomadaire(profil) {
+  console.log('🍽️ Génération du menu STRICT avec aliments autorisés...');
+  console.log('📋 Profil reçu:', profil);
+
   // Calculer les besoins caloriques
-  const besoinsNutritionnels = calculerBesoinsNutritionnels(profile)
-  
-  const semaine = []
-  const nomsUtilises = []
-  
-  // Jours de la semaine
-  const jours = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche']
-  
-  for (let i = 0; i < 7; i++) {
-    const jour = jours[i]
-    
-    // Jeûne intermittent pour objectif perte
-    const estJourJeune = objectif === 'perte' && [0, 2, 4, 5].includes(i)
-    
-    if (estJourJeune) {
-      // Jour de jeûne : seulement petit-déjeuner et déjeuner
-      const petitDejeuner = getRecetteAleatoire('dejeuner', nomsUtilises)
-      const nutritionPetitDej = calculerNutritionRecette(petitDejeuner.ingredients)
-      
-      const dejeuner = choisirRecetteDejeuner([...nomsUtilises, petitDejeuner.nom])
-      const nutritionDejeuner = calculerNutritionRecette(dejeuner.ingredients)
-      
-      nomsUtilises.push(petitDejeuner.nom, dejeuner.nom)
-      
-      semaine.push({
-        jour,
-        menu: {
-          petitDejeuner: {
-            ...petitDejeuner,
-            calories: nutritionPetitDej.calories,
-            proteines: nutritionPetitDej.proteines,
-            glucides: nutritionPetitDej.glucides,
-            lipides: nutritionPetitDej.lipides
-          },
-          dejeuner: {
-            ...dejeuner,
-            calories: nutritionDejeuner.calories,
-            proteines: nutritionDejeuner.proteines,
-            glucides: nutritionDejeuner.glucides,
-            lipides: nutritionDejeuner.lipides
-          },
-          diner: null
-        },
-        note: '🌙 Jeûne intermittent - Pas de dîner'
-      })
-    } else {
-      // Jour normal avec 3 repas
-      const menuJour = genererMenuJour(profile, besoinsNutritionnels)
-      
-      nomsUtilises.push(
-        menuJour.petitDejeuner.nom,
-        menuJour.dejeuner.nom,
-        menuJour.diner.nom
-      )
-      
-      semaine.push({
-        jour,
-        menu: menuJour
-      })
+  const bmr = calculerBMR(profil);
+  const tdee = calculerTDEE(bmr, profil.niveauActivite || 'modere');
+  const caloriesJournalieres = ajusterCaloriesObjectif(tdee, profil.objectif);
+
+  console.log(`📊 BMR: ${Math.round(bmr)} kcal`);
+  console.log(`📊 TDEE: ${Math.round(tdee)} kcal`);
+  console.log(`🎯 Calories journalières cibles: ${Math.round(caloriesJournalieres)} kcal`);
+
+  const menuHebdomadaire = {};
+  const recettesUtilisees = []; // Pour éviter les répétitions dans la semaine
+
+  // Générer un menu pour chaque jour
+  JOURS_SEMAINE.forEach(jour => {
+    menuHebdomadaire[jour] = genererMenuJour(
+      caloriesJournalieres,
+      profil.jeuneIntermittent || false,
+      recettesUtilisees
+    );
+  });
+
+  // Calculer les moyennes hebdomadaires
+  const caloriesSemaine = Object.values(menuHebdomadaire).map(j => j.totaux.calories);
+  const moyenneCalories = Math.round(caloriesSemaine.reduce((a, b) => a + b, 0) / 7);
+
+  return {
+    menu: menuHebdomadaire,
+    metadata: {
+      profil: {
+        objectif: profil.objectif,
+        jeuneIntermittent: profil.jeuneIntermittent || false,
+        allergies: profil.allergies || [],
+        preferences: profil.preferences || []
+      },
+      besoins: {
+        bmr: Math.round(bmr),
+        tdee: Math.round(tdee),
+        caloriesJournalieres: Math.round(caloriesJournalieres),
+        moyenneRéelle: moyenneCalories
+      },
+      dateGeneration: new Date().toISOString(),
+      systeme: 'strict',
+      alimentsUtilises: 'Excel autorisé uniquement'
     }
-  }
-  
-  return {
-    semaine,
-    nutritionNeeds: besoinsNutritionnels,
-    conseils: genererConseils(profile)
-  }
+  };
 }
 
 /**
- * Calcule les besoins nutritionnels
+ * Régénère un repas spécifique
  */
-const calculerBesoinsNutritionnels = (profile) => {
-  const { taille, poids, age, genre, activitePhysique, objectif } = profile
-  
-  // Calcul du métabolisme de base (formule de Harris-Benedict)
-  let bmr
-  if (genre === 'homme') {
-    bmr = 88.362 + (13.397 * poids) + (4.799 * taille) - (5.677 * age)
-  } else {
-    bmr = 447.593 + (9.247 * poids) + (3.098 * taille) - (4.330 * age)
-  }
-  
-  // Facteur d'activité
-  const facteursActivite = {
-    'sedentaire': 1.2,
-    'legere': 1.375,
-    'moderee': 1.55,
-    'intense': 1.725,
-    'tres_intense': 1.9
-  }
-  
-  const facteurActivite = facteursActivite[activitePhysique] || 1.55
-  
-  // TDEE (Total Daily Energy Expenditure)
-  let tdee = bmr * facteurActivite
-  
-  // Ajustement selon l'objectif
-  if (objectif === 'perte') {
-    tdee *= 0.8 // Déficit de 20%
-  } else if (objectif === 'prise de masse') {
-    tdee *= 1.1 // Surplus de 10%
-  }
-  
-  // Répartition des macronutriments
-  const proteines = (tdee * 0.25) / 4 // 25% des calories, 4kcal/g
-  const lipides = (tdee * 0.30) / 9   // 30% des calories, 9kcal/g
-  const glucides = (tdee * 0.45) / 4  // 45% des calories, 4kcal/g
-  
-  return {
-    calories: Math.round(tdee),
-    proteines: Math.round(proteines),
-    glucides: Math.round(glucides),
-    lipides: Math.round(lipides),
-    bmr: Math.round(bmr),
-    tdee: Math.round(tdee)
-  }
-}
+export async function regenererRepas(jour, typeRepas, menuActuel, profil) {
+  console.log(`🔄 Régénération du ${typeRepas} pour ${jour}`);
 
-/**
- * Génère des conseils personnalisés
- */
-const genererConseils = (profile) => {
-  const conseils = []
-  
-  if (profile.objectif === 'perte') {
-    conseils.push('🏃 Privilégiez les légumineuses riches en fibres')
-    conseils.push('💧 Buvez au moins 2L d\'eau par jour')
-    conseils.push('🌙 Respectez le jeûne intermittent les jours indiqués')
-  }
-  
-  if (profile.objectif === 'confort digestif') {
-    conseils.push('🌿 Les lentilles corail sont plus digestes')
-    conseils.push('🍚 Préférez le riz blanc au riz complet le soir')
-    conseils.push('⏰ Dînez 2-3h avant le coucher')
-  }
-  
-  if (profile.capaciteDigestive?.includes('Digestion lente le soir')) {
-    conseils.push('🌙 Vos dîners sont adaptés pour une digestion facile')
-    conseils.push('🥣 Les flocons d\'avoine du soir sont une excellente option')
-  }
-  
-  conseils.push('✅ Tous vos repas utilisent uniquement des aliments autorisés')
-  conseils.push('📊 Les valeurs nutritionnelles sont calculées précisément')
-  
-  return conseils
-}
+  const caloriesCible = menuActuel[jour].totaux.calories / menuActuel[jour].repas.length;
+  const recettesDejaUtilisees = Object.values(menuActuel)
+    .flatMap(j => j.repas)
+    .map(r => r.recette);
 
-/**
- * Régénère un repas unique
- */
-export const regenererRepas = (typeRepas, profile, menuActuel) => {
-  // Collecter les noms déjà utilisés dans le menu actuel
-  const nomsUtilises = []
-  
-  if (menuActuel.petitDejeuner) nomsUtilises.push(menuActuel.petitDejeuner.nom)
-  if (menuActuel.dejeuner) nomsUtilises.push(menuActuel.dejeuner.nom)
-  if (menuActuel.diner) nomsUtilises.push(menuActuel.diner.nom)
-  
-  let nouvelleRecette
-  
-  switch (typeRepas) {
-    case 'petitDejeuner':
-      nouvelleRecette = getRecetteAleatoire('dejeuner', nomsUtilises)
-      break
-      
-    case 'dejeuner':
-      nouvelleRecette = choisirRecetteDejeuner(nomsUtilises)
-      break
-      
-    case 'diner':
-      if (profile.capaciteDigestive?.includes('Digestion lente le soir')) {
-        nouvelleRecette = choisirRecetteDinerLeger(nomsUtilises)
-      } else {
-        nouvelleRecette = choisirRecetteDiner(nomsUtilises)
-      }
-      break
-      
-    default:
-      nouvelleRecette = getRecetteAleatoire('diner', nomsUtilises)
-  }
-  
-  const nutrition = calculerNutritionRecette(nouvelleRecette.ingredients)
-  
-  return {
-    ...nouvelleRecette,
-    calories: nutrition.calories,
-    proteines: nutrition.proteines,
-    glucides: nutrition.glucides,
-    lipides: nutrition.lipides
-  }
+  const nouveauRepas = genererRepas(typeRepas, caloriesCible, recettesDejaUtilisees);
+
+  return nouveauRepas;
 }
 
 export default {
-  genererMenuJour,
   genererMenuHebdomadaire,
   regenererRepas
-}
+};

@@ -1,234 +1,226 @@
 /**
- * Calcul nutritionnel basé UNIQUEMENT sur les aliments autorisés
- * Utilise les données nutritionnelles exactes du fichier Excel
+ * CALCULATEUR DE NUTRITION STRICTE
+ * 
+ * Utilise UNIQUEMENT les aliments du fichier JSON autorisé
+ * Calculs précis basés sur les données Excel fournies
  */
 
-import alimentsAutorisesData from '../data/aliments_autorises.json'
+import alimentsAutorises from '../data/aliments_autorises.json';
 
-// Créer un index pour un accès rapide
-const alimentsIndex = {}
-alimentsAutorisesData.forEach(aliment => {
-  // Normaliser le nom pour la recherche
-  const nomNormalise = aliment.nom.toLowerCase()
+// Créer un index pour une recherche rapide (insensible à la casse et aux accents)
+const normalizeString = (str) => {
+  return str
+    .toLowerCase()
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '') // Supprimer les accents
-    .trim()
-  
-  alimentsIndex[nomNormalise] = aliment
-  // Aussi indexer par le nom original
-  alimentsIndex[aliment.nom] = aliment
-})
+    .replace(/[\u0300-\u036f]/g, '') // Enlever les accents
+    .trim();
+};
+
+const alimentsIndex = {};
+alimentsAutorises.forEach(aliment => {
+  const key = normalizeString(aliment.nom);
+  alimentsIndex[key] = aliment;
+});
 
 /**
- * Trouve un aliment dans la base de données
+ * Recherche un aliment dans la base de données autorisée
+ * @param {string} nomAliment - Nom de l'aliment à rechercher
+ * @returns {object|null} L'aliment trouvé ou null
  */
-export const trouverAliment = (nomAliment) => {
-  // Recherche exacte d'abord
-  if (alimentsIndex[nomAliment]) {
-    return alimentsIndex[nomAliment]
+export function chercherAliment(nomAliment) {
+  const key = normalizeString(nomAliment);
+  const aliment = alimentsIndex[key];
+  
+  if (!aliment) {
+    console.warn(`⚠️ Aliment non trouvé dans la base autorisée: "${nomAliment}"`);
+    return null;
   }
   
-  // Recherche normalisée
-  const nomNormalise = nomAliment.toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .trim()
-  
-  if (alimentsIndex[nomNormalise]) {
-    return alimentsIndex[nomNormalise]
-  }
-  
-  // Recherche partielle
-  const cle = Object.keys(alimentsIndex).find(k => 
-    k.includes(nomNormalise) || nomNormalise.includes(k)
-  )
-  
-  if (cle) {
-    return alimentsIndex[cle]
-  }
-  
-  return null
+  return aliment;
 }
 
 /**
- * Calcule les valeurs nutritionnelles d'une recette
+ * Convertit les quantités en grammes
+ * @param {number} quantite - Quantité de l'ingrédient
+ * @param {string} unite - Unité de mesure
+ * @returns {number} Quantité en grammes
  */
-export const calculerNutritionRecette = (ingredients) => {
-  let calories = 0
-  let proteines = 0
-  let glucides = 0
-  let lipides = 0
-  let alimentsNonTrouves = []
+function convertirEnGrammes(quantite, unite) {
+  const conversions = {
+    'g': 1,
+    'kg': 1000,
+    'mg': 0.001,
+    'ml': 1, // Approximation : 1ml = 1g pour les liquides
+    'l': 1000,
+    'cl': 10,
+    'cuillère à soupe': 15,
+    'cuillère à café': 5,
+    'c.s.': 15,
+    'c.c.': 5,
+    'tasse': 240,
+    'verre': 200,
+  };
 
-  for (const [nomIngredient, details] of Object.entries(ingredients)) {
-    const aliment = trouverAliment(nomIngredient)
+  const uniteNormalisee = unite.toLowerCase().trim();
+  const facteur = conversions[uniteNormalisee] || 1;
+  
+  return quantite * facteur;
+}
+
+/**
+ * Calcule la nutrition pour un ingrédient
+ * @param {object} ingredient - { nom, quantite, unite }
+ * @returns {object} Valeurs nutritionnelles
+ */
+export function calculerNutritionIngredient(ingredient) {
+  const aliment = chercherAliment(ingredient.nom);
+  
+  if (!aliment) {
+    return {
+      calories: 0,
+      proteines: 0,
+      glucides: 0,
+      lipides: 0,
+      sucres: 0,
+      magnesium: 0,
+      valide: false,
+      nom: ingredient.nom
+    };
+  }
+
+  const quantiteEnGrammes = convertirEnGrammes(ingredient.quantite, ingredient.unite);
+  const facteur = quantiteEnGrammes / 100; // Les valeurs sont pour 100g
+
+  return {
+    calories: (aliment.energie * facteur) || 0,
+    proteines: (aliment.proteines * facteur) || 0,
+    glucides: (aliment.glucides * facteur) || 0,
+    lipides: (aliment.lipides * facteur) || 0,
+    sucres: (aliment.sucres * facteur) || 0,
+    magnesium: (aliment.magnesium * facteur) || 0,
+    valide: true,
+    nom: ingredient.nom,
+    quantite: quantiteEnGrammes
+  };
+}
+
+/**
+ * Calcule la nutrition totale pour une recette
+ * @param {array} ingredients - Liste d'ingrédients { nom, quantite, unite }
+ * @returns {object} Valeurs nutritionnelles totales
+ */
+export function calculerNutritionRecette(ingredients) {
+  const total = {
+    calories: 0,
+    proteines: 0,
+    glucides: 0,
+    lipides: 0,
+    sucres: 0,
+    magnesium: 0,
+    ingredientsValides: 0,
+    ingredientsTotal: ingredients.length
+  };
+
+  const details = [];
+
+  ingredients.forEach(ingredient => {
+    const nutrition = calculerNutritionIngredient(ingredient);
     
-    if (!aliment) {
-      console.warn(`⚠️ Aliment non trouvé: ${nomIngredient}`)
-      alimentsNonTrouves.push(nomIngredient)
-      continue
+    total.calories += nutrition.calories;
+    total.proteines += nutrition.proteines;
+    total.glucides += nutrition.glucides;
+    total.lipides += nutrition.lipides;
+    total.sucres += nutrition.sucres;
+    total.magnesium += nutrition.magnesium;
+    
+    if (nutrition.valide) {
+      total.ingredientsValides++;
     }
+    
+    details.push({
+      nom: ingredient.nom,
+      quantite: ingredient.quantite,
+      unite: ingredient.unite,
+      ...nutrition
+    });
+  });
 
-    const quantiteGrammes = convertirEnGrammes(details.quantite, details.unite)
-    const facteur = quantiteGrammes / 100 // Valeurs pour 100g
-
-    calories += (aliment.energie || 0) * facteur
-    proteines += (aliment.proteines || 0) * facteur
-    glucides += (aliment.glucides || 0) * facteur
-    lipides += (aliment.lipides || 0) * facteur
-
-    console.log(`✅ ${nomIngredient}: ${quantiteGrammes}g = ${(aliment.energie * facteur).toFixed(1)}kcal`)
-  }
-
-  if (alimentsNonTrouves.length > 0) {
-    console.error(`❌ Aliments non trouvés: ${alimentsNonTrouves.join(', ')}`)
-  }
+  // Arrondir les valeurs
+  total.calories = Math.round(total.calories);
+  total.proteines = Math.round(total.proteines * 10) / 10;
+  total.glucides = Math.round(total.glucides * 10) / 10;
+  total.lipides = Math.round(total.lipides * 10) / 10;
+  total.sucres = Math.round(total.sucres * 10) / 10;
+  total.magnesium = Math.round(total.magnesium * 10) / 10;
 
   return {
-    calories: Math.round(calories),
-    proteines: Math.round(proteines * 10) / 10,
-    glucides: Math.round(glucides * 10) / 10,
-    lipides: Math.round(lipides * 10) / 10,
-    alimentsNonTrouves
-  }
-}
-
-/**
- * Convertit une quantité en grammes
- */
-const convertirEnGrammes = (quantite, unite) => {
-  const uniteNormalisee = unite.toLowerCase()
-  
-  switch (uniteNormalisee) {
-    case 'g':
-    case 'grammes':
-      return quantite
-    
-    case 'kg':
-    case 'kilogrammes':
-      return quantite * 1000
-    
-    case 'ml':
-    case 'millilitres':
-      return quantite // Approximation 1ml = 1g pour la plupart des aliments
-    
-    case 'l':
-    case 'litres':
-      return quantite * 1000
-    
-    case 'cuillère à soupe':
-    case 'c. à soupe':
-    case 'cs':
-      return quantite * 15
-    
-    case 'cuillère à café':
-    case 'c. à café':
-    case 'cc':
-      return quantite * 5
-    
-    case 'tasse':
-      return quantite * 240
-    
-    case 'portion':
-      return quantite * 100
-    
-    default:
-      console.warn(`⚠️ Unité non reconnue: ${unite}, utilisation de ${quantite}g`)
-      return quantite
-  }
-}
-
-/**
- * Vérifie si un aliment est autorisé
- */
-export const estAlimentAutorise = (nomAliment) => {
-  return trouverAliment(nomAliment) !== null
-}
-
-/**
- * Obtient la liste de tous les aliments autorisés
- */
-export const getAlimentsAutorises = () => {
-  return alimentsAutorisesData
-}
-
-/**
- * Obtient les informations nutritionnelles d'un aliment
- */
-export const getInfoNutritionnelles = (nomAliment) => {
-  return trouverAliment(nomAliment)
-}
-
-/**
- * Calcule les besoins nutritionnels pour un repas
- * basé sur l'objectif calorique total et la répartition
- */
-export const calculerBesoinsRepas = (caloriesJournalieres, typeRepas) => {
-  // Répartition standard
-  const repartition = {
-    'dejeuner': 0.25,  // 25% petit-déjeuner
-    'diner': 0.40,     // 40% déjeuner
-    'gouter': 0.35     // 35% dîner
-  }
-
-  const caloriesRepas = caloriesJournalieres * (repartition[typeRepas] || 0.33)
-  
-  // Répartition des macros (approximation)
-  const proteines = (caloriesRepas * 0.20) / 4  // 20% des calories, 4kcal/g
-  const lipides = (caloriesRepas * 0.30) / 9    // 30% des calories, 9kcal/g
-  const glucides = (caloriesRepas * 0.50) / 4   // 50% des calories, 4kcal/g
-
-  return {
-    calories: Math.round(caloriesRepas),
-    proteines: Math.round(proteines * 10) / 10,
-    glucides: Math.round(glucides * 10) / 10,
-    lipides: Math.round(lipides * 10) / 10
-  }
+    ...total,
+    details,
+    valide: total.ingredientsValides === total.ingredientsTotal
+  };
 }
 
 /**
  * Valide qu'une recette utilise uniquement des aliments autorisés
+ * @param {array} ingredients - Liste d'ingrédients
+ * @returns {object} Résultat de la validation
  */
-export const validerRecette = (recette) => {
-  const errors = []
-  const warnings = []
+export function validerRecette(ingredients) {
+  const errors = [];
+  const warnings = [];
 
-  if (!recette.ingredients || Object.keys(recette.ingredients).length === 0) {
-    errors.push("La recette n'a pas d'ingrédients")
-    return { valide: false, errors, warnings }
-  }
-
-  for (const nomIngredient of Object.keys(recette.ingredients)) {
-    if (!estAlimentAutorise(nomIngredient)) {
-      errors.push(`Aliment non autorisé: ${nomIngredient}`)
+  ingredients.forEach(ingredient => {
+    const aliment = chercherAliment(ingredient.nom);
+    
+    if (!aliment) {
+      errors.push(`Aliment non autorisé: "${ingredient.nom}"`);
+    } else if (aliment.energie === 0) {
+      warnings.push(`Aliment avec 0 kcal: "${ingredient.nom}" - vérifier les données`);
     }
-  }
-
-  // Calculer la nutrition
-  const nutrition = calculerNutritionRecette(recette.ingredients)
-  
-  if (nutrition.alimentsNonTrouves.length > 0) {
-    warnings.push(`Aliments non trouvés: ${nutrition.alimentsNonTrouves.join(', ')}`)
-  }
-
-  if (nutrition.calories === 0) {
-    warnings.push("La recette a 0 calories, vérifier les ingrédients")
-  }
+  });
 
   return {
     valide: errors.length === 0,
     errors,
     warnings,
-    nutrition
-  }
+    total: ingredients.length,
+    valides: ingredients.length - errors.length
+  };
+}
+
+/**
+ * Liste tous les aliments autorisés
+ * @returns {array} Liste des aliments
+ */
+export function listerAlimentsAutorises() {
+  return alimentsAutorises.map(a => ({
+    nom: a.nom,
+    energie: a.energie,
+    proteines: a.proteines,
+    glucides: a.glucides,
+    lipides: a.lipides
+  })).sort((a, b) => a.nom.localeCompare(b.nom));
+}
+
+/**
+ * Recherche des aliments par catégorie
+ * @param {string} motCle - Mot-clé pour filtrer
+ * @returns {array} Aliments correspondants
+ */
+export function rechercherAlimentsParMotCle(motCle) {
+  const motCleNormalise = normalizeString(motCle);
+  
+  return alimentsAutorises.filter(aliment => {
+    const nomNormalise = normalizeString(aliment.nom);
+    return nomNormalise.includes(motCleNormalise);
+  });
 }
 
 export default {
-  trouverAliment,
+  chercherAliment,
+  calculerNutritionIngredient,
   calculerNutritionRecette,
-  estAlimentAutorise,
-  getAlimentsAutorises,
-  getInfoNutritionnelles,
-  calculerBesoinsRepas,
-  validerRecette
-}
+  validerRecette,
+  listerAlimentsAutorises,
+  rechercherAlimentsParMotCle
+};
