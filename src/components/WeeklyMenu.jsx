@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { generateWeeklyMenu, regenerateSingleMeal } from '../utils/menuGenerator'
+import { genererMenuHebdomadaire, regenererRepas } from '../utils/menuGeneratorStrict'
 import { calculateIMC, calculateCalories } from '../utils/nutritionCalculator'
 import { loadCIQUAL } from '../utils/ciqualParser'
 import { loadAlimentsSimple } from '../utils/alimentsSimpleParser'
@@ -22,33 +23,19 @@ const WeeklyMenu = ({ userProfile, initialMenu = null, onMenuGenerated, onBack }
       return
     }
 
-    // Charger la base simplifiée (prioritaire) et CIQUAL (backup)
+    // Générer le menu avec le système strict (aliments autorisés uniquement)
     const loadAndGenerateMenu = async () => {
       try {
-        console.log('🔍 Chargement des bases nutritionnelles...')
+        console.log('🎯 Génération du menu avec ALIMENTS AUTORISÉS uniquement...')
         
-        // Charger la base simplifiée en priorité
-        const alimentsSimpleData = await loadAlimentsSimple()
-        console.log(`✅ Base simplifiée: ${alimentsSimpleData?.length || 0} aliments`)
-        setAlimentsSimple(alimentsSimpleData)
+        // Utiliser le générateur strict qui utilise uniquement les 18 aliments autorisés
+        const menu = genererMenuHebdomadaire(userProfile)
         
-        // Charger CIQUAL en backup
-        let ciqualDataLoaded = null
-        try {
-          ciqualDataLoaded = await loadCIQUAL()
-          console.log(`✅ CIQUAL (backup): ${Object.keys(ciqualDataLoaded || {}).length} aliments`)
-          setCiqualData(ciqualDataLoaded)
-        } catch (e) {
-          console.warn('⚠️ CIQUAL non disponible, utilisation uniquement base simplifiée')
-        }
-        
-        // Générer le menu avec la base simplifiée en priorité
-        console.log('🎯 [WeeklyMenu] Appel generateWeeklyMenu...')
-        const menu = await generateWeeklyMenu(userProfile, alimentsSimpleData, ciqualDataLoaded)
-        console.log('📊 [WeeklyMenu] Menu généré reçu:', menu)
+        console.log('📊 [WeeklyMenu] Menu strict généré:', menu)
         console.log('📊 [WeeklyMenu] Premier jour du menu:', menu.semaine[0])
+        
         setWeeklyMenu(menu)
-        console.log('✅ [WeeklyMenu] setWeeklyMenu appelé')
+        console.log('✅ [WeeklyMenu] Menu sauvegardé')
         
         // Sauvegarder automatiquement
         saveMenu(menu, userProfile)
@@ -60,11 +47,7 @@ const WeeklyMenu = ({ userProfile, initialMenu = null, onMenuGenerated, onBack }
         
         setLoading(false)
       } catch (error) {
-        console.error('❌ Erreur lors du chargement:', error)
-        // Générer quand même le menu sans bases
-        const menu = await generateWeeklyMenu(userProfile, null, null)
-        setWeeklyMenu(menu)
-        saveMenu(menu, userProfile)
+        console.error('❌ Erreur lors de la génération du menu strict:', error)
         setLoading(false)
       }
     }
@@ -87,31 +70,16 @@ const WeeklyMenu = ({ userProfile, initialMenu = null, onMenuGenerated, onBack }
   // Handler pour régénérer un repas
   const handleRegenerateMeal = async (dayIndex, mealType) => {
     try {
-      console.log(`🔄 Régénération du repas: Jour ${dayIndex}, Type ${mealType}`)
+      console.log(`🔄 Régénération du repas avec ALIMENTS AUTORISÉS: Jour ${dayIndex}, Type ${mealType}`)
       
       // Marquer le repas en cours de régénération
       setRegeneratingMeal({ dayIndex, mealType })
       
-      // Calculer les besoins nutritionnels
-      const nutritionNeeds = calculateCalories(userProfile)
+      // Utiliser le générateur strict pour régénérer le repas
+      const menuActuel = weeklyMenu.semaine[dayIndex].menu
+      const newMeal = regenererRepas(mealType, userProfile, menuActuel)
       
-      // Collecter toutes les recettes utilisées dans la semaine pour éviter les doublons
-      const excludedRecipes = []
-      weeklyMenu.semaine.forEach(day => {
-        if (day.menu.petitDejeuner) excludedRecipes.push(day.menu.petitDejeuner.nom)
-        if (day.menu.dejeuner) excludedRecipes.push(day.menu.dejeuner.nom)
-        if (day.menu.diner) excludedRecipes.push(day.menu.diner.nom)
-      })
-      
-      // Générer un nouveau repas
-      const newMeal = await regenerateSingleMeal(
-        mealType,
-        userProfile,
-        alimentsSimple,
-        ciqualData,
-        nutritionNeeds,
-        excludedRecipes
-      )
+      console.log('✅ Nouveau repas généré:', newMeal)
       
       // Mettre à jour le menu
       const updatedMenu = { ...weeklyMenu }
