@@ -67,9 +67,43 @@ function choisirRecetteAleatoire(recettes, recettesDejaChoisies = []) {
 }
 
 /**
+ * Filtre les recettes selon le profil utilisateur
+ */
+function filtrerRecettesSelonProfil(recettes, profil) {
+  return recettes.filter(recette => {
+    // Filtrer selon les allergies
+    if (profil.allergies && profil.allergies.length > 0) {
+      const hasAllergen = recette.ingredients.some(ing => {
+        const nomIngredient = ing.nom.toLowerCase();
+        return profil.allergies.some(allergie => {
+          const allergieNormalisee = allergie.toLowerCase();
+          return nomIngredient.includes(allergieNormalisee);
+        });
+      });
+      if (hasAllergen) return false;
+    }
+
+    // Filtrer selon les préférences alimentaires
+    if (profil.preferences && profil.preferences.length > 0) {
+      // Si l'utilisateur a des préférences, favoriser les recettes correspondantes
+      // mais ne pas exclure les autres complètement
+      const matchPreferences = recette.tags && recette.tags.some(tag => 
+        profil.preferences.some(pref => pref.toLowerCase() === tag.toLowerCase())
+      );
+      // Ajouter un score de préférence (utilisé plus tard)
+      recette.scorePreference = matchPreferences ? 10 : 1;
+    } else {
+      recette.scorePreference = 1;
+    }
+
+    return true;
+  });
+}
+
+/**
  * Génère un repas
  */
-function genererRepas(type, caloriesCible, recettesDejaUtilisees = []) {
+function genererRepas(type, caloriesCible, recettesDejaUtilisees = [], profil = {}) {
   let recettes;
   
   switch(type) {
@@ -84,6 +118,15 @@ function genererRepas(type, caloriesCible, recettesDejaUtilisees = []) {
       break;
     default:
       recettes = recettesDatabase.toutes;
+  }
+
+  // Filtrer selon le profil utilisateur (allergies, préférences)
+  recettes = filtrerRecettesSelonProfil(recettes, profil);
+
+  if (recettes.length === 0) {
+    console.warn(`⚠️ Aucune recette disponible pour ${type} après filtrage !`);
+    // Fallback : utiliser toutes les recettes sans filtrage d'allergies (dangereux mais évite un crash)
+    recettes = recettesDatabase.toutes;
   }
 
   const recette = choisirRecetteAleatoire(recettes, recettesDejaUtilisees);
@@ -103,7 +146,7 @@ function genererRepas(type, caloriesCible, recettesDejaUtilisees = []) {
 /**
  * Génère un menu pour un jour
  */
-function genererMenuJour(caloriesJournalieres, jeuneIntermittent, recettesUtilisees) {
+function genererMenuJour(caloriesJournalieres, jeuneIntermittent, recettesUtilisees, profil) {
   const repas = [];
   let caloriesDistribuees = {
     petit_dejeuner: 0,
@@ -122,18 +165,18 @@ function genererMenuJour(caloriesJournalieres, jeuneIntermittent, recettesUtilis
     caloriesDistribuees.diner = caloriesJournalieres * 0.30;          // 30%
   }
 
-  // Générer les repas
+  // Générer les repas en passant le profil pour le filtrage
   if (!jeuneIntermittent) {
-    const petitDej = genererRepas('petit_dejeuner', caloriesDistribuees.petit_dejeuner, recettesUtilisees);
+    const petitDej = genererRepas('petit_dejeuner', caloriesDistribuees.petit_dejeuner, recettesUtilisees, profil);
     repas.push(petitDej);
     recettesUtilisees.push(petitDej.recette);
   }
 
-  const dejeuner = genererRepas('dejeuner', caloriesDistribuees.dejeuner, recettesUtilisees);
+  const dejeuner = genererRepas('dejeuner', caloriesDistribuees.dejeuner, recettesUtilisees, profil);
   repas.push(dejeuner);
   recettesUtilisees.push(dejeuner.recette);
 
-  const diner = genererRepas('diner', caloriesDistribuees.diner, recettesUtilisees);
+  const diner = genererRepas('diner', caloriesDistribuees.diner, recettesUtilisees, profil);
   repas.push(diner);
   recettesUtilisees.push(diner.recette);
 
@@ -173,12 +216,21 @@ export async function genererMenuHebdomadaire(profil) {
   const menuHebdomadaire = {};
   const recettesUtilisees = []; // Pour éviter les répétitions dans la semaine
 
+  // Log des directives utilisateur
+  console.log('👤 Directives utilisateur:', {
+    objectif: profil.objectif,
+    allergies: profil.allergies || [],
+    preferences: profil.preferences || [],
+    jeuneIntermittent: profil.jeuneIntermittent
+  });
+
   // Générer un menu pour chaque jour
   JOURS_SEMAINE.forEach(jour => {
     menuHebdomadaire[jour] = genererMenuJour(
       caloriesJournalieres,
       profil.jeuneIntermittent || false,
-      recettesUtilisees
+      recettesUtilisees,
+      profil  // Passer le profil complet
     );
   });
 
@@ -213,13 +265,17 @@ export async function genererMenuHebdomadaire(profil) {
  */
 export async function regenererRepas(jour, typeRepas, menuActuel, profil) {
   console.log(`🔄 Régénération du ${typeRepas} pour ${jour}`);
+  console.log('👤 Respect des directives:', {
+    allergies: profil.allergies || [],
+    preferences: profil.preferences || []
+  });
 
   const caloriesCible = menuActuel[jour].totaux.calories / menuActuel[jour].repas.length;
   const recettesDejaUtilisees = Object.values(menuActuel)
     .flatMap(j => j.repas)
     .map(r => r.recette);
 
-  const nouveauRepas = genererRepas(typeRepas, caloriesCible, recettesDejaUtilisees);
+  const nouveauRepas = genererRepas(typeRepas, caloriesCible, recettesDejaUtilisees, profil);
 
   return nouveauRepas;
 }

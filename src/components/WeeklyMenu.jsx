@@ -340,9 +340,9 @@ const MealCard = ({ meal, onRegenerate, isRegenerating }) => {
             className="btn-regenerate"
             onClick={onRegenerate}
             disabled={isRegenerating}
-            title="Changer ce repas"
+            title="Proposez-moi autre chose"
           >
-            {isRegenerating ? '⏳' : '🔄'}
+            {isRegenerating ? '⏳ Recherche...' : '🔄 Autre proposition'}
           </button>
         )}
       </div>
