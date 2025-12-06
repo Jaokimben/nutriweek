@@ -185,6 +185,251 @@ export const recettesAvancees = [
     ],
     preparation: 'Faites cuire tous les légumes surgelés ensemble à la vapeur.',
     tags: ['végétarien', 'pratique', 'coloré']
+  },
+  // NOUVEAUX PETITS-DÉJEUNERS
+  {
+    id: 'pd_avocat_pomme',
+    nom: 'Avocat et pomme aux raisins',
+    type: 'petit_dejeuner',
+    ingredients: [
+      { nom: 'Avocat, pulpe, cru', quantite: 80, unite: 'g' },
+      { nom: 'Pomme Golden, pulpe et peau, crue', quantite: 120, unite: 'g' },
+      { nom: 'Raisin noir Muscat, cru', quantite: 80, unite: 'g' }
+    ],
+    preparation: 'Coupez l\'avocat et la pomme en cubes. Ajoutez les raisins.',
+    tags: ['végétarien', 'rapide', 'énergétique']
+  },
+  {
+    id: 'pd_fruits_varies',
+    nom: 'Bol de fruits variés',
+    type: 'petit_dejeuner',
+    ingredients: [
+      { nom: 'Pomme Golden, pulpe et peau, crue', quantite: 100, unite: 'g' },
+      { nom: 'Raisin noir Muscat, cru', quantite: 100, unite: 'g' },
+      { nom: 'Myrtille, surgelée, crue', quantite: 80, unite: 'g' }
+    ],
+    preparation: 'Mélangez tous les fruits. Servez frais.',
+    tags: ['végétarien', 'vitaminé', 'léger']
+  },
+  {
+    id: 'pd_framboise_pomme',
+    nom: 'Framboises et pomme croquante',
+    type: 'petit_dejeuner',
+    ingredients: [
+      { nom: 'Framboise, surgelée, crue', quantite: 120, unite: 'g' },
+      { nom: 'Pomme Golden, pulpe et peau, crue', quantite: 130, unite: 'g' }
+    ],
+    preparation: 'Décongeler les framboises. Coupez la pomme en morceaux.',
+    tags: ['végétarien', 'léger', 'frais']
+  },
+  // NOUVEAUX DÉJEUNERS
+  {
+    id: 'dej_carotte_brocoli',
+    nom: 'Carottes et brocoli vapeur',
+    type: 'dejeuner',
+    ingredients: [
+      { nom: 'Carotte, crue', quantite: 200, unite: 'g' },
+      { nom: 'Brocoli, cuit à la vapeur', quantite: 150, unite: 'g' },
+      { nom: 'Avocat, pulpe, cru', quantite: 60, unite: 'g' }
+    ],
+    preparation: 'Faites cuire les carottes à la vapeur. Réchauffez le brocoli. Ajoutez l\'avocat en tranches.',
+    tags: ['végétarien', 'vapeur', 'healthy']
+  },
+  {
+    id: 'dej_pomme_terre_carotte',
+    nom: 'Pommes de terre et carottes bouillies',
+    type: 'dejeuner',
+    ingredients: [
+      { nom: 'Pomme de terre, appertisée, égouttée', quantite: 200, unite: 'g' },
+      { nom: 'Carotte, bouillie/cuite à l\'eau, croquante', quantite: 150, unite: 'g' },
+      { nom: 'Champignon, tout type, cru', quantite: 100, unite: 'g' }
+    ],
+    preparation: 'Réchauffez les pommes de terre et les carottes. Ajoutez les champignons crus.',
+    tags: ['végétarien', 'simple', 'consistant']
+  },
+  {
+    id: 'dej_salade_chou',
+    nom: 'Salade de chou et carottes râpées',
+    type: 'dejeuner',
+    ingredients: [
+      { nom: 'Chou rouge, cru', quantite: 150, unite: 'g' },
+      { nom: 'Carotte, crue', quantite: 120, unite: 'g' },
+      { nom: 'Pomme Golden, pulpe et peau, crue', quantite: 80, unite: 'g' },
+      { nom: 'Avocat, pulpe, cru', quantite: 50, unite: 'g' }
+    ],
+    preparation: 'Râpez le chou et les carottes. Ajoutez la pomme et l\'avocat en dés.',
+    tags: ['végétarien', 'croquant', 'coloré']
+  },
+  {
+    id: 'dej_legumes_grilles',
+    nom: 'Légumes grillés méditerranéens',
+    type: 'dejeuner',
+    ingredients: [
+      { nom: 'Courgette, pulpe et peau, crue', quantite: 150, unite: 'g' },
+      { nom: 'Champignon, tout type, cru', quantite: 120, unite: 'g' },
+      { nom: 'Tomate, séchée, à l\'huile', quantite: 40, unite: 'g' },
+      { nom: 'Oignon, cru', quantite: 60, unite: 'g' }
+    ],
+    preparation: 'Grillez les courgettes, champignons et oignons. Ajoutez les tomates séchées.',
+    tags: ['végétarien', 'grillé', 'savoureux']
+  },
+  // NOUVEAUX DÎNERS
+  {
+    id: 'din_salade_fraiche',
+    nom: 'Salade fraîcheur du soir',
+    type: 'diner',
+    ingredients: [
+      { nom: 'Laitue, crue', quantite: 100, unite: 'g' },
+      { nom: 'Concombre, pulpe et peau, cru', quantite: 150, unite: 'g' },
+      { nom: 'Carotte, crue', quantite: 80, unite: 'g' },
+      { nom: 'Champignon, tout type, cru', quantite: 80, unite: 'g' }
+    ],
+    preparation: 'Lavez et coupez tous les légumes. Mélangez dans un saladier.',
+    tags: ['végétarien', 'léger', 'frais']
+  },
+  {
+    id: 'din_brocoli_courgette',
+    nom: 'Brocoli et courgettes vapeur',
+    type: 'diner',
+    ingredients: [
+      { nom: 'Brocoli, cuit à la vapeur', quantite: 150, unite: 'g' },
+      { nom: 'Courgette, pulpe et peau, crue', quantite: 120, unite: 'g' },
+      { nom: 'Carotte, crue', quantite: 80, unite: 'g' }
+    ],
+    preparation: 'Réchauffez le brocoli. Faites cuire les courgettes et carottes à la vapeur.',
+    tags: ['végétarien', 'léger', 'vapeur']
+  },
+  {
+    id: 'din_avocat_legumes',
+    nom: 'Avocat et légumes crus',
+    type: 'diner',
+    ingredients: [
+      { nom: 'Avocat, pulpe, cru', quantite: 80, unite: 'g' },
+      { nom: 'Concombre, pulpe, cru', quantite: 120, unite: 'g' },
+      { nom: 'Roquette, crue', quantite: 60, unite: 'g' },
+      { nom: 'Carotte, crue', quantite: 80, unite: 'g' }
+    ],
+    preparation: 'Coupez l\'avocat en tranches. Ajoutez les légumes crus.',
+    tags: ['végétarien', 'cru', 'healthy']
+  },
+  {
+    id: 'din_puree_mix',
+    nom: 'Purée de légumes variés',
+    type: 'diner',
+    ingredients: [
+      { nom: 'Carotte, purée', quantite: 150, unite: 'g' },
+      { nom: 'Courgette, purée', quantite: 100, unite: 'g' },
+      { nom: 'Brocoli, purée', quantite: 100, unite: 'g' }
+    ],
+    preparation: 'Réchauffez toutes les purées séparément ou mélangez-les.',
+    tags: ['végétarien', 'onctueux', 'doux']
+  }
+];
+
+// ENCORE PLUS DE RECETTES POUR LA VARIÉTÉ
+export const recettesSupplementaires = [
+  // Petits-déjeuners supplémentaires
+  {
+    id: 'pd_myrtilles_raisin',
+    nom: 'Myrtilles et raisins frais',
+    type: 'petit_dejeuner',
+    ingredients: [
+      { nom: 'Myrtille, surgelée, crue', quantite: 150, unite: 'g' },
+      { nom: 'Raisin noir Muscat, cru', quantite: 120, unite: 'g' },
+      { nom: 'Pomme Golden, pulpe et peau, crue', quantite: 80, unite: 'g' }
+    ],
+    preparation: 'Décongeler les myrtilles. Mélanger avec les raisins et la pomme.',
+    tags: ['végétarien', 'antioxydants', 'sucré']
+  },
+  {
+    id: 'pd_avocat_fruits',
+    nom: 'Avocat aux fruits',
+    type: 'petit_dejeuner',
+    ingredients: [
+      { nom: 'Avocat, pulpe, cru', quantite: 70, unite: 'g' },
+      { nom: 'Pomme Golden, pulpe et peau, crue', quantite: 110, unite: 'g' },
+      { nom: 'Framboise, surgelée, crue', quantite: 70, unite: 'g' }
+    ],
+    preparation: 'Coupez l\'avocat et la pomme. Ajoutez les framboises.',
+    tags: ['végétarien', 'crémeux', 'original']
+  },
+  // Déjeuners supplémentaires
+  {
+    id: 'dej_ratatouille',
+    nom: 'Ratatouille de légumes',
+    type: 'dejeuner',
+    ingredients: [
+      { nom: 'Courgette, pulpe et peau, crue', quantite: 140, unite: 'g' },
+      { nom: 'Tomate, séchée, à l\'huile', quantite: 50, unite: 'g' },
+      { nom: 'Oignon, cru', quantite: 70, unite: 'g' },
+      { nom: 'Champignon, tout type, cru', quantite: 90, unite: 'g' }
+    ],
+    preparation: 'Faites revenir tous les légumes ensemble. Mijotez 15 minutes.',
+    tags: ['végétarien', 'mijoté', 'provençal']
+  },
+  {
+    id: 'dej_bowl_buddha',
+    nom: 'Buddha bowl végétal',
+    type: 'dejeuner',
+    ingredients: [
+      { nom: 'Avocat, pulpe, cru', quantite: 80, unite: 'g' },
+      { nom: 'Carotte, crue', quantite: 100, unite: 'g' },
+      { nom: 'Brocoli, cuit à la vapeur', quantite: 120, unite: 'g' },
+      { nom: 'Chou rouge, cru', quantite: 80, unite: 'g' }
+    ],
+    preparation: 'Disposez tous les ingrédients dans un bol. Servez frais.',
+    tags: ['végétarien', 'complet', 'coloré']
+  },
+  {
+    id: 'dej_assiette_legumes',
+    nom: 'Assiette de légumes crus et cuits',
+    type: 'dejeuner',
+    ingredients: [
+      { nom: 'Carotte, bouillie/cuite à l\'eau, croquante', quantite: 130, unite: 'g' },
+      { nom: 'Concombre, pulpe et peau, cru', quantite: 110, unite: 'g' },
+      { nom: 'Laitue, crue', quantite: 70, unite: 'g' },
+      { nom: 'Avocat, pulpe, cru', quantite: 70, unite: 'g' }
+    ],
+    preparation: 'Disposez les légumes de manière harmonieuse dans une assiette.',
+    tags: ['végétarien', 'équilibré', 'frais']
+  },
+  // Dîners supplémentaires
+  {
+    id: 'din_veloute_carotte',
+    nom: 'Velouté de carottes',
+    type: 'diner',
+    ingredients: [
+      { nom: 'Carotte, purée', quantite: 200, unite: 'g' },
+      { nom: 'Oignon, cru', quantite: 40, unite: 'g' },
+      { nom: 'Champignon, tout type, cru', quantite: 60, unite: 'g' }
+    ],
+    preparation: 'Réchauffez la purée de carottes. Ajoutez l\'oignon et les champignons émincés.',
+    tags: ['végétarien', 'velouté', 'réconfortant']
+  },
+  {
+    id: 'din_salade_mixte',
+    nom: 'Salade mixte légère',
+    type: 'diner',
+    ingredients: [
+      { nom: 'Laitue, crue', quantite: 90, unite: 'g' },
+      { nom: 'Endive, crue', quantite: 90, unite: 'g' },
+      { nom: 'Concombre, pulpe, cru', quantite: 100, unite: 'g' },
+      { nom: 'Carotte, crue', quantite: 70, unite: 'g' }
+    ],
+    preparation: 'Lavez et coupez toutes les salades. Mélangez délicatement.',
+    tags: ['végétarien', 'léger', 'croquant']
+  },
+  {
+    id: 'din_legumes_vapeur_light',
+    nom: 'Légumes vapeur du soir',
+    type: 'diner',
+    ingredients: [
+      { nom: 'Courgette, pulpe et peau, crue', quantite: 140, unite: 'g' },
+      { nom: 'Carotte, crue', quantite: 100, unite: 'g' },
+      { nom: 'Brocoli, cuit à la vapeur', quantite: 100, unite: 'g' }
+    ],
+    preparation: 'Faites cuire les courgettes et carottes à la vapeur. Réchauffez le brocoli.',
+    tags: ['végétarien', 'vapeur', 'digestif']
   }
 ];
 
@@ -193,7 +438,8 @@ export const toutesLesRecettes = [
   ...recettesPetitDejeuner,
   ...recettesDejeunerLegumes,
   ...recettesDinerLeger,
-  ...recettesAvancees
+  ...recettesAvancees,
+  ...recettesSupplementaires
 ];
 
 // Ajouter les calculs nutritionnels à chaque recette au chargement

@@ -56,10 +56,15 @@ function ajusterCaloriesObjectif(tdee, objectif) {
  * Sélectionne une recette aléatoire d'une liste
  */
 function choisirRecetteAleatoire(recettes, recettesDejaChoisies = []) {
+  console.log(`    🔍 Sélection parmi ${recettes.length} recettes, ${recettesDejaChoisies.length} déjà utilisées`);
+  
   const recettesFiltrees = recettes.filter(r => !recettesDejaChoisies.includes(r.id));
+  
+  console.log(`    ✓ ${recettesFiltrees.length} recettes disponibles après filtrage`);
   
   if (recettesFiltrees.length === 0) {
     // Si toutes les recettes ont été choisies, on réinitialise
+    console.log(`    ⚠️ Toutes les recettes ont été utilisées, réinitialisation`);
     return recettes[Math.floor(Math.random() * recettes.length)];
   }
   
@@ -104,21 +109,10 @@ function filtrerRecettesSelonProfil(recettes, profil) {
  * Génère un repas
  */
 function genererRepas(type, caloriesCible, recettesDejaUtilisees = [], profil = {}) {
-  let recettes;
+  // Filtrer TOUTES les recettes par type pour assurer la cohérence
+  let recettes = recettesDatabase.toutes.filter(r => r.type === type);
   
-  switch(type) {
-    case 'petit_dejeuner':
-      recettes = recettesDatabase.petitDejeuner;
-      break;
-    case 'dejeuner':
-      recettes = [...recettesDatabase.dejeunerLegumes, ...recettesDatabase.avancees];
-      break;
-    case 'diner':
-      recettes = recettesDatabase.dinerLeger;
-      break;
-    default:
-      recettes = recettesDatabase.toutes;
-  }
+  console.log(`  📊 ${recettes.length} recettes de type "${type}" disponibles`);
 
   // Filtrer selon le profil utilisateur (allergies, préférences)
   recettes = filtrerRecettesSelonProfil(recettes, profil);
@@ -130,6 +124,8 @@ function genererRepas(type, caloriesCible, recettesDejaUtilisees = [], profil = 
   }
 
   const recette = choisirRecetteAleatoire(recettes, recettesDejaUtilisees);
+  
+  console.log(`  ✓ ${type}: "${recette.nom}" (ID: ${recette.id})`);
   
   return {
     id: `${type}_${Date.now()}_${Math.random().toString(36).substring(7)}`,
@@ -225,13 +221,18 @@ export async function genererMenuHebdomadaire(profil) {
   });
 
   // Générer un menu pour chaque jour
-  JOURS_SEMAINE.forEach(jour => {
+  JOURS_SEMAINE.forEach((jour, index) => {
+    console.log(`\n📅 Génération du menu pour ${jour} (${index + 1}/7)`);
+    console.log(`📝 Recettes déjà utilisées: ${recettesUtilisees.length}`);
+    
     menuHebdomadaire[jour] = genererMenuJour(
       caloriesJournalieres,
       profil.jeuneIntermittent || false,
       recettesUtilisees,
       profil  // Passer le profil complet
     );
+    
+    console.log(`✅ Menu ${jour} généré - Recettes utilisées: ${recettesUtilisees.length}`);
   });
 
   // Calculer les moyennes hebdomadaires
