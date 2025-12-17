@@ -20,7 +20,7 @@ function transformerMenuPourAffichage(menuData) {
     
     return {
       jour,
-      date: date.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }),
+      date: date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' }),
       jeune: false,
       menu: {
         petitDejeuner: transformerRepasPourAffichage(jourData.repas.find(r => r.type === 'petit_dejeuner')),
