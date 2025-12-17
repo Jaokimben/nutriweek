@@ -259,7 +259,7 @@ const WeeklyMenu = ({ userProfile, initialMenu = null, onMenuGenerated, onBack }
         <h3>📊 Vos Macronutriments</h3>
         <div className="macros-grid">
           <div className="macro-card">
-            <span className="macro-icon">🥩</span>
+            <span className="macro-icon">🌱</span>
             <span className="macro-label">Protéines</span>
             <span className="macro-value">{weeklyMenu.nutritionNeeds.macros.proteines}g</span>
             <span className="macro-percent">{weeklyMenu.nutritionNeeds.macroRatio.proteines}%</span>
@@ -351,7 +351,7 @@ const MealCard = ({ meal, onRegenerate, isRegenerating }) => {
       {/* Affichage des macronutriments */}
       {meal.proteines !== undefined && (
         <div className="meal-macros">
-          <span className="macro-item">🥩 P: {meal.proteines}g</span>
+          <span className="macro-item">🌱 P: {meal.proteines}g</span>
           <span className="macro-item">🥑 L: {meal.lipides}g</span>
           <span className="macro-item">🍞 G: {meal.glucides}g</span>
         </div>

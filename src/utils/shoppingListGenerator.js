@@ -33,9 +33,9 @@ const CATEGORIES = {
     keywords: ['lait', 'yaourt', 'fromage', 'feta', 'végétal', 'coco', 'amande', 'soja']
   },
   proteines: {
-    icon: '🥩',
-    label: 'Protéines',
-    keywords: ['viande', 'poulet', 'poisson', 'œuf', 'tofu', 'tempeh']
+    icon: '🌱',
+    label: 'Protéines Végétales',
+    keywords: ['légumineuses', 'haricot', 'lentille', 'pois', 'tofu', 'tempeh', 'seitan']
   },
   matiereGrasse: {
     icon: '🫒',
