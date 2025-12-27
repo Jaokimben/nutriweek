@@ -113,6 +113,287 @@ button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
 
+/* ============================
+   RÈGLES DE CONTRASTE POUR BOUTONS
+   ============================ */
+
+/* Boutons avec gradient - garantir contraste en mode sombre */
+[data-theme="dark"] .btn-primary,
+[data-theme="dark"] .btn-action,
+[data-theme="dark"] .btn-regenerate,
+[data-theme="dark"] .btn-shopping,
+[data-theme="dark"] .btn-print,
+[data-theme="dark"] .btn-share {
+  color: #ffffff !important;
+}
+
+/* Boutons secondaires - adapter couleur de fond et texte */
+.btn-secondary {
+  background: var(--card-bg) !important;
+  color: var(--text-primary) !important;
+  border: 2px solid var(--border-color) !important;
+}
+
+[data-theme="dark"] .btn-secondary {
+  background: var(--bg-tertiary) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] .btn-secondary:hover {
+  background: var(--accent-primary) !important;
+  color: #ffffff !important;
+  border-color: var(--accent-primary) !important;
+}
+
+/* Bouton retour (back-button) - améliorer contraste */
+.back-button {
+  background: rgba(255, 255, 255, 0.2) !important;
+  color: white !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+}
+
+.back-button:hover {
+  background: rgba(255, 255, 255, 0.3) !important;
+}
+
+[data-theme="dark"] .back-button {
+  background: rgba(255, 255, 255, 0.15) !important;
+  color: white !important;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+}
+
+[data-theme="dark"] .back-button:hover {
+  background: rgba(255, 255, 255, 0.25) !important;
+}
+
+/* Boutons de navigation des jours */
+.day-button {
+  background: var(--card-bg) !important;
+  color: var(--text-primary) !important;
+  border: 2px solid var(--border-color) !important;
+}
+
+.day-button.active {
+  background: linear-gradient(135deg, rgba(76, 175, 80, 0.15), rgba(33, 150, 243, 0.15)) !important;
+  border-color: var(--accent-primary) !important;
+}
+
+[data-theme="dark"] .day-button {
+  background: var(--bg-tertiary) !important;
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .day-button.active {
+  background: linear-gradient(135deg, rgba(102, 187, 106, 0.25), rgba(66, 165, 245, 0.25)) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Date du jour - améliorer contraste */
+.day-date {
+  color: var(--text-secondary) !important;
+}
+
+[data-theme="dark"] .day-date {
+  color: var(--text-tertiary) !important;
+}
+
+/* Cartes d'options - améliorer contraste */
+.option-card {
+  background: var(--card-bg) !important;
+  border: 2px solid var(--border-color) !important;
+}
+
+.option-card .label {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .option-card {
+  background: var(--bg-tertiary) !important;
+  border-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] .option-card.selected {
+  background: linear-gradient(135deg, rgba(102, 187, 106, 0.2), rgba(66, 165, 245, 0.2)) !important;
+  border-color: var(--accent-primary) !important;
+}
+
+/* Cartes de repas - améliorer contraste */
+.meal-card {
+  background: var(--card-bg) !important;
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .meal-card {
+  background: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Étiquettes de calories - toujours blanc sur gradient */
+.meal-calories {
+  color: #ffffff !important;
+}
+
+/* Éléments macro - améliorer contraste */
+.macro-item {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .macro-item {
+  color: var(--text-secondary) !important;
+}
+
+/* Labels de macro - améliorer contraste */
+.macro-label {
+  color: var(--text-secondary) !important;
+}
+
+[data-theme="dark"] .macro-label {
+  color: var(--text-tertiary) !important;
+}
+
+/* Textes de préparation et ingrédients */
+.preparation-section p,
+.ingredient-quantity {
+  color: var(--text-secondary) !important;
+}
+
+[data-theme="dark"] .preparation-section p,
+[data-theme="dark"] .ingredient-quantity {
+  color: var(--text-tertiary) !important;
+}
+
+/* Conseil de jeûne */
+.conseil-jeune {
+  color: var(--text-secondary) !important;
+}
+
+[data-theme="dark"] .conseil-jeune {
+  color: var(--text-tertiary) !important;
+}
+
+/* Inputs - améliorer contraste */
+.form-group input {
+  background: var(--input-bg) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--input-border) !important;
+}
+
+[data-theme="dark"] .form-group input {
+  background: var(--bg-tertiary) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] .form-group input::placeholder {
+  color: var(--text-tertiary) !important;
+}
+
+/* Checkbox et radio - améliorer contraste */
+.checkbox-label,
+.radio-label {
+  background: var(--card-bg) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] .checkbox-label,
+[data-theme="dark"] .radio-label {
+  background: var(--bg-tertiary) !important;
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .checkbox-label:has(input:checked),
+[data-theme="dark"] .radio-label:has(input:checked) {
+  background: linear-gradient(135deg, rgba(102, 187, 106, 0.2), rgba(66, 165, 245, 0.2)) !important;
+  border-color: var(--accent-primary) !important;
+}
+
+/* Morphotype cards */
+.morphotype-card {
+  background: var(--card-bg) !important;
+  border-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] .morphotype-card {
+  background: var(--bg-tertiary) !important;
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .morphotype-card.selected {
+  background: linear-gradient(135deg, rgba(102, 187, 106, 0.2), rgba(66, 165, 245, 0.2)) !important;
+  border-color: var(--accent-primary) !important;
+}
+
+/* Section macros */
+.macros-section {
+  background: var(--card-bg) !important;
+}
+
+[data-theme="dark"] .macros-section {
+  background: var(--bg-secondary) !important;
+}
+
+.macro-card {
+  background: var(--bg-secondary) !important;
+}
+
+[data-theme="dark"] .macro-card {
+  background: var(--bg-tertiary) !important;
+}
+
+/* Section tips */
+.tips-section {
+  background: var(--card-bg) !important;
+}
+
+[data-theme="dark"] .tips-section {
+  background: var(--bg-secondary) !important;
+}
+
+/* Navigation des jours - fond adapté */
+.days-navigation {
+  background: var(--card-bg) !important;
+}
+
+[data-theme="dark"] .days-navigation {
+  background: var(--bg-secondary) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Step du questionnaire */
+.step {
+  background: var(--card-bg) !important;
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .step {
+  background: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Citation */
+.quote {
+  background: var(--card-bg) !important;
+  color: var(--text-secondary) !important;
+}
+
+[data-theme="dark"] .quote {
+  background: var(--bg-secondary) !important;
+  color: var(--text-tertiary) !important;
+  border-color: var(--border-color) !important;
+}
+
+/* Help text */
+.help-text {
+  color: var(--text-secondary) !important;
+}
+
+[data-theme="dark"] .help-text {
+  background: linear-gradient(135deg, rgba(102, 187, 106, 0.15), rgba(66, 165, 245, 0.15)) !important;
+  color: var(--text-tertiary) !important;
+}
+
 @media (prefers-color-scheme: light) {
   :root {
     color: #213547;
