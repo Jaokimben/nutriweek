@@ -8,6 +8,7 @@ import Register from './components/auth/Register'
 import Profile from './components/Profile'
 import History from './components/History'
 import BottomNav from './components/BottomNav'
+import ThemeToggle from './components/ThemeToggle'
 import { getCurrentUser, isAuthenticated, initializeDemoAccount, updateUserProfile, saveUserMenu } from './utils/authService'
 import './App.css'
 
@@ -196,6 +197,9 @@ function App() {
 
   return (
     <div className="app">
+      {/* Toggle de thème */}
+      <ThemeToggle />
+      
       {/* Bouton d'accès admin (visible seulement sur questionnaire) */}
       {activeTab === 'questionnaire' && (
         <button 

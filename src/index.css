@@ -3,31 +3,90 @@
   line-height: 1.5;
   font-weight: 400;
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  
+  /* ============================
+     THÈME CLAIR (par défaut)
+     ============================ */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8f9fa;
+  --bg-tertiary: #e9ecef;
+  
+  --text-primary: #2c3e50;
+  --text-secondary: #6c757d;
+  --text-tertiary: #95a5a6;
+  
+  --border-color: #dee2e6;
+  --border-light: #e9ecef;
+  
+  --accent-primary: #4CAF50;
+  --accent-secondary: #2196F3;
+  --accent-tertiary: #FF9800;
+  
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.15);
+  
+  --card-bg: #ffffff;
+  --card-hover: #f8f9fa;
+  
+  --input-bg: #ffffff;
+  --input-border: #ced4da;
+  
+  --success: #28a745;
+  --danger: #dc3545;
+  --warning: #ffc107;
+  --info: #17a2b8;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
+/* ============================
+   THÈME SOMBRE
+   ============================ */
+[data-theme="dark"] {
+  --bg-primary: #1a1a1a;
+  --bg-secondary: #242424;
+  --bg-tertiary: #2d2d2d;
+  
+  --text-primary: #e0e0e0;
+  --text-secondary: #b0b0b0;
+  --text-tertiary: #808080;
+  
+  --border-color: #3a3a3a;
+  --border-light: #2d2d2d;
+  
+  --accent-primary: #66BB6A;
+  --accent-secondary: #42A5F5;
+  --accent-tertiary: #FFA726;
+  
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.5);
+  
+  --card-bg: #242424;
+  --card-hover: #2d2d2d;
+  
+  --input-bg: #2d2d2d;
+  --input-border: #3a3a3a;
+  
+  --success: #4caf50;
+  --danger: #f44336;
+  --warning: #ffc107;
+  --info: #2196f3;
 }
 
+/* Application des variables */
 body {
   margin: 0;
   display: flex;
   place-items: center;
   min-width: 320px;
   min-height: 100vh;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 h1 {

@@ -1,6 +1,6 @@
 .weekly-menu {
   min-height: 100vh;
-  background: var(--bg-color);
+  background: var(--bg-primary);
   padding-bottom: 2rem;
 }
 
@@ -17,7 +17,7 @@
   width: 50px;
   height: 50px;
   border: 4px solid var(--border-color);
-  border-top-color: var(--primary-color);
+  border-top-color: var(--accent-primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -27,7 +27,7 @@
 }
 
 .menu-header {
-  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
   color: white;
   padding: 1.5rem;
   position: relative;
@@ -112,18 +112,18 @@
 }
 
 .day-button:hover {
-  border-color: var(--primary-color);
+  border-color: var(--accent-primary);
   transform: translateY(-2px);
 }
 
 .day-button.active {
-  border-color: var(--primary-color);
+  border-color: var(--accent-primary);
   background: linear-gradient(135deg, rgba(76, 175, 80, 0.1), rgba(33, 150, 243, 0.1));
   box-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);
 }
 
 .day-button.jeune-day {
-  border-color: var(--accent-color);
+  border-color: var(--accent-tertiary);
 }
 
 .day-name {
@@ -149,14 +149,14 @@
 
 .day-menu h2 {
   text-align: center;
-  color: var(--text-color);
+  color: var(--text-primary);
   margin-bottom: 1.5rem;
   font-size: 1.3rem;
 }
 
 .jeune-alert {
   background: linear-gradient(135deg, rgba(255, 152, 0, 0.1), rgba(255, 193, 7, 0.1));
-  border: 2px solid var(--accent-color);
+  border: 2px solid var(--accent-tertiary);
   border-radius: 12px;
   padding: 1.5rem;
   margin-bottom: 1.5rem;
@@ -164,7 +164,7 @@
 }
 
 .jeune-alert h3 {
-  color: var(--accent-color);
+  color: var(--accent-tertiary);
   margin-bottom: 0.5rem;
 }
 
@@ -210,12 +210,12 @@
 
 .meal-header h4 {
   font-size: 1.2rem;
-  color: var(--text-color);
+  color: var(--text-primary);
   margin: 0;
 }
 
 .meal-calories {
-  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
   color: white;
   padding: 0.25rem 0.75rem;
   border-radius: 20px;
@@ -294,7 +294,7 @@
   background: rgba(76, 175, 80, 0.1);
   padding: 0.75rem;
   border-radius: 8px;
-  border-left: 4px solid var(--primary-color);
+  border-left: 4px solid var(--accent-primary);
   margin-bottom: 0.75rem;
   font-size: 0.9rem;
   font-style: italic;
@@ -303,7 +303,7 @@
 .toggle-details {
   background: none;
   border: none;
-  color: var(--primary-color);
+  color: var(--accent-primary);
   cursor: pointer;
   font-weight: 600;
   padding: 0.5rem 0;
@@ -314,7 +314,7 @@
 }
 
 .toggle-details:hover {
-  color: var(--secondary-color);
+  color: var(--accent-secondary);
 }
 
 .meal-details {
@@ -330,7 +330,7 @@
 
 .ingredients-section h5,
 .preparation-section h5 {
-  color: var(--primary-color);
+  color: var(--accent-primary);
   margin-bottom: 0.5rem;
 }
 
@@ -348,7 +348,7 @@
 
 .ingredient-name {
   font-weight: 600;
-  color: var(--text-color);
+  color: var(--text-primary);
 }
 
 .ingredient-quantity {
@@ -361,7 +361,7 @@
   content: '✓';
   position: absolute;
   left: 0;
-  color: var(--primary-color);
+  color: var(--accent-primary);
   font-weight: bold;
 }
 
@@ -380,7 +380,7 @@
 
 .macros-section h3 {
   text-align: center;
-  color: var(--text-color);
+  color: var(--text-primary);
   margin-bottom: 1rem;
 }
 
@@ -396,7 +396,7 @@
   align-items: center;
   gap: 0.25rem;
   padding: 1rem;
-  background: var(--bg-color);
+  background: var(--bg-primary);
   border-radius: 8px;
 }
 
@@ -412,12 +412,12 @@
 .macro-value {
   font-size: 1.2rem;
   font-weight: 600;
-  color: var(--text-color);
+  color: var(--text-primary);
 }
 
 .macro-percent {
   font-size: 0.8rem;
-  color: var(--primary-color);
+  color: var(--accent-primary);
   font-weight: 600;
 }
 
@@ -431,7 +431,7 @@
 
 .tips-section h3 {
   text-align: center;
-  color: var(--text-color);
+  color: var(--text-primary);
   margin-bottom: 1rem;
 }
 
@@ -444,7 +444,7 @@
 .tip-card {
   padding: 1rem;
   background: linear-gradient(135deg, rgba(76, 175, 80, 0.05), rgba(33, 150, 243, 0.05));
-  border-left: 4px solid var(--primary-color);
+  border-left: 4px solid var(--accent-primary);
   border-radius: 8px;
   font-size: 0.9rem;
 }
@@ -472,12 +472,12 @@
 }
 
 .btn-print {
-  background: var(--secondary-color);
+  background: var(--accent-secondary);
   color: white;
 }
 
 .btn-share {
-  background: var(--primary-color);
+  background: var(--accent-primary);
   color: white;
 }
 
