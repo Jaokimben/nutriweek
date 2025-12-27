@@ -109,6 +109,24 @@ npm run preview
 
 ## 🌐 Déploiement
 
+### 📦 Environnements
+
+Le projet utilise **deux environnements** pour séparer développement et production:
+
+| Environnement | Branche | URL | Utilisation |
+|--------------|---------|-----|-------------|
+| **Production** | `main` | https://nutriweek-es33.vercel.app/ | Version stable pour utilisateurs |
+| **Preview/Dev** | `develop` | Auto-générée par Vercel | Tests et validation |
+
+### 🔄 Workflow
+
+1. **Développement:** Travailler sur branche `develop`
+2. **Validation:** Tester sur Preview URL (Vercel)
+3. **Production:** Merger `develop` → `main` après validation
+
+📚 **Guide complet:** [DEPLOYMENT_WORKFLOW.md](./DEPLOYMENT_WORKFLOW.md)  
+⚡ **Guide rapide:** [QUICK_GUIDE.md](./QUICK_GUIDE.md)
+
 ### 🚀 Déployer sur Vercel (Recommandé)
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/Jaokimben/nutriweek)
