@@ -6,7 +6,7 @@ import { loadCIQUAL } from '../utils/ciqualParser'
 import { loadAlimentsSimple } from '../utils/alimentsSimpleParser'
 import { saveMenu } from '../utils/storage'
 import { getCurrentUser } from '../utils/authService'
-import { toggleFavorite, isFavorite } from '../utils/favoritesStorage'
+import { getAllFavorites, addFavorite, removeFavorite } from '../utils/favoritesStorage'
 import ShoppingList from './ShoppingList'
 import './WeeklyMenu.css'
 

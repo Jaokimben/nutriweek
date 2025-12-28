@@ -1,460 +1,234 @@
 /**
- * Service de gestion des favoris
- * Stockage dans localStorage avec sync multi-devices possible
+ * Gestion du stockage des favoris avec LocalStorage
+ * 
+ * Structure de données:
+ * - nutriweek_favorites: { [userId]: { [recipeId]: { recipe, addedAt, notes } } }
  */
 
 const FAVORITES_KEY = 'nutriweek_favorites'
-const FAVORITES_STATS_KEY = 'nutriweek_favorites_stats'
 
 /**
- * Structure d'un favori
- * {
- *   id: string (unique),
- *   userId: string,
- *   recipeId: string,
- *   recipeName: string,
- *   recipeType: 'petit_dejeuner' | 'dejeuner' | 'diner',
- *   calories: number,
- *   proteines: number,
- *   lipides: number,
- *   glucides: number,
- *   ingredients: array,
- *   preparation: string,
- *   tags: array,
- *   addedAt: timestamp,
- *   notes: string (optional)
- * }
+ * Récupérer tous les favoris d'un utilisateur
  */
-
-// ========== Lecture ==========
-
-/**
- * Récupère tous les favoris d'un utilisateur
- */
-export const getFavorites = (userId) => {
+export const getAllFavorites = async () => {
   try {
-    const allFavorites = localStorage.getItem(FAVORITES_KEY)
-    if (!allFavorites) return []
+    const allFavorites = JSON.parse(localStorage.getItem(FAVORITES_KEY) || '{}')
+    const userFavorites = allFavorites['current'] || {}
     
-    const favorites = JSON.parse(allFavorites)
-    // Filtrer par utilisateur
-    return favorites.filter(fav => fav.userId === userId)
+    // Convertir en tableau
+    const favoritesArray = Object.entries(userFavorites).map(([recipeId, data]) => ({
+      id: recipeId,
+      recipe: data.recipe,
+      addedAt: data.addedAt,
+      notes: data.notes || ''
+    }))
+    
+    // Trier par date (plus récent en premier)
+    return favoritesArray.sort((a, b) => new Date(b.addedAt) - new Date(a.addedAt))
   } catch (error) {
-    console.error('Erreur lecture favoris:', error)
+    console.error('Erreur lors de la récupération des favoris:', error)
     return []
   }
 }
 
 /**
- * Récupère un favori par ID
+ * Ajouter un favori
  */
-export const getFavoriteById = (favoriteId) => {
+export const addFavorite = async (recipe, notes = '') => {
   try {
-    const allFavorites = localStorage.getItem(FAVORITES_KEY)
-    if (!allFavorites) return null
+    const allFavorites = JSON.parse(localStorage.getItem(FAVORITES_KEY) || '{}')
     
-    const favorites = JSON.parse(allFavorites)
-    return favorites.find(fav => fav.id === favoriteId) || null
+    if (!allFavorites['current']) {
+      allFavorites['current'] = {}
+    }
+    
+    const recipeId = recipe.id || recipe.nom
+    
+    allFavorites['current'][recipeId] = {
+      recipe: {
+        id: recipeId,
+        nom: recipe.nom,
+        type: recipe.type || getMealTypeFromMoment(recipe.moment),
+        calories: recipe.calories,
+        proteines: recipe.proteines,
+        lipides: recipe.lipides,
+        glucides: recipe.glucides,
+        ingredients: recipe.ingredients,
+        preparation: recipe.preparation,
+        tags: recipe.tags || []
+      },
+      addedAt: new Date().toISOString(),
+      notes: notes
+    }
+    
+    localStorage.setItem(FAVORITES_KEY, JSON.stringify(allFavorites))
+    
+    console.log(`✅ Favori ajouté: ${recipe.nom}`)
+    return { success: true }
   } catch (error) {
-    console.error('Erreur lecture favori:', error)
-    return null
+    console.error('Erreur lors de l\'ajout du favori:', error)
+    return { success: false, error: error.message }
   }
 }
 
 /**
- * Vérifie si une recette est en favoris
+ * Retirer un favori
  */
-export const isFavorite = (userId, recipeId) => {
+export const removeFavorite = async (recipeId) => {
   try {
-    const favorites = getFavorites(userId)
-    return favorites.some(fav => fav.recipeId === recipeId)
+    const allFavorites = JSON.parse(localStorage.getItem(FAVORITES_KEY) || '{}')
+    
+    if (allFavorites['current'] && allFavorites['current'][recipeId]) {
+      delete allFavorites['current'][recipeId]
+      localStorage.setItem(FAVORITES_KEY, JSON.stringify(allFavorites))
+      
+      console.log(`✅ Favori retiré: ${recipeId}`)
+      return { success: true }
+    }
+    
+    return { success: false, error: 'Favori non trouvé' }
   } catch (error) {
-    console.error('Erreur vérification favori:', error)
+    console.error('Erreur lors de la suppression du favori:', error)
+    return { success: false, error: error.message }
+  }
+}
+
+/**
+ * Vérifier si une recette est dans les favoris
+ */
+export const isFavorite = async (recipeId) => {
+  try {
+    const allFavorites = JSON.parse(localStorage.getItem(FAVORITES_KEY) || '{}')
+    return !!(allFavorites['current'] && allFavorites['current'][recipeId])
+  } catch (error) {
+    console.error('Erreur lors de la vérification du favori:', error)
     return false
   }
 }
 
-// ========== Écriture ==========
-
 /**
- * Ajoute une recette aux favoris
+ * Ajouter/modifier une note sur un favori
  */
-export const addFavorite = (userId, recipe) => {
+export const updateFavoriteNote = async (recipeId, notes) => {
   try {
-    if (!userId || !recipe) {
-      return { success: false, error: 'Données manquantes' }
-    }
+    const allFavorites = JSON.parse(localStorage.getItem(FAVORITES_KEY) || '{}')
     
-    // Vérifier si déjà en favoris
-    if (isFavorite(userId, recipe.id || recipe.nom)) {
-      return { success: false, error: 'Cette recette est déjà dans vos favoris' }
-    }
-    
-    const allFavorites = localStorage.getItem(FAVORITES_KEY)
-    const favorites = allFavorites ? JSON.parse(allFavorites) : []
-    
-    // Créer le favori
-    const favorite = {
-      id: `fav_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      userId,
-      recipeId: recipe.id || recipe.nom,
-      recipeName: recipe.nom,
-      recipeType: recipe.type,
-      calories: recipe.calories || recipe.nutrition?.calories,
-      proteines: recipe.proteines || recipe.nutrition?.proteines,
-      lipides: recipe.lipides || recipe.nutrition?.lipides,
-      glucides: recipe.glucides || recipe.nutrition?.glucides,
-      ingredients: recipe.ingredients,
-      preparation: recipe.preparation,
-      tags: recipe.tags || [],
-      addedAt: new Date().toISOString(),
-      notes: ''
-    }
-    
-    favorites.push(favorite)
-    localStorage.setItem(FAVORITES_KEY, JSON.stringify(favorites))
-    
-    // Mettre à jour les statistiques
-    updateStats(userId, 'add', favorite.recipeType)
-    
-    console.log('✅ Favori ajouté:', favorite.recipeName)
-    return { success: true, favorite }
-  } catch (error) {
-    console.error('❌ Erreur ajout favori:', error)
-    return { success: false, error: 'Erreur lors de l\'ajout' }
-  }
-}
-
-/**
- * Retire une recette des favoris
- */
-export const removeFavorite = (userId, recipeId) => {
-  try {
-    const allFavorites = localStorage.getItem(FAVORITES_KEY)
-    if (!allFavorites) return { success: false, error: 'Aucun favori' }
-    
-    let favorites = JSON.parse(allFavorites)
-    const initialLength = favorites.length
-    
-    // Trouver et retirer le favori
-    const favoriteToRemove = favorites.find(
-      fav => fav.userId === userId && fav.recipeId === recipeId
-    )
-    
-    if (!favoriteToRemove) {
-      return { success: false, error: 'Favori non trouvé' }
-    }
-    
-    favorites = favorites.filter(
-      fav => !(fav.userId === userId && fav.recipeId === recipeId)
-    )
-    
-    if (favorites.length === initialLength) {
-      return { success: false, error: 'Impossible de retirer le favori' }
-    }
-    
-    localStorage.setItem(FAVORITES_KEY, JSON.stringify(favorites))
-    
-    // Mettre à jour les statistiques
-    updateStats(userId, 'remove', favoriteToRemove.recipeType)
-    
-    console.log('✅ Favori retiré:', recipeId)
-    return { success: true }
-  } catch (error) {
-    console.error('❌ Erreur retrait favori:', error)
-    return { success: false, error: 'Erreur lors du retrait' }
-  }
-}
-
-/**
- * Toggle favori (ajouter si pas présent, retirer si présent)
- */
-export const toggleFavorite = (userId, recipe) => {
-  const recipeId = recipe.id || recipe.nom
-  if (isFavorite(userId, recipeId)) {
-    return removeFavorite(userId, recipeId)
-  } else {
-    return addFavorite(userId, recipe)
-  }
-}
-
-/**
- * Mettre à jour les notes d'un favori
- */
-export const updateFavoriteNotes = (favoriteId, notes) => {
-  try {
-    const allFavorites = localStorage.getItem(FAVORITES_KEY)
-    if (!allFavorites) return { success: false, error: 'Aucun favori' }
-    
-    const favorites = JSON.parse(allFavorites)
-    const favorite = favorites.find(fav => fav.id === favoriteId)
-    
-    if (!favorite) {
-      return { success: false, error: 'Favori non trouvé' }
-    }
-    
-    favorite.notes = notes
-    favorite.updatedAt = new Date().toISOString()
-    
-    localStorage.setItem(FAVORITES_KEY, JSON.stringify(favorites))
-    
-    console.log('✅ Notes mises à jour:', favoriteId)
-    return { success: true, favorite }
-  } catch (error) {
-    console.error('❌ Erreur mise à jour notes:', error)
-    return { success: false, error: 'Erreur lors de la mise à jour' }
-  }
-}
-
-// ========== Filtres et Tri ==========
-
-/**
- * Filtre les favoris par type de repas
- */
-export const filterByType = (favorites, type) => {
-  if (!type || type === 'tous') return favorites
-  return favorites.filter(fav => fav.recipeType === type)
-}
-
-/**
- * Recherche dans les favoris
- */
-export const searchFavorites = (favorites, query) => {
-  if (!query) return favorites
-  
-  const lowerQuery = query.toLowerCase()
-  return favorites.filter(fav => 
-    fav.recipeName.toLowerCase().includes(lowerQuery) ||
-    fav.ingredients.some(ing => 
-      (typeof ing === 'string' ? ing : ing.nom).toLowerCase().includes(lowerQuery)
-    )
-  )
-}
-
-/**
- * Trie les favoris
- */
-export const sortFavorites = (favorites, sortBy) => {
-  const sorted = [...favorites]
-  
-  switch (sortBy) {
-    case 'date':
-      return sorted.sort((a, b) => new Date(b.addedAt) - new Date(a.addedAt))
-    
-    case 'alpha':
-      return sorted.sort((a, b) => a.recipeName.localeCompare(b.recipeName))
-    
-    case 'calories':
-      return sorted.sort((a, b) => b.calories - a.calories)
-    
-    case 'proteines':
-      return sorted.sort((a, b) => b.proteines - a.proteines)
-    
-    default:
-      return sorted
-  }
-}
-
-// ========== Statistiques ==========
-
-/**
- * Récupère les statistiques des favoris
- */
-export const getFavoritesStats = (userId) => {
-  try {
-    const favorites = getFavorites(userId)
-    
-    if (favorites.length === 0) {
-      return {
-        total: 0,
-        byType: {
-          petit_dejeuner: 0,
-          dejeuner: 0,
-          diner: 0
-        },
-        avgCalories: 0,
-        mostRecent: null,
-        topRecipe: null
-      }
-    }
-    
-    // Compter par type
-    const byType = {
-      petit_dejeuner: favorites.filter(f => f.recipeType === 'petit_dejeuner').length,
-      dejeuner: favorites.filter(f => f.recipeType === 'dejeuner').length,
-      diner: favorites.filter(f => f.recipeType === 'diner').length
-    }
-    
-    // Calories moyennes
-    const avgCalories = Math.round(
-      favorites.reduce((sum, f) => sum + f.calories, 0) / favorites.length
-    )
-    
-    // Plus récent
-    const mostRecent = favorites.sort((a, b) => 
-      new Date(b.addedAt) - new Date(a.addedAt)
-    )[0]
-    
-    // Type favori
-    const topType = Object.entries(byType).sort((a, b) => b[1] - a[1])[0][0]
-    
-    return {
-      total: favorites.length,
-      byType,
-      avgCalories,
-      mostRecent,
-      topType
-    }
-  } catch (error) {
-    console.error('Erreur stats favoris:', error)
-    return null
-  }
-}
-
-/**
- * Met à jour les statistiques (interne)
- */
-const updateStats = (userId, action, recipeType) => {
-  try {
-    const statsKey = `${FAVORITES_STATS_KEY}_${userId}`
-    let stats = localStorage.getItem(statsKey)
-    stats = stats ? JSON.parse(stats) : { adds: 0, removes: 0, byType: {} }
-    
-    if (action === 'add') {
-      stats.adds = (stats.adds || 0) + 1
-      stats.byType[recipeType] = (stats.byType[recipeType] || 0) + 1
-    } else if (action === 'remove') {
-      stats.removes = (stats.removes || 0) + 1
-    }
-    
-    localStorage.setItem(statsKey, JSON.stringify(stats))
-  } catch (error) {
-    console.error('Erreur update stats:', error)
-  }
-}
-
-// ========== Export/Import ==========
-
-/**
- * Exporte les favoris en JSON
- */
-export const exportFavorites = (userId) => {
-  try {
-    const favorites = getFavorites(userId)
-    const data = {
-      version: '1.0',
-      exportedAt: new Date().toISOString(),
-      userId,
-      favorites
-    }
-    
-    const json = JSON.stringify(data, null, 2)
-    const blob = new Blob([json], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `nutriweek_favoris_${new Date().toISOString().split('T')[0]}.json`
-    link.click()
-    
-    URL.revokeObjectURL(url)
-    
-    console.log('✅ Favoris exportés')
-    return { success: true }
-  } catch (error) {
-    console.error('❌ Erreur export favoris:', error)
-    return { success: false, error: 'Erreur lors de l\'export' }
-  }
-}
-
-/**
- * Importe des favoris depuis JSON
- */
-export const importFavorites = (userId, jsonData) => {
-  try {
-    const data = JSON.parse(jsonData)
-    
-    if (!data.favorites || !Array.isArray(data.favorites)) {
-      return { success: false, error: 'Format de fichier invalide' }
-    }
-    
-    let imported = 0
-    let skipped = 0
-    
-    data.favorites.forEach(fav => {
-      // Réassigner l'userId
-      fav.userId = userId
-      fav.id = `fav_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    if (allFavorites['current'] && allFavorites['current'][recipeId]) {
+      allFavorites['current'][recipeId].notes = notes
+      localStorage.setItem(FAVORITES_KEY, JSON.stringify(allFavorites))
       
-      // Vérifier si déjà présent
-      if (!isFavorite(userId, fav.recipeId)) {
-        const result = addFavorite(userId, {
-          id: fav.recipeId,
-          nom: fav.recipeName,
-          type: fav.recipeType,
-          calories: fav.calories,
-          proteines: fav.proteines,
-          lipides: fav.lipides,
-          glucides: fav.glucides,
-          ingredients: fav.ingredients,
-          preparation: fav.preparation,
-          tags: fav.tags
-        })
-        
-        if (result.success) imported++
-        else skipped++
-      } else {
-        skipped++
+      console.log(`✅ Note mise à jour pour: ${recipeId}`)
+      return { success: true }
+    }
+    
+    return { success: false, error: 'Favori non trouvé' }
+  } catch (error) {
+    console.error('Erreur lors de la mise à jour de la note:', error)
+    return { success: false, error: error.message }
+  }
+}
+
+/**
+ * Obtenir les statistiques des favoris
+ */
+export const getFavoritesStats = async () => {
+  try {
+    const favorites = await getAllFavorites()
+    
+    const stats = {
+      total: favorites.length,
+      byType: {
+        'petit-dejeuner': favorites.filter(f => f.recipe.type === 'petit-dejeuner').length,
+        'dejeuner': favorites.filter(f => f.recipe.type === 'dejeuner').length,
+        'diner': favorites.filter(f => f.recipe.type === 'diner').length
+      },
+      averageCalories: favorites.length > 0 
+        ? Math.round(favorites.reduce((sum, f) => sum + f.recipe.calories, 0) / favorites.length)
+        : 0,
+      topFavorites: favorites.slice(0, 3)
+    }
+    
+    return stats
+  } catch (error) {
+    console.error('Erreur lors du calcul des statistiques:', error)
+    return {
+      total: 0,
+      byType: { 'petit-dejeuner': 0, 'dejeuner': 0, 'diner': 0 },
+      averageCalories: 0,
+      topFavorites: []
+    }
+  }
+}
+
+/**
+ * Exporter les favoris en JSON
+ */
+export const exportFavorites = async () => {
+  try {
+    const favorites = await getAllFavorites()
+    const dataStr = JSON.stringify(favorites, null, 2)
+    const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr)
+    
+    const exportFileDefaultName = `nutriweek-favoris-${new Date().toISOString().split('T')[0]}.json`
+    
+    const linkElement = document.createElement('a')
+    linkElement.setAttribute('href', dataUri)
+    linkElement.setAttribute('download', exportFileDefaultName)
+    linkElement.click()
+    
+    return { success: true }
+  } catch (error) {
+    console.error('Erreur lors de l\'export:', error)
+    return { success: false, error: error.message }
+  }
+}
+
+/**
+ * Importer des favoris depuis un fichier JSON
+ */
+export const importFavorites = async (fileContent) => {
+  try {
+    const importedFavorites = JSON.parse(fileContent)
+    
+    if (!Array.isArray(importedFavorites)) {
+      throw new Error('Format de fichier invalide')
+    }
+    
+    const allFavorites = JSON.parse(localStorage.getItem(FAVORITES_KEY) || '{}')
+    
+    if (!allFavorites['current']) {
+      allFavorites['current'] = {}
+    }
+    
+    // Ajouter les favoris importés
+    importedFavorites.forEach(fav => {
+      const recipeId = fav.id || fav.recipe.id || fav.recipe.nom
+      allFavorites['current'][recipeId] = {
+        recipe: fav.recipe,
+        addedAt: fav.addedAt,
+        notes: fav.notes || ''
       }
     })
     
-    console.log(`✅ Import terminé: ${imported} importés, ${skipped} ignorés`)
-    return { success: true, imported, skipped }
+    localStorage.setItem(FAVORITES_KEY, JSON.stringify(allFavorites))
+    
+    return { success: true, count: importedFavorites.length }
   } catch (error) {
-    console.error('❌ Erreur import favoris:', error)
-    return { success: false, error: 'Erreur lors de l\'import' }
-  }
-}
-
-// ========== Utilitaires ==========
-
-/**
- * Nettoie les favoris orphelins (sans utilisateur)
- */
-export const cleanupFavorites = () => {
-  try {
-    const allFavorites = localStorage.getItem(FAVORITES_KEY)
-    if (!allFavorites) return { success: true, removed: 0 }
-    
-    const favorites = JSON.parse(allFavorites)
-    const cleaned = favorites.filter(fav => fav.userId)
-    
-    const removed = favorites.length - cleaned.length
-    
-    if (removed > 0) {
-      localStorage.setItem(FAVORITES_KEY, JSON.stringify(cleaned))
-      console.log(`✅ Nettoyage: ${removed} favoris orphelins supprimés`)
-    }
-    
-    return { success: true, removed }
-  } catch (error) {
-    console.error('❌ Erreur nettoyage favoris:', error)
-    return { success: false, error: 'Erreur lors du nettoyage' }
+    console.error('Erreur lors de l\'import:', error)
+    return { success: false, error: error.message }
   }
 }
 
 /**
- * Compte le nombre total de favoris
+ * Utilitaire pour déterminer le type de repas depuis le moment
  */
-export const getTotalFavoritesCount = () => {
-  try {
-    const allFavorites = localStorage.getItem(FAVORITES_KEY)
-    if (!allFavorites) return 0
-    
-    const favorites = JSON.parse(allFavorites)
-    return favorites.length
-  } catch (error) {
-    console.error('Erreur comptage favoris:', error)
-    return 0
-  }
+const getMealTypeFromMoment = (moment) => {
+  if (!moment) return 'dejeuner'
+  
+  const momentLower = moment.toLowerCase()
+  if (momentLower.includes('petit')) return 'petit-dejeuner'
+  if (momentLower.includes('déjeuner') || momentLower.includes('dejeuner')) return 'dejeuner'
+  if (momentLower.includes('dîner') || momentLower.includes('diner')) return 'diner'
+  
+  return 'dejeuner'
 }
