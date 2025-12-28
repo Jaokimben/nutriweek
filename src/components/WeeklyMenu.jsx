@@ -257,6 +257,40 @@ const WeeklyMenu = ({ userProfile, initialMenu = null, onMenuGenerated, onBack }
       setRegeneratingMeal(null)
     }
   }
+  
+  // Handler pour ajouter/retirer des favoris
+  const handleToggleFavorite = async (meal) => {
+    try {
+      const isFavorite = favorites[meal.nom]
+      
+      if (isFavorite) {
+        await removeFavorite(meal.nom)
+        setFavorites(prev => {
+          const newFavs = { ...prev }
+          delete newFavs[meal.nom]
+          return newFavs
+        })
+        console.log(`💔 Retiré des favoris: ${meal.nom}`)
+      } else {
+        await addFavorite(meal)
+        setFavorites(prev => ({ ...prev, [meal.nom]: true }))
+        console.log(`❤️ Ajouté aux favoris: ${meal.nom}`)
+      }
+    } catch (error) {
+      console.error('Erreur toggle favori:', error)
+      alert('Erreur lors de la mise à jour des favoris')
+    }
+  }
+  
+  // Handler pour ajouter une note à un favori
+  const handleAddNote = async (mealName, note) => {
+    try {
+      await addFavorite({ nom: mealName }, note)
+      console.log(`📝 Note ajoutée: ${note}`)
+    } catch (error) {
+      console.error('Erreur ajout note:', error)
+    }
+  }
 
   return (
     <div className="weekly-menu">
@@ -315,6 +349,8 @@ const WeeklyMenu = ({ userProfile, initialMenu = null, onMenuGenerated, onBack }
               propositionCount={propositionCount[`${selectedDay}-petitDejeuner`] || 0}
               isTransitioning={isTransitioning?.dayIndex === selectedDay && isTransitioning?.mealType === 'petitDejeuner'}
               transitionPhase={isTransitioning?.phase}
+              isFavorite={favorites[currentDayMenu.menu.petitDejeuner.nom]}
+              onToggleFavorite={handleToggleFavorite}
             />
           )}
           
@@ -326,6 +362,8 @@ const WeeklyMenu = ({ userProfile, initialMenu = null, onMenuGenerated, onBack }
               propositionCount={propositionCount[`${selectedDay}-dejeuner`] || 0}
               isTransitioning={isTransitioning?.dayIndex === selectedDay && isTransitioning?.mealType === 'dejeuner'}
               transitionPhase={isTransitioning?.phase}
+              isFavorite={favorites[currentDayMenu.menu.dejeuner.nom]}
+              onToggleFavorite={handleToggleFavorite}
             />
           )}
           
@@ -337,6 +375,8 @@ const WeeklyMenu = ({ userProfile, initialMenu = null, onMenuGenerated, onBack }
               propositionCount={propositionCount[`${selectedDay}-diner`] || 0}
               isTransitioning={isTransitioning?.dayIndex === selectedDay && isTransitioning?.mealType === 'diner'}
               transitionPhase={isTransitioning?.phase}
+              isFavorite={favorites[currentDayMenu.menu.diner.nom]}
+              onToggleFavorite={handleToggleFavorite}
             />
           )}
         </div>
@@ -403,20 +443,10 @@ const WeeklyMenu = ({ userProfile, initialMenu = null, onMenuGenerated, onBack }
   )
 }
 
-const MealCard = ({ meal, onRegenerate, isRegenerating, propositionCount = 0, isTransitioning = false, transitionPhase = 'in' }) => {
+const MealCard = ({ meal, onRegenerate, isRegenerating, propositionCount = 0, isTransitioning = false, transitionPhase = 'in', isFavorite = false, onToggleFavorite }) => {
   const [showDetails, setShowDetails] = useState(false)
-  const [isFav, setIsFav] = useState(false)
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
-  
-  // Vérifier si c'est un favori
-  useEffect(() => {
-    const user = getCurrentUser()
-    if (user) {
-      const recipeId = meal.id || meal.nom
-      setIsFav(isFavorite(user.id, recipeId))
-    }
-  }, [meal])
   
   // Gérer le toggle favori
   const handleToggleFavorite = () => {
@@ -426,29 +456,10 @@ const MealCard = ({ meal, onRegenerate, isRegenerating, propositionCount = 0, is
       return
     }
     
-    const recipe = {
-      id: meal.id || meal.nom,
-      nom: meal.nom,
-      type: meal.type || getMealType(meal.moment),
-      calories: meal.calories,
-      proteines: meal.proteines,
-      lipides: meal.lipides,
-      glucides: meal.glucides,
-      ingredients: meal.ingredients,
-      preparation: meal.preparation,
-      tags: meal.tags
-    }
-    
-    const result = toggleFavorite(user.id, recipe)
-    
-    if (result.success) {
-      setIsFav(!isFav)
-      setToastMessage(isFav ? 'Retiré des favoris' : 'Ajouté aux favoris ❤️')
-      setShowToast(true)
-      setTimeout(() => setShowToast(false), 3000)
-    } else {
-      alert(result.error)
-    }
+    onToggleFavorite(meal)
+    setToastMessage(isFavorite ? 'Retiré des favoris' : 'Ajouté aux favoris ❤️')
+    setShowToast(true)
+    setTimeout(() => setShowToast(false), 3000)
   }
   
   // Déterminer le type de repas depuis le moment
@@ -481,11 +492,11 @@ const MealCard = ({ meal, onRegenerate, isRegenerating, propositionCount = 0, is
         <div className="meal-actions">
           {/* Bouton favori */}
           <button
-            className={`btn-favorite ${isFav ? 'is-favorite' : ''}`}
+            className={`btn-favorite ${isFavorite ? 'is-favorite' : ''}`}
             onClick={handleToggleFavorite}
-            title={isFav ? 'Retirer des favoris' : 'Ajouter aux favoris'}
+            title={isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris'}
           >
-            {isFav ? '❤️' : '🤍'}
+            {isFavorite ? '❤️' : '🤍'}
           </button>
           
           {/* Bouton régénérer */}
