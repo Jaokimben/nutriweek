@@ -519,3 +519,109 @@
     align-self: flex-start;
   }
 }
+
+/* ========== NOUVELLES ANIMATIONS & COMPOSANTS ========== */
+
+/* Container pour le bouton de régénération et le compteur */
+.regenerate-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+/* Compteur de propositions */
+.proposition-counter {
+  background: linear-gradient(135deg, rgba(156, 39, 176, 0.1), rgba(233, 30, 99, 0.1));
+  border: 2px solid #9c27b0;
+  color: #9c27b0;
+  padding: 0.25rem 0.6rem;
+  border-radius: 15px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+  animation: fadeIn 0.3s ease;
+}
+
+[data-theme="dark"] .proposition-counter {
+  background: linear-gradient(135deg, rgba(156, 39, 176, 0.2), rgba(233, 30, 99, 0.2));
+  border-color: #ba68c8;
+  color: #ba68c8;
+}
+
+/* Spinner petit pour le bouton */
+.spinner-small {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-right: 0.3rem;
+}
+
+/* Animations de transition pour les cartes de repas */
+.meal-card-fade-out {
+  animation: fadeOut 0.3s ease forwards;
+}
+
+.meal-card-fade-in {
+  animation: fadeIn 0.3s ease forwards;
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Amélioration du bouton régénérer en mode sombre */
+[data-theme="dark"] .btn-regenerate {
+  background: linear-gradient(135deg, #ba68c8, #f06292);
+  box-shadow: 0 2px 8px rgba(186, 104, 200, 0.3);
+}
+
+[data-theme="dark"] .btn-regenerate:hover:not(:disabled) {
+  box-shadow: 0 4px 12px rgba(186, 104, 200, 0.5);
+}
+
+/* État de transition pour le conteneur de repas */
+.meals-container {
+  position: relative;
+}
+
+/* Amélioration responsive du container de régénération */
+@media (max-width: 480px) {
+  .regenerate-container {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+    width: 100%;
+  }
+  
+  .btn-regenerate {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .proposition-counter {
+    align-self: flex-start;
+  }
+}

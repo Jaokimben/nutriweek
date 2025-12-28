@@ -89,6 +89,11 @@ const WeeklyMenu = ({ userProfile, initialMenu = null, onMenuGenerated, onBack }
   const [regeneratingMeal, setRegeneratingMeal] = useState(null)
   const [alimentsSimple, setAlimentsSimple] = useState(null)
   const [ciqualData, setCiqualData] = useState(null)
+  
+  // Nouveau: Système de cache pour les alternatives
+  const [alternativesCache, setAlternativesCache] = useState({})
+  const [propositionCount, setPropositionCount] = useState({})
+  const [isTransitioning, setIsTransitioning] = useState(null)
 
   useEffect(() => {
     // Si on a déjà un menu initial, ne pas générer
@@ -142,26 +147,77 @@ const WeeklyMenu = ({ userProfile, initialMenu = null, onMenuGenerated, onBack }
   const imc = calculateIMC(userProfile.poids, userProfile.taille)
   const currentDayMenu = weeklyMenu.semaine[selectedDay]
 
-  // Handler pour régénérer un repas
+  // Handler pour régénérer un repas avec cache et animations
   const handleRegenerateMeal = async (dayIndex, mealType) => {
     try {
-      console.log(`🔄 Régénération du repas avec ALIMENTS AUTORISÉS: Jour ${dayIndex}, Type ${mealType}`)
+      const cacheKey = `${dayIndex}-${mealType}`
+      
+      // Incrémenter le compteur de propositions
+      const currentCount = propositionCount[cacheKey] || 0
+      const newCount = currentCount + 1
+      setPropositionCount(prev => ({ ...prev, [cacheKey]: newCount }))
+      
+      console.log(`🔄 Régénération ${newCount}/5 du repas: Jour ${dayIndex}, Type ${mealType}`)
+      
+      // Vérifier si on a atteint la limite
+      if (newCount > 5) {
+        alert('Vous avez exploré toutes les alternatives disponibles pour ce repas. Cliquez à nouveau pour réinitialiser.')
+        setPropositionCount(prev => ({ ...prev, [cacheKey]: 0 }))
+        setAlternativesCache(prev => ({ ...prev, [cacheKey]: [] }))
+        return
+      }
+      
+      // Animation: fade-out
+      setIsTransitioning({ dayIndex, mealType, phase: 'out' })
+      await new Promise(resolve => setTimeout(resolve, 300))
       
       // Marquer le repas en cours de régénération
-      setRegeneratingMeal({ dayIndex, mealType })
+      setRegeneratingMeal({ dayIndex, mealType, count: newCount })
       
-      // Obtenir le jour correspondant
-      const jourNames = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche']
-      const jourName = jourNames[dayIndex]
+      let newMeal
       
-      // Utiliser le générateur strict pour régénérer le repas
-      const menuActuel = weeklyMenu.rawMenu // Menu brut du générateur
-      const newMeal = await regenererRepas(jourName, mealType, menuActuel, userProfile)
+      // Vérifier si on a des alternatives en cache
+      const cachedAlternatives = alternativesCache[cacheKey] || []
       
-      console.log('✅ Nouveau repas généré:', newMeal)
+      if (cachedAlternatives.length > 0) {
+        // Utiliser une alternative du cache (rotation)
+        newMeal = cachedAlternatives[0]
+        // Déplacer cette alternative à la fin
+        setAlternativesCache(prev => ({
+          ...prev,
+          [cacheKey]: [...cachedAlternatives.slice(1), cachedAlternatives[0]]
+        }))
+        console.log('✅ Alternative récupérée du cache (instantané)')
+      } else {
+        // Générer de nouvelles alternatives
+        console.log('🔄 Génération de nouvelles alternatives...')
+        
+        const jourNames = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche']
+        const jourName = jourNames[dayIndex]
+        const menuActuel = weeklyMenu.rawMenu
+        
+        // Générer 3 alternatives d'un coup
+        const alternatives = []
+        for (let i = 0; i < 3; i++) {
+          const alternative = await regenererRepas(jourName, mealType, menuActuel, userProfile)
+          alternatives.push(alternative)
+        }
+        
+        // Utiliser la première, mettre les autres en cache
+        newMeal = alternatives[0]
+        setAlternativesCache(prev => ({
+          ...prev,
+          [cacheKey]: alternatives.slice(1)
+        }))
+        
+        console.log(`✅ 3 alternatives générées (2 en cache)`)
+      }
       
       // Transformer le repas pour l'affichage
       const formattedMeal = transformerRepasPourAffichage(newMeal)
+      
+      // Animation: fade-in
+      setIsTransitioning({ dayIndex, mealType, phase: 'in' })
       
       // Mettre à jour le menu
       const updatedMenu = { ...weeklyMenu }
@@ -170,10 +226,15 @@ const WeeklyMenu = ({ userProfile, initialMenu = null, onMenuGenerated, onBack }
       setWeeklyMenu(updatedMenu)
       saveMenu(updatedMenu, userProfile)
       
-      console.log('✅ Repas régénéré avec succès')
+      // Attendre la fin de l'animation
+      await new Promise(resolve => setTimeout(resolve, 300))
+      setIsTransitioning(null)
+      
+      console.log(`✅ Repas régénéré avec succès (Proposition ${newCount}/5)`)
     } catch (error) {
       console.error('❌ Erreur régénération repas:', error)
-      alert('Erreur lors de la régénération du repas')
+      alert('Erreur lors de la régénération du repas. Veuillez réessayer.')
+      setIsTransitioning(null)
     } finally {
       setRegeneratingMeal(null)
     }
@@ -233,6 +294,9 @@ const WeeklyMenu = ({ userProfile, initialMenu = null, onMenuGenerated, onBack }
               meal={currentDayMenu.menu.petitDejeuner}
               onRegenerate={() => handleRegenerateMeal(selectedDay, 'petitDejeuner')}
               isRegenerating={regeneratingMeal?.dayIndex === selectedDay && regeneratingMeal?.mealType === 'petitDejeuner'}
+              propositionCount={propositionCount[`${selectedDay}-petitDejeuner`] || 0}
+              isTransitioning={isTransitioning?.dayIndex === selectedDay && isTransitioning?.mealType === 'petitDejeuner'}
+              transitionPhase={isTransitioning?.phase}
             />
           )}
           
@@ -241,6 +305,9 @@ const WeeklyMenu = ({ userProfile, initialMenu = null, onMenuGenerated, onBack }
               meal={currentDayMenu.menu.dejeuner}
               onRegenerate={() => handleRegenerateMeal(selectedDay, 'dejeuner')}
               isRegenerating={regeneratingMeal?.dayIndex === selectedDay && regeneratingMeal?.mealType === 'dejeuner'}
+              propositionCount={propositionCount[`${selectedDay}-dejeuner`] || 0}
+              isTransitioning={isTransitioning?.dayIndex === selectedDay && isTransitioning?.mealType === 'dejeuner'}
+              transitionPhase={isTransitioning?.phase}
             />
           )}
           
@@ -249,6 +316,9 @@ const WeeklyMenu = ({ userProfile, initialMenu = null, onMenuGenerated, onBack }
               meal={currentDayMenu.menu.diner}
               onRegenerate={() => handleRegenerateMeal(selectedDay, 'diner')}
               isRegenerating={regeneratingMeal?.dayIndex === selectedDay && regeneratingMeal?.mealType === 'diner'}
+              propositionCount={propositionCount[`${selectedDay}-diner`] || 0}
+              isTransitioning={isTransitioning?.dayIndex === selectedDay && isTransitioning?.mealType === 'diner'}
+              transitionPhase={isTransitioning?.phase}
             />
           )}
         </div>
@@ -315,35 +385,48 @@ const WeeklyMenu = ({ userProfile, initialMenu = null, onMenuGenerated, onBack }
   )
 }
 
-const MealCard = ({ meal, onRegenerate, isRegenerating }) => {
+const MealCard = ({ meal, onRegenerate, isRegenerating, propositionCount = 0, isTransitioning = false, transitionPhase = 'in' }) => {
   const [showDetails, setShowDetails] = useState(false)
   
-  // DEBUG: Log ce que reçoit MealCard
-  console.log('🍽️ [MealCard] Rendu pour:', meal.nom)
-  console.log('📊 [MealCard] Valeurs nutrition:', {
-    calories: meal.calories,
-    proteines: meal.proteines,
-    lipides: meal.lipides,
-    glucides: meal.glucides
-  })
-  console.log('🔍 [MealCard] Objet meal complet:', meal)
+  // Déterminer la classe d'animation
+  const transitionClass = isTransitioning 
+    ? (transitionPhase === 'out' ? 'meal-card-fade-out' : 'meal-card-fade-in')
+    : ''
 
   return (
-    <div className="meal-card">
+    <div className={`meal-card ${transitionClass}`}>
       <div className="meal-header">
         <div>
           <h4>{meal.nom}</h4>
           <span className="meal-calories">{meal.calories} kcal</span>
         </div>
         {onRegenerate && (
-          <button 
-            className="btn-regenerate"
-            onClick={onRegenerate}
-            disabled={isRegenerating}
-            title="Proposez-moi autre chose"
-          >
-            {isRegenerating ? '⏳ Recherche...' : '🔄 Autre proposition'}
-          </button>
+          <div className="regenerate-container">
+            {propositionCount > 0 && (
+              <span className="proposition-counter">
+                {propositionCount}/5
+              </span>
+            )}
+            <button 
+              className="btn-regenerate"
+              onClick={onRegenerate}
+              disabled={isRegenerating}
+              title={propositionCount >= 5 
+                ? "Toutes les alternatives explorées - Cliquez pour réinitialiser" 
+                : "Proposez-moi autre chose"}
+            >
+              {isRegenerating ? (
+                <>
+                  <span className="spinner-small"></span>
+                  Génération...
+                </>
+              ) : propositionCount >= 5 ? (
+                '🔄 Réinitialiser'
+              ) : (
+                '🔄 Autre proposition'
+              )}
+            </button>
+          </div>
         )}
       </div>
       <p className="meal-moment">{meal.moment}</p>
