@@ -5,6 +5,8 @@ import { calculateIMC, calculateCalories } from '../utils/nutritionCalculator'
 import { loadCIQUAL } from '../utils/ciqualParser'
 import { loadAlimentsSimple } from '../utils/alimentsSimpleParser'
 import { saveMenu } from '../utils/storage'
+import { getCurrentUser } from '../utils/authService'
+import { toggleFavorite, isFavorite } from '../utils/favoritesStorage'
 import ShoppingList from './ShoppingList'
 import './WeeklyMenu.css'
 
@@ -94,6 +96,9 @@ const WeeklyMenu = ({ userProfile, initialMenu = null, onMenuGenerated, onBack }
   const [alternativesCache, setAlternativesCache] = useState({})
   const [propositionCount, setPropositionCount] = useState({})
   const [isTransitioning, setIsTransitioning] = useState(null)
+  
+  // Système de favoris
+  const [favorites, setFavorites] = useState({})
 
   useEffect(() => {
     // Si on a déjà un menu initial, ne pas générer
@@ -134,6 +139,19 @@ const WeeklyMenu = ({ userProfile, initialMenu = null, onMenuGenerated, onBack }
     
     loadAndGenerateMenu()
   }, [userProfile])
+  
+  // Charger les favoris au montage
+  useEffect(() => {
+    const loadFavs = async () => {
+      const allFavorites = await getAllFavorites()
+      const favsMap = {}
+      allFavorites.forEach(fav => {
+        favsMap[fav.recipe.nom] = true
+      })
+      setFavorites(favsMap)
+    }
+    loadFavs()
+  }, [])
 
   if (loading) {
     return (
@@ -387,6 +405,59 @@ const WeeklyMenu = ({ userProfile, initialMenu = null, onMenuGenerated, onBack }
 
 const MealCard = ({ meal, onRegenerate, isRegenerating, propositionCount = 0, isTransitioning = false, transitionPhase = 'in' }) => {
   const [showDetails, setShowDetails] = useState(false)
+  const [isFav, setIsFav] = useState(false)
+  const [showToast, setShowToast] = useState(false)
+  const [toastMessage, setToastMessage] = useState('')
+  
+  // Vérifier si c'est un favori
+  useEffect(() => {
+    const user = getCurrentUser()
+    if (user) {
+      const recipeId = meal.id || meal.nom
+      setIsFav(isFavorite(user.id, recipeId))
+    }
+  }, [meal])
+  
+  // Gérer le toggle favori
+  const handleToggleFavorite = () => {
+    const user = getCurrentUser()
+    if (!user) {
+      alert('Vous devez être connecté pour ajouter des favoris')
+      return
+    }
+    
+    const recipe = {
+      id: meal.id || meal.nom,
+      nom: meal.nom,
+      type: meal.type || getMealType(meal.moment),
+      calories: meal.calories,
+      proteines: meal.proteines,
+      lipides: meal.lipides,
+      glucides: meal.glucides,
+      ingredients: meal.ingredients,
+      preparation: meal.preparation,
+      tags: meal.tags
+    }
+    
+    const result = toggleFavorite(user.id, recipe)
+    
+    if (result.success) {
+      setIsFav(!isFav)
+      setToastMessage(isFav ? 'Retiré des favoris' : 'Ajouté aux favoris ❤️')
+      setShowToast(true)
+      setTimeout(() => setShowToast(false), 3000)
+    } else {
+      alert(result.error)
+    }
+  }
+  
+  // Déterminer le type de repas depuis le moment
+  const getMealType = (moment) => {
+    if (moment?.includes('Petit')) return 'petit_dejeuner'
+    if (moment?.includes('Déjeuner')) return 'dejeuner'
+    if (moment?.includes('Dîner')) return 'diner'
+    return 'dejeuner'
+  }
   
   // Déterminer la classe d'animation
   const transitionClass = isTransitioning 
@@ -395,39 +466,58 @@ const MealCard = ({ meal, onRegenerate, isRegenerating, propositionCount = 0, is
 
   return (
     <div className={`meal-card ${transitionClass}`}>
+      {/* Toast pour favoris */}
+      {showToast && (
+        <div className="favorite-toast">
+          {toastMessage}
+        </div>
+      )}
+      
       <div className="meal-header">
         <div>
           <h4>{meal.nom}</h4>
           <span className="meal-calories">{meal.calories} kcal</span>
         </div>
-        {onRegenerate && (
-          <div className="regenerate-container">
-            {propositionCount > 0 && (
-              <span className="proposition-counter">
-                {propositionCount}/5
-              </span>
-            )}
-            <button 
-              className="btn-regenerate"
-              onClick={onRegenerate}
-              disabled={isRegenerating}
-              title={propositionCount >= 5 
-                ? "Toutes les alternatives explorées - Cliquez pour réinitialiser" 
-                : "Proposez-moi autre chose"}
-            >
-              {isRegenerating ? (
-                <>
-                  <span className="spinner-small"></span>
-                  Génération...
-                </>
-              ) : propositionCount >= 5 ? (
-                '🔄 Réinitialiser'
-              ) : (
-                '🔄 Autre proposition'
+        <div className="meal-actions">
+          {/* Bouton favori */}
+          <button
+            className={`btn-favorite ${isFav ? 'is-favorite' : ''}`}
+            onClick={handleToggleFavorite}
+            title={isFav ? 'Retirer des favoris' : 'Ajouter aux favoris'}
+          >
+            {isFav ? '❤️' : '🤍'}
+          </button>
+          
+          {/* Bouton régénérer */}
+          {onRegenerate && (
+            <div className="regenerate-container">
+              {propositionCount > 0 && (
+                <span className="proposition-counter">
+                  {propositionCount}/5
+                </span>
               )}
-            </button>
-          </div>
-        )}
+              <button 
+                className="btn-regenerate"
+                onClick={onRegenerate}
+                disabled={isRegenerating}
+                title={propositionCount >= 5 
+                  ? "Toutes les alternatives explorées - Cliquez pour réinitialiser" 
+                  : "Proposez-moi autre chose"}
+              >
+                {isRegenerating ? (
+                  <>
+                    <span className="spinner-small"></span>
+                    Génération...
+                  </>
+                ) : propositionCount >= 5 ? (
+                  '🔄 Réinitialiser'
+                ) : (
+                  '🔄 Autre proposition'
+                )}
+              </button>
+            </div>
+          )}
+        </div>
       </div>
       <p className="meal-moment">{meal.moment}</p>
       
