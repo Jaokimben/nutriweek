@@ -4,6 +4,7 @@ const BottomNav = ({ activeTab, onTabChange }) => {
   const tabs = [
     { id: 'questionnaire', icon: '📋', label: 'Questionnaire' },
     { id: 'menu', icon: '🍽️', label: 'Mon Menu' },
+    { id: 'favorites', icon: '❤️', label: 'Favoris' },
     { id: 'history', icon: '📚', label: 'Historique' },
     { id: 'profile', icon: '👤', label: 'Profil' }
   ]

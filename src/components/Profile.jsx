@@ -43,14 +43,29 @@ const Profile = ({ onLogout }) => {
   })
 
   const [message, setMessage] = useState({ type: '', text: '' })
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
   useEffect(() => {
     loadUserData()
   }, [])
 
-  const loadUserData = () => {
-    const currentUser = getCurrentUser()
-    if (currentUser) {
+  const loadUserData = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      
+      // Attendre un court délai pour éviter le flash
+      await new Promise(resolve => setTimeout(resolve, 100))
+      
+      const currentUser = getCurrentUser()
+      
+      if (!currentUser) {
+        setError('Aucun utilisateur connecté')
+        setLoading(false)
+        return
+      }
+      
       setUser(currentUser)
       
       // Ne charger les stats que si pas en mode invité
@@ -72,6 +87,12 @@ const Profile = ({ onLogout }) => {
           lastName: currentUser.lastName || ''
         }))
       }
+      
+      setLoading(false)
+    } catch (err) {
+      console.error('Erreur chargement profil:', err)
+      setError('Erreur lors du chargement du profil')
+      setLoading(false)
     }
   }
 
@@ -155,10 +176,49 @@ const Profile = ({ onLogout }) => {
     }
   }
 
+  // États de chargement et d'erreur
+  if (loading) {
+    return (
+      <div className="profile-container">
+        <div className="loading-state">
+          <div className="spinner"></div>
+          <p>Chargement de votre profil...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="profile-container">
+        <div className="error-state">
+          <div className="error-icon">⚠️</div>
+          <h2>Erreur de chargement</h2>
+          <p>{error}</p>
+          <div className="error-actions">
+            <button className="btn-retry" onClick={loadUserData}>
+              🔄 Réessayer
+            </button>
+            <button className="btn-back" onClick={() => window.location.href = '/'}>
+              ← Retour à l'accueil
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   if (!user) {
     return (
       <div className="profile-container">
-        <p>Chargement...</p>
+        <div className="no-user-state">
+          <div className="no-user-icon">👤</div>
+          <h2>Non connecté</h2>
+          <p>Vous devez être connecté pour accéder à votre profil.</p>
+          <button className="btn-login" onClick={() => window.location.href = '/'}>
+            Se connecter
+          </button>
+        </div>
       </div>
     )
   }
