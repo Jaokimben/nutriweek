@@ -63,6 +63,36 @@ body {
   transform: scale(0.95);
 }
 
+/* Bouton d'accès praticien */
+.practitioner-access-btn {
+  position: fixed;
+  bottom: 6rem;
+  right: 2rem;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(240, 147, 251, 0.4);
+  transition: all 0.3s ease;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.practitioner-access-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 24px rgba(240, 147, 251, 0.6);
+}
+
+.practitioner-access-btn:active {
+  transform: scale(0.95);
+}
+
 /* Mobile-first responsive design */
 @media (min-width: 768px) {
   .app {
