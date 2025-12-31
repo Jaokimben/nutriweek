@@ -8,6 +8,7 @@ import Register from './components/auth/Register'
 import Profile from './components/Profile'
 import History from './components/History'
 import Favorites from './components/Favorites'
+import HydrationTracker from './components/HydrationTracker'
 import BottomNav from './components/BottomNav'
 import ThemeToggle from './components/ThemeToggle'
 import { getCurrentUser, isAuthenticated, initializeDemoAccount, updateUserProfile, saveUserMenu } from './utils/authService'
@@ -193,6 +194,9 @@ function App() {
       
       case 'favorites':
         return <Favorites />
+      
+      case 'hydration':
+        return <HydrationTracker />
       
       default:
         return null
