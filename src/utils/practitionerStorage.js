@@ -16,7 +16,9 @@ const STORAGE_KEY = 'nutriweek_practitioner_files'
  * Structure de données
  */
 const DEFAULT_FILES = {
-  alimentsExcel: null,
+  alimentsPetitDej: null,
+  alimentsDejeuner: null,
+  alimentsDiner: null,
   fodmapList: null,
   reglesGenerales: null,
   pertePoidHomme: null,
@@ -37,7 +39,9 @@ export const getFilesSummary = () => {
     const summary = {}
 
     const fileTypes = [
-      'alimentsExcel',
+      'alimentsPetitDej',
+      'alimentsDejeuner',
+      'alimentsDiner',
       'fodmapList',
       'reglesGenerales',
       'pertePoidHomme',
@@ -64,11 +68,27 @@ export const getFilesSummary = () => {
 }
 
 /**
- * Sauvegarder le fichier Excel des aliments
+ * Sauvegarder le fichier Excel petit-déjeuner
  */
-export const saveAlimentsExcel = async (file) => {
+export const saveAlimentsPetitDej = async (file) => {
   validateExcelFile(file)
-  return await saveFile('alimentsExcel', file)
+  return await saveFile('alimentsPetitDej', file)
+}
+
+/**
+ * Sauvegarder le fichier Excel déjeuner
+ */
+export const saveAlimentsDejeuner = async (file) => {
+  validateExcelFile(file)
+  return await saveFile('alimentsDejeuner', file)
+}
+
+/**
+ * Sauvegarder le fichier Excel dîner
+ */
+export const saveAlimentsDiner = async (file) => {
+  validateExcelFile(file)
+  return await saveFile('alimentsDiner', file)
 }
 
 /**

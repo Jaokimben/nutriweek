@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react'
 import {
   getAllFiles,
-  saveAlimentsExcel,
+  saveAlimentsPetitDej,
+  saveAlimentsDejeuner,
+  saveAlimentsDiner,
   saveFodmapList,
   saveReglesGenerales,
   savePertePoidHomme,
@@ -114,11 +116,27 @@ const PractitionerPortal = ({ onBack }) => {
 
   const fileConfigs = [
     {
-      key: 'alimentsExcel',
-      title: 'Fichier Excel - Aliments Autorisés',
-      description: 'Liste des aliments avec valeurs nutritionnelles',
-      icon: '📊',
-      saveFn: saveAlimentsExcel,
+      key: 'alimentsPetitDej',
+      title: 'Excel Petit-Déjeuner',
+      description: 'Aliments autorisés pour le petit-déjeuner',
+      icon: '🌅',
+      saveFn: saveAlimentsPetitDej,
+      formats: '.xls, .xlsx, .csv'
+    },
+    {
+      key: 'alimentsDejeuner',
+      title: 'Excel Déjeuner',
+      description: 'Aliments autorisés pour le déjeuner',
+      icon: '🍽️',
+      saveFn: saveAlimentsDejeuner,
+      formats: '.xls, .xlsx, .csv'
+    },
+    {
+      key: 'alimentsDiner',
+      title: 'Excel Dîner',
+      description: 'Aliments autorisés pour le dîner',
+      icon: '🌙',
+      saveFn: saveAlimentsDiner,
       formats: '.xls, .xlsx, .csv'
     },
     {
