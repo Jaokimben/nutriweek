@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import Questionnaire from './components/Questionnaire'
 import WeeklyMenu from './components/WeeklyMenu'
 import AdminPortal from './components/AdminPortal'
+import PractitionerPortal from './components/PractitionerPortal'
 import Welcome from './components/Welcome'
 import Login from './components/auth/Login'
 import Register from './components/auth/Register'
@@ -21,16 +22,21 @@ function App() {
   const [activeTab, setActiveTab] = useState('questionnaire')
   const [weeklyMenu, setWeeklyMenu] = useState(null)
   const [showAdmin, setShowAdmin] = useState(false)
+  const [showPractitioner, setShowPractitioner] = useState(false)
 
   // Initialiser au chargement
   useEffect(() => {
     // Créer le compte démo si nécessaire
     initializeDemoAccount()
 
-    // Vérifier si l'URL contient /admin
+    // Vérifier si l'URL contient /admin ou /practitioner
     const path = window.location.pathname
     if (path === '/admin' || path.includes('/admin')) {
       setShowAdmin(true)
+      return
+    }
+    if (path === '/practitioner' || path.includes('/practitioner')) {
+      setShowPractitioner(true)
       return
     }
 
@@ -107,9 +113,19 @@ function App() {
     window.history.pushState({}, '', '/')
   }
 
+  const handleBackFromPractitioner = () => {
+    setShowPractitioner(false)
+    window.history.pushState({}, '', '/')
+  }
+
   // Si mode admin activé
   if (showAdmin) {
     return <AdminPortal onBack={handleBackFromAdmin} />
+  }
+
+  // Si mode praticien activé
+  if (showPractitioner) {
+    return <PractitionerPortal onBack={handleBackFromPractitioner} />
   }
 
   // Gestion du mode invité
@@ -210,16 +226,29 @@ function App() {
       
       {/* Bouton d'accès admin (visible seulement sur questionnaire) */}
       {activeTab === 'questionnaire' && (
-        <button 
-          className="admin-access-btn"
-          onClick={() => {
-            setShowAdmin(true)
-            window.history.pushState({}, '', '/admin')
-          }}
-          title="Accéder au backoffice"
-        >
-          ⚙️
-        </button>
+        <>
+          <button 
+            className="admin-access-btn"
+            onClick={() => {
+              setShowAdmin(true)
+              window.history.pushState({}, '', '/admin')
+            }}
+            title="Accéder au backoffice"
+          >
+            ⚙️
+          </button>
+          
+          <button 
+            className="practitioner-access-btn"
+            onClick={() => {
+              setShowPractitioner(true)
+              window.history.pushState({}, '', '/practitioner')
+            }}
+            title="Accéder au portail praticien"
+          >
+            👨‍⚕️
+          </button>
+        </>
       )}
 
       {/* Contenu principal */}
