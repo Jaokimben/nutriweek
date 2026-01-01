@@ -6,8 +6,19 @@
  * - Liste FODMAP
  * - Fichiers Word (règles générales, perte de poids H/F, vitalité)
  * 
- * Stockage: LocalStorage avec limitation de 5MB
+ * 🔒 PERSISTANCE:
+ * - Stockage: LocalStorage (persistant)
+ * - Partagé entre toutes les sessions/connexions du navigateur
+ * - Survit aux rechargements de page
+ * - Survit aux déconnexions/reconnexions
+ * - NE S'EFFACE QUE SI:
+ *   1. Le praticien clique "Réinitialiser tout"
+ *   2. Le praticien supprime un fichier individuellement
+ *   3. Le praticien remplace un fichier
+ *   4. Le cache du navigateur est vidé manuellement
+ * 
  * Format: Base64 pour compatibilité
+ * Limitation: 5MB total
  */
 
 const STORAGE_KEY = 'nutriweek_practitioner_files'
@@ -390,6 +401,27 @@ export const getActivationStatus = () => {
       hasExcelFiles: false,
       lastUpdated: null
     }
+  }
+}
+
+/**
+ * Obtenir les informations de persistance
+ */
+export const getPersistenceInfo = () => {
+  return {
+    storageType: 'LocalStorage',
+    isPersistent: true,
+    isSharedAcrossSessions: true,
+    survivesPageReload: true,
+    survivesLogout: true,
+    onlyDeletedBy: [
+      'Bouton "Réinitialiser tout"',
+      'Suppression individuelle de fichier',
+      'Remplacement de fichier',
+      'Vidage manuel du cache navigateur'
+    ],
+    maxSize: '5 MB',
+    storageKey: STORAGE_KEY
   }
 }
 

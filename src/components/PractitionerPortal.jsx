@@ -249,6 +249,15 @@ const PractitionerPortal = ({ onBack }) => {
           <div className="storage-bar">
             <div className="storage-fill" style={{ width: `${stats.usedPercent}%` }} />
           </div>
+          
+          {/* Persistence Info */}
+          <div className="persistence-info">
+            <div className="persistence-icon">🔒</div>
+            <div className="persistence-text">
+              <strong>Fichiers Persistants:</strong> Vos fichiers restent sauvegardés même après déconnexion ou rechargement de la page. 
+              Ils ne s'effacent que si vous les supprimez ou réinitialisez.
+            </div>
+          </div>
         </div>
 
         {/* Activation Section */}

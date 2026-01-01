@@ -158,6 +158,42 @@
   transition: width 0.3s ease;
 }
 
+/* Persistence Info */
+.persistence-info {
+  margin-top: 1rem;
+  padding: 1rem 1.25rem;
+  background: #e6f7ff;
+  border-left: 4px solid #1890ff;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.dark-mode .persistence-info {
+  background: rgba(24, 144, 255, 0.15);
+  border-color: #40a9ff;
+}
+
+.persistence-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.persistence-text {
+  font-size: 0.9rem;
+  color: #0050b3;
+  line-height: 1.5;
+}
+
+.dark-mode .persistence-text {
+  color: #91d5ff;
+}
+
+.persistence-text strong {
+  font-weight: 600;
+}
+
 /* Activation Section */
 .activation-section {
   background: white;
