@@ -26,7 +26,8 @@ const DEFAULT_FILES = {
   vitalite: null,
   metadata: {
     lastUpdated: null,
-    uploadedBy: null
+    uploadedBy: null,
+    useUploadedFiles: false  // Par défaut, utiliser les données de l'app
   }
 }
 
@@ -297,6 +298,98 @@ export const resetAllFiles = () => {
   } catch (error) {
     console.error('❌ Erreur réinitialisation:', error)
     throw error
+  }
+}
+
+/**
+ * Activer l'utilisation des fichiers uploadés
+ */
+export const activateUploadedFiles = () => {
+  try {
+    const allFiles = getAllFiles()
+    
+    // Vérifier qu'au moins un fichier Excel est uploadé
+    const hasExcelFiles = allFiles.alimentsPetitDej || 
+                          allFiles.alimentsDejeuner || 
+                          allFiles.alimentsDiner
+    
+    if (!hasExcelFiles) {
+      throw new Error('Aucun fichier Excel uploadé. Veuillez uploader au moins un fichier Excel avant d\'activer.')
+    }
+    
+    allFiles.metadata.useUploadedFiles = true
+    allFiles.metadata.lastUpdated = new Date().toISOString()
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(allFiles))
+    
+    console.log('✅ Fichiers uploadés activés - L\'application utilisera vos fichiers')
+    return { success: true }
+    
+  } catch (error) {
+    console.error('❌ Erreur activation:', error)
+    throw error
+  }
+}
+
+/**
+ * Désactiver l'utilisation des fichiers uploadés
+ */
+export const deactivateUploadedFiles = () => {
+  try {
+    const allFiles = getAllFiles()
+    allFiles.metadata.useUploadedFiles = false
+    allFiles.metadata.lastUpdated = new Date().toISOString()
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(allFiles))
+    
+    console.log('✅ Fichiers uploadés désactivés - L\'application utilisera les données par défaut')
+    return { success: true }
+    
+  } catch (error) {
+    console.error('❌ Erreur désactivation:', error)
+    throw error
+  }
+}
+
+/**
+ * Vérifier si les fichiers uploadés sont activés
+ */
+export const isUsingUploadedFiles = () => {
+  try {
+    const allFiles = getAllFiles()
+    return allFiles.metadata.useUploadedFiles === true
+  } catch (error) {
+    console.error('❌ Erreur vérification:', error)
+    return false
+  }
+}
+
+/**
+ * Obtenir le statut d'activation avec détails
+ */
+export const getActivationStatus = () => {
+  try {
+    const allFiles = getAllFiles()
+    const isActive = allFiles.metadata.useUploadedFiles === true
+    
+    const uploadedFiles = []
+    if (allFiles.alimentsPetitDej) uploadedFiles.push('Petit-Déjeuner')
+    if (allFiles.alimentsDejeuner) uploadedFiles.push('Déjeuner')
+    if (allFiles.alimentsDiner) uploadedFiles.push('Dîner')
+    if (allFiles.fodmapList) uploadedFiles.push('FODMAP')
+    
+    return {
+      isActive,
+      uploadedFiles,
+      hasExcelFiles: allFiles.alimentsPetitDej || allFiles.alimentsDejeuner || allFiles.alimentsDiner,
+      lastUpdated: allFiles.metadata.lastUpdated
+    }
+  } catch (error) {
+    console.error('❌ Erreur statut:', error)
+    return {
+      isActive: false,
+      uploadedFiles: [],
+      hasExcelFiles: false,
+      lastUpdated: null
+    }
   }
 }
 

@@ -14,7 +14,10 @@ import {
   getStorageStats,
   exportAllFiles,
   importAllFiles,
-  resetAllFiles
+  resetAllFiles,
+  activateUploadedFiles,
+  deactivateUploadedFiles,
+  getActivationStatus
 } from '../utils/practitionerStorage'
 import './PractitionerPortal.css'
 
@@ -23,6 +26,7 @@ const PractitionerPortal = ({ onBack }) => {
   const [stats, setStats] = useState(null)
   const [uploading, setUploading] = useState(null)
   const [toast, setToast] = useState(null)
+  const [activationStatus, setActivationStatus] = useState(null)
 
   useEffect(() => {
     loadData()
@@ -31,8 +35,10 @@ const PractitionerPortal = ({ onBack }) => {
   const loadData = () => {
     const loadedFiles = getAllFiles()
     const loadedStats = getStorageStats()
+    const loadedStatus = getActivationStatus()
     setFiles(loadedFiles)
     setStats(loadedStats)
+    setActivationStatus(loadedStatus)
   }
 
   const showToast = (message, type = 'success') => {
@@ -110,7 +116,29 @@ const PractitionerPortal = ({ onBack }) => {
     }
   }
 
-  if (!files || !stats) {
+  const handleActivate = async () => {
+    try {
+      await activateUploadedFiles()
+      loadData()
+      showToast('✅ Fichiers activés ! L\'application utilise maintenant vos fichiers uploadés.', 'success')
+    } catch (error) {
+      showToast(`❌ ${error.message}`, 'error')
+    }
+  }
+
+  const handleDeactivate = async () => {
+    if (!confirm('Désactiver vos fichiers ? L\'application utilisera les données par défaut.')) return
+    
+    try {
+      await deactivateUploadedFiles()
+      loadData()
+      showToast('⚠️ Fichiers désactivés. L\'application utilise les données par défaut.', 'success')
+    } catch (error) {
+      showToast(`❌ Erreur: ${error.message}`, 'error')
+    }
+  }
+
+  if (!files || !stats || !activationStatus) {
     return <div className="loading">⏳ Chargement...</div>
   }
 
@@ -221,6 +249,52 @@ const PractitionerPortal = ({ onBack }) => {
           <div className="storage-bar">
             <div className="storage-fill" style={{ width: `${stats.usedPercent}%` }} />
           </div>
+        </div>
+
+        {/* Activation Section */}
+        <div className={`activation-section ${activationStatus.isActive ? 'active' : 'inactive'}`}>
+          <div className="activation-header">
+            <div className="activation-info">
+              <h3>
+                {activationStatus.isActive ? '✅ Fichiers Activés' : '⚠️ Fichiers Non Activés'}
+              </h3>
+              <p>
+                {activationStatus.isActive 
+                  ? 'L\'application utilise actuellement vos fichiers uploadés'
+                  : 'L\'application utilise les données par défaut'
+                }
+              </p>
+              {activationStatus.uploadedFiles.length > 0 && (
+                <div className="uploaded-files-list">
+                  <strong>Fichiers disponibles:</strong> {activationStatus.uploadedFiles.join(', ')}
+                </div>
+              )}
+            </div>
+            <div className="activation-actions">
+              {activationStatus.isActive ? (
+                <button 
+                  onClick={handleDeactivate}
+                  className="btn-deactivate"
+                >
+                  🔴 Désactiver
+                </button>
+              ) : (
+                <button 
+                  onClick={handleActivate}
+                  className="btn-activate"
+                  disabled={!activationStatus.hasExcelFiles}
+                  title={!activationStatus.hasExcelFiles ? 'Uploadez au moins un fichier Excel pour activer' : ''}
+                >
+                  ✅ Activer les Fichiers Uploadés
+                </button>
+              )}
+            </div>
+          </div>
+          {!activationStatus.hasExcelFiles && !activationStatus.isActive && (
+            <div className="activation-warning">
+              ⚠️ Uploadez au moins un fichier Excel (Petit-Déjeuner, Déjeuner ou Dîner) pour pouvoir activer vos fichiers.
+            </div>
+          )}
         </div>
 
         {/* Files Grid */}
