@@ -3,9 +3,15 @@
  * 
  * Utilise UNIQUEMENT les aliments du fichier JSON autorisé
  * Calculs précis basés sur les données Excel fournies
+ * 
+ * MISE À JOUR: Utilise maintenant la base alimentaire complète avec protéines, féculents, etc.
  */
 
-import alimentsAutorises from '../data/aliments_autorises.json';
+import alimentsAutorisesBase from '../data/aliments_autorises.json' with { type: 'json' };
+import alimentsComplets from '../data/aliments_complets.json' with { type: 'json' };
+
+// Fusionner les deux bases de données (priorité aux aliments complets)
+const alimentsAutorises = [...alimentsComplets, ...alimentsAutorisesBase];
 
 // Créer un index pour une recherche rapide (insensible à la casse et aux accents)
 const normalizeString = (str) => {
