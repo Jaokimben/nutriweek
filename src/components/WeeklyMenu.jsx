@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { generateWeeklyMenu, regenerateSingleMeal } from '../utils/menuGenerator'
-import { genererMenuHebdomadaire, regenererRepas } from '../utils/menuGeneratorCorrige'
+import { genererMenuHebdomadaire, regenererRepas } from '../utils/menuGeneratorOptimise'
 import { calculateIMC, calculateCalories } from '../utils/nutritionCalculator'
 import { loadCIQUAL } from '../utils/ciqualParser'
 import { loadAlimentsSimple } from '../utils/alimentsSimpleParser'
