@@ -3,10 +3,17 @@
  * 
  * Ce générateur utilise EXCLUSIVEMENT les aliments uploadés par le praticien
  * dans les fichiers Excel (alimentsPetitDej, alimentsDejeuner, alimentsDiner)
+ * 
+ * + RESPECTE STRICTEMENT les règles des documents Word uploadés
  */
 
 import { parseExcelFile } from './practitionerExcelParser.js';
 import { getAllFiles } from './practitionerStorage.js';
+import { 
+  chargerReglesPraticien, 
+  verifierAlimentAutorise,
+  appliquerReglesAuMenu 
+} from './practitionerRulesParser.js';
 
 // Jours de la semaine
 const JOURS_SEMAINE = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
@@ -139,16 +146,25 @@ async function chargerAlimentsExcel() {
 
 /**
  * Sélectionne des aliments aléatoires pour atteindre un objectif calorique
+ * + Filtre selon les règles praticien
  */
-function selectionnerAliments(alimentsDisponibles, caloriesCible, alimentsUtilises = []) {
+function selectionnerAliments(alimentsDisponibles, caloriesCible, alimentsUtilises = [], regles = []) {
   const aliments = [];
   let caloriesAccumulees = 0;
   const tentatives = [];
   
   // Filtrer les aliments déjà utilisés aujourd'hui
-  const alimentsNonUtilises = alimentsDisponibles.filter(
+  let alimentsNonUtilises = alimentsDisponibles.filter(
     a => !alimentsUtilises.includes(a.nom)
   );
+  
+  // Filtrer selon les règles praticien (aliments interdits)
+  if (regles.length > 0) {
+    alimentsNonUtilises = alimentsNonUtilises.filter(aliment => 
+      verifierAlimentAutorise(aliment, regles)
+    );
+    console.log(`  🔍 Après filtrage règles: ${alimentsNonUtilises.length} aliments autorisés`);
+  }
   
   const alimentsPool = alimentsNonUtilises.length > 0 
     ? alimentsNonUtilises 
@@ -199,8 +215,9 @@ function selectionnerAliments(alimentsDisponibles, caloriesCible, alimentsUtilis
 
 /**
  * Génère un repas (petit-déjeuner, déjeuner ou dîner)
+ * + Applique les règles praticien
  */
-function genererRepas(type, caloriesCible, alimentsDisponibles, alimentsUtilisesAujourdhui) {
+function genererRepas(type, caloriesCible, alimentsDisponibles, alimentsUtilisesAujourdhui, regles = []) {
   let meilleurRepas = null;
   let meilleurEcart = Infinity;
   
@@ -208,7 +225,8 @@ function genererRepas(type, caloriesCible, alimentsDisponibles, alimentsUtilises
     const { aliments, caloriesTotal } = selectionnerAliments(
       alimentsDisponibles, 
       caloriesCible,
-      alimentsUtilisesAujourdhui
+      alimentsUtilisesAujourdhui,
+      regles
     );
     
     const ecart = Math.abs(caloriesTotal - caloriesCible) / caloriesCible;
@@ -239,8 +257,9 @@ function genererRepas(type, caloriesCible, alimentsDisponibles, alimentsUtilises
 
 /**
  * Génère un menu pour une journée
+ * + Applique les règles praticien
  */
-function genererMenuJour(caloriesJournalieres, jeuneIntermittent, alimentsExcel) {
+function genererMenuJour(caloriesJournalieres, jeuneIntermittent, alimentsExcel, regles = []) {
   const distribution = jeuneIntermittent ? DISTRIBUTION_JEUNE : DISTRIBUTION_NORMALE;
   const alimentsUtilisesAujourdhui = [];
   
@@ -254,7 +273,8 @@ function genererMenuJour(caloriesJournalieres, jeuneIntermittent, alimentsExcel)
         'Petit-déjeuner',
         caloriesPetitDej,
         alimentsExcel.petitDejeuner,
-        alimentsUtilisesAujourdhui
+        alimentsUtilisesAujourdhui,
+        regles
       );
       
       if (repas.petitDejeuner) {
@@ -271,7 +291,8 @@ function genererMenuJour(caloriesJournalieres, jeuneIntermittent, alimentsExcel)
         'Déjeuner',
         caloriesDejeuner,
         alimentsExcel.dejeuner,
-        alimentsUtilisesAujourdhui
+        alimentsUtilisesAujourdhui,
+        regles
       );
       
       if (repas.dejeuner) {
@@ -288,7 +309,8 @@ function genererMenuJour(caloriesJournalieres, jeuneIntermittent, alimentsExcel)
         'Dîner',
         caloriesDiner,
         alimentsExcel.diner,
-        alimentsUtilisesAujourdhui
+        alimentsUtilisesAujourdhui,
+        regles
       );
     }
     
@@ -327,9 +349,10 @@ function genererMenuJour(caloriesJournalieres, jeuneIntermittent, alimentsExcel)
 
 /**
  * Génère un menu hebdomadaire complet
+ * + Charge et applique les règles praticien
  */
 export async function genererMenuHebdomadaireExcel(profil) {
-  console.log('🎯 Génération menu hebdomadaire depuis fichiers Excel');
+  console.log('🎯 Génération menu hebdomadaire depuis fichiers Excel + Règles praticien');
   console.log('Profil:', profil);
   
   // Charger les aliments depuis les fichiers Excel
@@ -341,6 +364,10 @@ export async function genererMenuHebdomadaireExcel(profil) {
       alimentsExcel.diner.length === 0) {
     throw new Error('Aucun fichier Excel uploadé. Le praticien doit d\'abord uploader les aliments autorisés.');
   }
+  
+  // Charger les règles praticien depuis les documents Word
+  const reglesData = await chargerReglesPraticien(profil);
+  console.log(`📋 Règles chargées: ${reglesData.toutesLesRegles.length} règles actives`);
   
   // Calculer les besoins nutritionnels
   const bmr = calculerBMR(profil);
@@ -354,7 +381,7 @@ export async function genererMenuHebdomadaireExcel(profil) {
   console.log('  Objectif journalier:', caloriesJournalieres, 'kcal');
   console.log('  Macros cibles:', macrosCibles);
   
-  // Générer les menus pour chaque jour
+  // Générer les menus pour chaque jour (avec règles)
   const semaine = [];
   
   for (let i = 0; i < 7; i++) {
@@ -364,7 +391,8 @@ export async function genererMenuHebdomadaireExcel(profil) {
     const menuJour = genererMenuJour(
       caloriesJournalieres,
       profil.jeuneIntermittent,
-      alimentsExcel
+      alimentsExcel,
+      reglesData.toutesLesRegles
     );
     
     if (!menuJour) {
@@ -404,7 +432,8 @@ export async function genererMenuHebdomadaireExcel(profil) {
   console.log('\n✅ Menu hebdomadaire généré avec succès!');
   console.log('📊 Moyenne journalière:', moyenneSemaine);
   
-  return {
+  // Valider le menu contre les règles praticien
+  const menuComplet = {
     semaine,
     metadata: {
       profil,
@@ -417,16 +446,46 @@ export async function genererMenuHebdomadaireExcel(profil) {
       totaux: totalSemaine,
       moyennes: moyenneSemaine,
       dateGeneration: new Date().toISOString(),
-      source: 'Fichiers Excel uploadés par le praticien'
+      source: 'Fichiers Excel uploadés par le praticien',
+      regles: {
+        nombre: reglesData.toutesLesRegles.length,
+        generales: reglesData.generales.length,
+        specifiques: reglesData.specifiques.length,
+        texteComplet: reglesData.texteComplet
+      }
     }
   };
+  
+  // Appliquer et vérifier les règles
+  if (reglesData.toutesLesRegles.length > 0) {
+    const validation = appliquerReglesAuMenu(
+      menuComplet, 
+      reglesData.toutesLesRegles, 
+      profil
+    );
+    
+    menuComplet.metadata.validation = validation;
+    
+    if (!validation.valide) {
+      console.warn('⚠️ Le menu contient des violations des règles praticien:');
+      validation.violations.forEach(v => {
+        console.warn(`  - ${v.jour} ${v.repas}: ${v.raison}`);
+      });
+    } else {
+      console.log('✅ Menu conforme à toutes les règles praticien');
+    }
+  }
+  
+  return menuComplet;
 }
 
 /**
- * Régénère un repas spécifique
+ * Régénère un repas spécifique (avec règles praticien)
  */
 export async function regenererRepasExcel(jourIndex, typeRepas, profil) {
   const alimentsExcel = await chargerAlimentsExcel();
+  const reglesData = await chargerReglesPraticien(profil);
+  
   const caloriesJournalieres = calculerCaloriesJournalieres(
     calculerTDEE(calculerBMR(profil), profil.activite),
     profil.objectif
@@ -453,5 +512,5 @@ export async function regenererRepasExcel(jourIndex, typeRepas, profil) {
       throw new Error('Type de repas invalide');
   }
   
-  return genererRepas(typeRepas, caloriesCible, alimentsDisponibles, []);
+  return genererRepas(typeRepas, caloriesCible, alimentsDisponibles, [], reglesData.toutesLesRegles);
 }

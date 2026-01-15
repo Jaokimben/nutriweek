@@ -15,6 +15,7 @@
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
     "helmet": "^8.1.0",
+    "mammoth": "^1.11.0",
     "multer": "^2.0.2",
     "node-json-db": "^2.4.2",
     "react": "^19.2.0",
