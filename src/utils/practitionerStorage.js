@@ -148,14 +148,32 @@ export const saveVitalite = async (file) => {
  */
 export const getAllFiles = () => {
   try {
+    console.log('🔍 [getAllFiles] Lecture depuis localStorage...')
     const data = localStorage.getItem(STORAGE_KEY)
+    
     if (!data) {
-      return DEFAULT_FILES
+      console.log('⚠️ [getAllFiles] Aucune donnée trouvée, retour DEFAULT_FILES')
+      return { ...DEFAULT_FILES }
     }
-    return JSON.parse(data)
+    
+    const parsed = JSON.parse(data)
+    console.log('✅ [getAllFiles] Données chargées:', {
+      alimentsPetitDej: !!parsed.alimentsPetitDej,
+      alimentsDejeuner: !!parsed.alimentsDejeuner,
+      alimentsDiner: !!parsed.alimentsDiner,
+      fodmapList: !!parsed.fodmapList,
+      reglesGenerales: !!parsed.reglesGenerales,
+      pertePoidHomme: !!parsed.pertePoidHomme,
+      pertePoidFemme: !!parsed.pertePoidFemme,
+      vitalite: !!parsed.vitalite,
+      useUploadedFiles: parsed.metadata?.useUploadedFiles
+    })
+    
+    return parsed
   } catch (error) {
-    console.error('❌ Erreur lecture fichiers:', error)
-    return DEFAULT_FILES
+    console.error('❌ [getAllFiles] Erreur lecture fichiers:', error)
+    console.error('❌ [getAllFiles] Stack:', error.stack)
+    return { ...DEFAULT_FILES }
   }
 }
 
@@ -176,9 +194,12 @@ export const saveFile = async (fileType, file) => {
     }
 
     // Lire le fichier en Base64
+    console.log(`📄 [saveFile] Conversion ${fileType} en Base64...`, file.name)
     const base64 = await fileToBase64(file)
+    console.log(`✓ [saveFile] Base64 créé: ${base64.substring(0, 50)}...`)
 
     // Charger les données existantes
+    console.log(`🔄 [saveFile] Chargement données existantes...`)
     const allFiles = getAllFiles()
 
     // Mettre à jour le fichier spécifique
@@ -194,9 +215,20 @@ export const saveFile = async (fileType, file) => {
     allFiles.metadata.lastUpdated = new Date().toISOString()
 
     // Sauvegarder
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(allFiles))
+    console.log(`💾 [saveFile] Sauvegarde dans localStorage...`)
+    const stringified = JSON.stringify(allFiles)
+    console.log(`💾 [saveFile] Taille totale: ${(stringified.length / 1024).toFixed(2)} KB`)
+    localStorage.setItem(STORAGE_KEY, stringified)
 
-    console.log(`✅ Fichier ${fileType} sauvegardé:`, file.name)
+    // Vérifier que la sauvegarde a réussi
+    const verification = localStorage.getItem(STORAGE_KEY)
+    if (!verification) {
+      throw new Error('Échec de la sauvegarde dans localStorage')
+    }
+
+    console.log(`✅ [saveFile] Fichier ${fileType} sauvegardé avec succès:`, file.name)
+    console.log(`✅ [saveFile] Vérification: présent dans localStorage`)
+    
     return { success: true, fileName: file.name }
 
   } catch (error) {

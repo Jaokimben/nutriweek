@@ -30,15 +30,44 @@ const PractitionerPortal = ({ onBack }) => {
 
   useEffect(() => {
     loadData()
+    
+    // Écouter les changements de localStorage (pour sync entre onglets)
+    const handleStorageChange = (e) => {
+      if (e.key === 'nutriweek_practitioner_files') {
+        console.log('🔄 [PractitionerPortal] Storage changé, rechargement...')
+        loadData()
+      }
+    }
+    
+    window.addEventListener('storage', handleStorageChange)
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange)
+    }
   }, [])
 
   const loadData = () => {
-    const loadedFiles = getAllFiles()
-    const loadedStats = getStorageStats()
-    const loadedStatus = getActivationStatus()
-    setFiles(loadedFiles)
-    setStats(loadedStats)
-    setActivationStatus(loadedStatus)
+    console.log('🔄 [PractitionerPortal] Chargement des données...')
+    try {
+      const loadedFiles = getAllFiles()
+      const loadedStats = getStorageStats()
+      const loadedStatus = getActivationStatus()
+      
+      console.log('📁 [PractitionerPortal] Fichiers chargés:', loadedFiles)
+      console.log('📊 [PractitionerPortal] Stats:', loadedStats)
+      console.log('✓ [PractitionerPortal] Status:', loadedStatus)
+      
+      setFiles(loadedFiles)
+      setStats(loadedStats)
+      setActivationStatus(loadedStatus)
+    } catch (error) {
+      console.error('❌ [PractitionerPortal] Erreur chargement:', error)
+      showToast('⚠️ Erreur de chargement. Réinitialisation...', 'error')
+      // En cas d'erreur, initialiser avec des valeurs par défaut
+      setFiles(getAllFiles())
+      setStats(getStorageStats())
+      setActivationStatus(getActivationStatus())
+    }
   }
 
   const showToast = (message, type = 'success') => {
@@ -47,16 +76,27 @@ const PractitionerPortal = ({ onBack }) => {
   }
 
   const handleFileUpload = async (fileType, saveFn, file) => {
-    if (!file) return
+    if (!file) {
+      console.log('⚠️ [handleFileUpload] Aucun fichier sélectionné')
+      return
+    }
 
+    console.log(`📤 [handleFileUpload] Upload ${fileType}:`, file.name)
     setUploading(fileType)
     try {
-      await saveFn(file)
+      console.log(`🔄 [handleFileUpload] Appel saveFn pour ${fileType}...`)
+      const result = await saveFn(file)
+      console.log(`✅ [handleFileUpload] saveFn retourné:`, result)
+      
+      console.log(`🔄 [handleFileUpload] Rechargement des données...`)
       loadData()
+      
       showToast(`✅ Fichier uploadé: ${file.name}`)
     } catch (error) {
+      console.error(`❌ [handleFileUpload] Erreur pour ${fileType}:`, error)
       showToast(`❌ Erreur: ${error.message}`, 'error')
     } finally {
+      console.log(`🏁 [handleFileUpload] Fin upload ${fileType}`)
       setUploading(null)
     }
   }
@@ -138,9 +178,17 @@ const PractitionerPortal = ({ onBack }) => {
     }
   }
 
-  if (!files || !stats || !activationStatus) {
-    return <div className="loading">⏳ Chargement...</div>
+  if (!files || !stats || activationStatus === null || activationStatus === undefined) {
+    console.log('⏳ [PractitionerPortal] Chargement en cours...', { files, stats, activationStatus })
+    return (
+      <div className="loading">
+        <div className="spinner"></div>
+        <p>⏳ Chargement du portail praticien...</p>
+      </div>
+    )
   }
+
+  console.log('✅ [PractitionerPortal] Données chargées, affichage du portail')
 
   const fileConfigs = [
     {
@@ -209,6 +257,31 @@ const PractitionerPortal = ({ onBack }) => {
     }
   ]
 
+  // Afficher un état de chargement si les données ne sont pas encore chargées
+  if (!files || !stats || !activationStatus) {
+    return (
+      <div className="practitioner-portal">
+        <div className="practitioner-header">
+          <h1>
+            <span>👨‍⚕️</span>
+            Portail Praticien
+          </h1>
+          <div className="header-actions">
+            <button onClick={onBack} className="btn-back">
+              ← Retour
+            </button>
+          </div>
+        </div>
+        <div className="practitioner-container">
+          <div className="loading-container">
+            <div className="spinner"></div>
+            <p>Chargement des fichiers...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="practitioner-portal">
       {/* Header */}
@@ -230,24 +303,24 @@ const PractitionerPortal = ({ onBack }) => {
           <h3>📊 Statistiques de Stockage</h3>
           <div className="stats-grid">
             <div className="stat-item">
-              <span className="stat-value">{stats.fileCount}</span>
+              <span className="stat-value">{stats?.fileCount || 0}</span>
               <span className="stat-label">Fichiers</span>
             </div>
             <div className="stat-item">
-              <span className="stat-value">{stats.formattedSize}</span>
+              <span className="stat-value">{stats?.formattedSize || '0 KB'}</span>
               <span className="stat-label">Utilisé</span>
             </div>
             <div className="stat-item">
-              <span className="stat-value">{stats.formattedMax}</span>
+              <span className="stat-value">{stats?.formattedMax || '5 MB'}</span>
               <span className="stat-label">Maximum</span>
             </div>
             <div className="stat-item">
-              <span className="stat-value">{stats.usedPercent}%</span>
+              <span className="stat-value">{stats?.usedPercent || 0}%</span>
               <span className="stat-label">Rempli</span>
             </div>
           </div>
           <div className="storage-bar">
-            <div className="storage-fill" style={{ width: `${stats.usedPercent}%` }} />
+            <div className="storage-fill" style={{ width: `${stats?.usedPercent || 0}%` }} />
           </div>
           
           {/* Persistence Info */}
@@ -261,26 +334,26 @@ const PractitionerPortal = ({ onBack }) => {
         </div>
 
         {/* Activation Section */}
-        <div className={`activation-section ${activationStatus.isActive ? 'active' : 'inactive'}`}>
+        <div className={`activation-section ${activationStatus?.isActive ? 'active' : 'inactive'}`}>
           <div className="activation-header">
             <div className="activation-info">
               <h3>
-                {activationStatus.isActive ? '✅ Fichiers Activés' : '⚠️ Fichiers Non Activés'}
+                {activationStatus?.isActive ? '✅ Fichiers Activés' : '⚠️ Fichiers Non Activés'}
               </h3>
               <p>
-                {activationStatus.isActive 
+                {activationStatus?.isActive 
                   ? 'L\'application utilise actuellement vos fichiers uploadés'
                   : 'L\'application utilise les données par défaut'
                 }
               </p>
-              {activationStatus.uploadedFiles.length > 0 && (
+              {activationStatus?.uploadedFiles?.length > 0 && (
                 <div className="uploaded-files-list">
                   <strong>Fichiers disponibles:</strong> {activationStatus.uploadedFiles.join(', ')}
                 </div>
               )}
             </div>
             <div className="activation-actions">
-              {activationStatus.isActive ? (
+              {activationStatus?.isActive ? (
                 <button 
                   onClick={handleDeactivate}
                   className="btn-deactivate"
@@ -291,15 +364,15 @@ const PractitionerPortal = ({ onBack }) => {
                 <button 
                   onClick={handleActivate}
                   className="btn-activate"
-                  disabled={!activationStatus.hasExcelFiles}
-                  title={!activationStatus.hasExcelFiles ? 'Uploadez au moins un fichier Excel pour activer' : ''}
+                  disabled={!activationStatus?.hasExcelFiles}
+                  title={!activationStatus?.hasExcelFiles ? 'Uploadez au moins un fichier Excel pour activer' : ''}
                 >
                   ✅ Activer les Fichiers Uploadés
                 </button>
               )}
             </div>
           </div>
-          {!activationStatus.hasExcelFiles && !activationStatus.isActive && (
+          {!activationStatus?.hasExcelFiles && !activationStatus?.isActive && (
             <div className="activation-warning">
               ⚠️ Uploadez au moins un fichier Excel (Petit-Déjeuner, Déjeuner ou Dîner) pour pouvoir activer vos fichiers.
             </div>
@@ -309,7 +382,7 @@ const PractitionerPortal = ({ onBack }) => {
         {/* Files Grid */}
         <div className="files-grid">
           {fileConfigs.map(config => {
-            const file = files[config.key]
+            const file = files?.[config.key]
             const isUploading = uploading === config.key
 
             return (
