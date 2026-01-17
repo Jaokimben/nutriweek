@@ -106,6 +106,7 @@ function calculerMacrosCibles(caloriesJournalieres, objectif) {
 
 /**
  * Charge les aliments depuis les fichiers Excel uploadés
+ * ⚠️ MODE STRICT : Refuse si fichiers manquants ou vides
  */
 async function chargerAlimentsExcel() {
   try {
@@ -128,6 +129,31 @@ async function chargerAlimentsExcel() {
     console.log('  Déjeuner:', alimentsDejeuner.length, 'aliments');
     console.log('  Dîner:', alimentsDiner.length, 'aliments');
     
+    // Vérification stricte : au moins 3 aliments par fichier minimum
+    const erreurs = [];
+    if (alimentsPetitDej.length < 3) {
+      erreurs.push(`Petit-déjeuner: ${alimentsPetitDej.length} aliments (minimum 3 requis)`);
+    }
+    if (alimentsDejeuner.length < 3) {
+      erreurs.push(`Déjeuner: ${alimentsDejeuner.length} aliments (minimum 3 requis)`);
+    }
+    if (alimentsDiner.length < 3) {
+      erreurs.push(`Dîner: ${alimentsDiner.length} aliments (minimum 3 requis)`);
+    }
+    
+    if (erreurs.length > 0) {
+      throw new Error(
+        '❌ FICHIERS EXCEL INSUFFISANTS\n\n' +
+        'Chaque fichier Excel doit contenir au moins 3 aliments pour générer des menus variés.\n\n' +
+        'Problèmes détectés:\n' +
+        erreurs.map(e => `  - ${e}`).join('\n') +
+        '\n\nVeuillez demander au praticien de compléter les fichiers Excel.'
+      );
+    }
+    
+    console.log('✅ Validation OK - Tous les fichiers contiennent suffisamment d\'aliments');
+    console.log('⚠️ MODE STRICT : AUCUN aliment externe ne sera ajouté');
+    
     return {
       petitDejeuner: alimentsPetitDej,
       dejeuner: alimentsDejeuner,
@@ -136,11 +162,7 @@ async function chargerAlimentsExcel() {
     
   } catch (error) {
     console.error('❌ Erreur chargement fichiers Excel:', error);
-    return {
-      petitDejeuner: [],
-      dejeuner: [],
-      diner: []
-    };
+    throw error; // Re-throw pour arrêter la génération
   }
 }
 
@@ -350,20 +372,15 @@ function genererMenuJour(caloriesJournalieres, jeuneIntermittent, alimentsExcel,
 /**
  * Génère un menu hebdomadaire complet
  * + Charge et applique les règles praticien
+ * ⚠️ MODE STRICT : UNIQUEMENT aliments des fichiers Excel
  */
 export async function genererMenuHebdomadaireExcel(profil) {
-  console.log('🎯 Génération menu hebdomadaire depuis fichiers Excel + Règles praticien');
+  console.log('🎯 MODE STRICT : Génération menu depuis fichiers Excel UNIQUEMENT');
+  console.log('⚠️ AUCUN aliment externe ne sera utilisé');
   console.log('Profil:', profil);
   
-  // Charger les aliments depuis les fichiers Excel
+  // Charger les aliments depuis les fichiers Excel (lance erreur si insuffisant)
   const alimentsExcel = await chargerAlimentsExcel();
-  
-  // Vérifier que des fichiers ont été uploadés
-  if (alimentsExcel.petitDejeuner.length === 0 && 
-      alimentsExcel.dejeuner.length === 0 && 
-      alimentsExcel.diner.length === 0) {
-    throw new Error('Aucun fichier Excel uploadé. Le praticien doit d\'abord uploader les aliments autorisés.');
-  }
   
   // Charger les règles praticien depuis les documents Word
   const reglesData = await chargerReglesPraticien(profil);
@@ -475,6 +492,57 @@ export async function genererMenuHebdomadaireExcel(profil) {
       console.log('✅ Menu conforme à toutes les règles praticien');
     }
   }
+  
+  // VALIDATION FINALE STRICTE : Vérifier que TOUS les aliments proviennent des fichiers Excel
+  console.log('\n🔍 VALIDATION FINALE STRICTE : Vérification de la conformité 100% Excel...');
+  
+  const alimentsAutorises = new Set([
+    ...alimentsExcel.petitDejeuner.map(a => a.nom.toLowerCase()),
+    ...alimentsExcel.dejeuner.map(a => a.nom.toLowerCase()),
+    ...alimentsExcel.diner.map(a => a.nom.toLowerCase())
+  ]);
+  
+  const alimentsExternesDetectes = [];
+  
+  menuComplet.semaine.forEach(jour => {
+    Object.entries(jour.menu).forEach(([typeRepas, repas]) => {
+      if (repas && repas.ingredients) {
+        repas.ingredients.forEach(ingredient => {
+          const nomIngredient = ingredient.nom.toLowerCase();
+          if (!alimentsAutorises.has(nomIngredient)) {
+            alimentsExternesDetectes.push({
+              jour: jour.jour,
+              repas: typeRepas,
+              ingredient: ingredient.nom
+            });
+          }
+        });
+      }
+    });
+  });
+  
+  if (alimentsExternesDetectes.length > 0) {
+    console.error('❌ ERREUR CRITIQUE : Des aliments EXTERNES ont été détectés !');
+    console.error('Aliments non autorisés:');
+    alimentsExternesDetectes.forEach(item => {
+      console.error(`  - ${item.jour} ${item.repas}: ${item.ingredient}`);
+    });
+    throw new Error(
+      'ERREUR CRITIQUE : Des aliments externes ont été utilisés dans la génération.\n' +
+      'Tous les aliments doivent provenir UNIQUEMENT des fichiers Excel uploadés.\n' +
+      `${alimentsExternesDetectes.length} aliment(s) externe(s) détecté(s).`
+    );
+  }
+  
+  console.log(`✅ VALIDATION STRICTE RÉUSSIE : ${alimentsAutorises.size} aliments Excel vérifiés`);
+  console.log('✅ AUCUN aliment externe détecté - Conformité 100%');
+  
+  menuComplet.metadata.validationStricte = {
+    conforme: true,
+    nombreAlimentsExcel: alimentsAutorises.size,
+    nombreAlimentsExternes: 0,
+    message: 'Menu généré à 100% depuis les fichiers Excel du praticien'
+  };
   
   return menuComplet;
 }
