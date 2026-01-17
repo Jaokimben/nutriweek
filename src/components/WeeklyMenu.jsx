@@ -86,6 +86,7 @@ function transformerRepasPourAffichage(repas) {
 const WeeklyMenu = ({ userProfile, initialMenu = null, onMenuGenerated, onBack }) => {
   const [weeklyMenu, setWeeklyMenu] = useState(initialMenu)
   const [loading, setLoading] = useState(!initialMenu)
+  const [error, setError] = useState(null) // Nouveau: état d'erreur
   const [selectedDay, setSelectedDay] = useState(0)
   const [showShoppingList, setShowShoppingList] = useState(false)
   const [regeneratingMeal, setRegeneratingMeal] = useState(null)
@@ -132,7 +133,13 @@ const WeeklyMenu = ({ userProfile, initialMenu = null, onMenuGenerated, onBack }
         
         setLoading(false)
       } catch (error) {
-        console.error('❌ Erreur lors de la génération du menu strict:', error)
+        console.error('❌ Erreur lors de la génération du menu:', error)
+        setError({
+          message: error.message || 'Erreur lors de la génération du menu',
+          details: error.message?.includes('EXCEL') 
+            ? 'Le praticien doit uploader les fichiers Excel contenant les aliments autorisés avant de pouvoir générer des menus.' 
+            : null
+        })
         setLoading(false)
       }
     }
@@ -158,6 +165,35 @@ const WeeklyMenu = ({ userProfile, initialMenu = null, onMenuGenerated, onBack }
       <div className="loading-container">
         <div className="spinner"></div>
         <p>Génération de votre menu personnalisé...</p>
+      </div>
+    )
+  }
+
+  // Afficher l'erreur si présente
+  if (error) {
+    return (
+      <div className="error-container">
+        <div className="error-icon">⚠️</div>
+        <h2>Impossible de générer le menu</h2>
+        <p className="error-message">{error.message}</p>
+        {error.details && (
+          <div className="error-details">
+            <p>{error.details}</p>
+            <p className="error-hint">
+              💡 <strong>Solution</strong> : Le praticien doit accéder au <a href="/practitioner">Portail Praticien</a> et uploader les fichiers Excel suivants :
+            </p>
+            <ul className="file-list">
+              <li>📄 alimentsPetitDejeuner.xlsx</li>
+              <li>📄 alimentsDejeuner.xlsx</li>
+              <li>📄 alimentsDiner.xlsx</li>
+            </ul>
+          </div>
+        )}
+        {onBack && (
+          <button className="btn-back" onClick={onBack}>
+            ← Retour au questionnaire
+          </button>
+        )}
       </div>
     )
   }
