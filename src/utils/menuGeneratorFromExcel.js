@@ -14,6 +14,7 @@ import {
   verifierAlimentAutorise,
   appliquerReglesAuMenu 
 } from './practitionerRulesParser.js';
+import { calculerBMR, calculerTDEE } from './bmrCalculator.js';
 
 // Jours de la semaine
 const JOURS_SEMAINE = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
@@ -35,34 +36,6 @@ const DISTRIBUTION_JEUNE = {
 const TOLERANCE_CALORIES = 0.10; // ±10% de tolérance
 const MAX_TENTATIVES_JOUR = 20;
 const MAX_TENTATIVES_REPAS = 50;
-
-/**
- * Calcule le BMR (Basal Metabolic Rate)
- */
-function calculerBMR(profil) {
-  const { poids, taille, age, sexe } = profil;
-  
-  if (sexe === 'homme') {
-    return 88.362 + (13.397 * poids) + (4.799 * taille) - (5.677 * age);
-  } else {
-    return 447.593 + (9.247 * poids) + (3.098 * taille) - (4.330 * age);
-  }
-}
-
-/**
- * Calcule le TDEE (Total Daily Energy Expenditure)
- */
-function calculerTDEE(bmr, activite) {
-  const multiplicateurs = {
-    sedentaire: 1.2,
-    leger: 1.375,
-    modere: 1.55,
-    actif: 1.725,
-    tres_actif: 1.9
-  };
-  
-  return bmr * (multiplicateurs[activite] || 1.2);
-}
 
 /**
  * Calcule les besoins caloriques journaliers selon l'objectif

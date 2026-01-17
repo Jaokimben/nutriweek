@@ -11,7 +11,7 @@ const Questionnaire = ({ onComplete, initialData = null }) => {
     taille: '170',      // 170 cm
     poids: '75',        // 75 kg
     age: '30',          // 30 ans
-    genre: 'homme',     // Homme
+    genre: '',          // Pas de valeur par défaut - DOIT être sélectionné
     tourDeTaille: '85', // 85 cm
     
     // Nombre de repas
@@ -85,7 +85,10 @@ const Questionnaire = ({ onComplete, initialData = null }) => {
           newErrors.poids = 'Poids invalide (30-300 kg)'
         if (!data.age || data.age < 10 || data.age > 120) 
           newErrors.age = 'Âge invalide (10-120 ans)'
-        if (!data.genre) newErrors.genre = 'Veuillez sélectionner un genre'
+        // VALIDATION STRICTE DU GENRE - obligatoire pour calcul BMR
+        if (!data.genre || (data.genre !== 'M' && data.genre !== 'F')) {
+          newErrors.genre = '⚠️ Veuillez sélectionner votre genre (obligatoire pour calculer vos besoins caloriques)'
+        }
         if (!data.tourDeTaille || data.tourDeTaille < 50 || data.tourDeTaille > 200) 
           newErrors.tourDeTaille = 'Tour de taille invalide (50-200 cm)'
         break
@@ -203,25 +206,26 @@ const Questionnaire = ({ onComplete, initialData = null }) => {
               {errors.age && <p className="error">{errors.age}</p>}
             </div>
             <div className="form-group">
-              <label>Genre</label>
+              <label>Genre <span className="required">*</span></label>
+              <p className="field-note">Obligatoire pour calculer vos besoins caloriques</p>
               <div className="radio-group">
-                <label className="radio-label">
+                <label className={`radio-label ${formData.genre === 'M' ? 'selected' : ''}`}>
                   <input
                     type="radio"
                     name="genre"
                     checked={formData.genre === 'M'}
                     onChange={() => handleChange('genre', 'M')}
                   />
-                  <span>Homme</span>
+                  <span>👨 Homme</span>
                 </label>
-                <label className="radio-label">
+                <label className={`radio-label ${formData.genre === 'F' ? 'selected' : ''}`}>
                   <input
                     type="radio"
                     name="genre"
                     checked={formData.genre === 'F'}
                     onChange={() => handleChange('genre', 'F')}
                   />
-                  <span>Femme</span>
+                  <span>👩 Femme</span>
                 </label>
               </div>
               {errors.genre && <p className="error">{errors.genre}</p>}
