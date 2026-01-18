@@ -248,6 +248,7 @@ async function genererRepas(type, caloriesCible, alimentsDisponibles, alimentsUt
   // 🆕 ÉTAPE 1: Chercher une recette cohérente
   try {
     console.log(`\n🔍 ====== RECHERCHE RECETTE COHÉRENTE ======`);
+    console.log(`  📝 Aliments autorisés disponibles:`, alimentsAutorises.map(a => a.nom).slice(0, 15));
     const recette = chercherRecetteCoherente(alimentsAutorises, type, caloriesCible);
     
     if (recette) {
@@ -303,16 +304,21 @@ async function genererRepas(type, caloriesCible, alimentsDisponibles, alimentsUt
     
     // 🆕 VALIDATION COHÉRENCE : Vérifier que la combinaison d'aliments est cohérente
     const nomsAliments = aliments.map(a => a.nom);
+    console.log(`\n  🔍 VALIDATION tentative ${tentative + 1}/${MAX_TENTATIVES_REPAS}:`);
+    console.log(`     Aliments sélectionnés: ${nomsAliments.join(', ')}`);
+    
     const validationCoherence = verifierCoherenceCombinaison(nomsAliments);
+    console.log(`     Résultat cohérence:`, validationCoherence);
     
     if (!validationCoherence.coherent) {
       tentativesIncoherentes++;
-      console.log(`  ⚠️ Tentative ${tentative + 1}: Combinaison incohérente rejetée`);
+      console.log(`  ❌ REJET tentative ${tentative + 1}: Combinaison incohérente`);
       validationCoherence.raisons.forEach(r => console.log(`     ${r}`));
       continue; // Rejeter cette combinaison et essayer une autre
     }
     
     tentativesCoherentes++;
+    console.log(`  ✅ ACCEPTÉ tentative ${tentative + 1}: Combinaison cohérente`);
     
     const ecart = Math.abs(caloriesTotal - caloriesCible) / caloriesCible;
     
@@ -353,8 +359,25 @@ async function genererRepas(type, caloriesCible, alimentsDisponibles, alimentsUt
   console.log(`  📈 Taux de cohérence: ${((tentativesCoherentes / (tentativesCoherentes + tentativesIncoherentes)) * 100).toFixed(1)}%`);
   
   if (meilleurRepas) {
-    console.log(`\n✅ Repas aléatoire généré: ${meilleurRepas.ingredients.length} ingrédients, ${meilleurRepas.nutrition.calories} kcal`);
-    console.log(`  🍽️ Ingrédients: ${meilleurRepas.ingredients.map(i => i.nom).join(', ')}`);
+    // 🛡️ VALIDATION FINALE CRITIQUE : Double vérification avant retour
+    const nomsIngredientsFinal = meilleurRepas.ingredients.map(i => i.nom);
+    const validationFinale = verifierCoherenceCombinaison(nomsIngredientsFinal);
+    
+    console.log(`\n🛡️ VALIDATION FINALE du repas:`);
+    console.log(`  🍽️ Ingrédients: ${nomsIngredientsFinal.join(', ')}`);
+    console.log(`  📊 Cohérence:`, validationFinale);
+    
+    if (!validationFinale.coherent) {
+      console.error(`\n🚨 ALERTE CRITIQUE: Le repas généré est INCOHÉRENT malgré les filtres!`);
+      console.error(`  ❌ Raisons:`, validationFinale.raisons);
+      console.error(`  🔧 Le repas sera REJETÉ et un nouveau sera tenté`);
+      
+      // On ne retourne PAS ce repas incohérent
+      throw new Error(`Impossible de générer un repas cohérent après ${MAX_TENTATIVES_REPAS} tentatives. Raisons: ${validationFinale.raisons.join(', ')}`);
+    }
+    
+    console.log(`✅ Repas validé: ${meilleurRepas.ingredients.length} ingrédients, ${meilleurRepas.nutrition.calories} kcal`);
+    console.log(`  🍽️ Ingrédients validés: ${nomsIngredientsFinal.join(', ')}`);
   }
   
   return meilleurRepas;

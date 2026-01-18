@@ -284,24 +284,27 @@ const CATEGORIES_ALIMENTS = {
   // PROTÉINES ANIMALES
   viandes_rouges: [
     'boeuf', 'veau', 'agneau', 'mouton', 'steak', 'viande hachée',
-    'viande rouge', 'bifteck', 'entrecôte', 'faux-filet', 'bavette'
+    'viande rouge', 'bifteck', 'entrecôte', 'faux-filet', 'bavette',
+    'viande', 'viandes'  // Termes génériques
   ],
   viandes_blanches: [
     'poulet', 'dinde', 'porc', 'lapin', 'escalope', 'blanc de poulet',
-    'cuisse de poulet', 'filet de poulet', 'jambon', 'lardons'
+    'cuisse de poulet', 'filet de poulet', 'jambon', 'lardons',
+    'volaille', 'volailles'  // Termes génériques
   ],
   poissons_maigres: [
     'cabillaud', 'colin', 'merlan', 'lieu', 'sole', 'limande',
-    'poisson blanc', 'bar', 'dorade', 'daurade'
+    'poisson blanc', 'bar', 'dorade', 'daurade',
+    'poisson', 'poissons'  // Termes génériques
   ],
   poissons_gras: [
     'saumon', 'thon', 'maquereau', 'sardine', 'hareng', 'truite',
-    'anchois'
+    'anchois', 'poisson gras'
   ],
   fruits_mer: [
     'moules', 'crevettes', 'coquilles saint-jacques', 'huîtres',
-    'palourdes', 'bulots', 'calamars', 'poulpe', 'fruits de mer',
-    'crustacés', 'coquillages'
+    'palourdes', 'bulots', 'calamars', 'calamar', 'poulpe', 'fruits de mer',
+    'crustacés', 'coquillages', 'fruits de la mer'
   ],
   oeufs: ['oeufs', 'oeuf', 'blanc d\'oeuf', 'jaune d\'oeuf'],
   
@@ -466,17 +469,100 @@ const REGLES_INCOHERENCE = [
 /**
  * Paires d'ingrédients SPÉCIFIQUES qui ne vont PAS ensemble
  * Pour des cas très précis non couverts par les catégories
+ * EXHAUSTIF : Toutes les combinaisons viande + poisson/fruits de mer
  */
 const COMBINAISONS_INTERDITES_SPECIFIQUES = [
-  // Cas très spécifiques
-  ['viande hachée', 'moules'],
-  ['steak', 'crevettes'],
+  // VIANDES ROUGES + POISSONS
+  ['viande', 'poisson'],
+  ['viande', 'saumon'],
+  ['viande', 'thon'],
+  ['viande', 'cabillaud'],
+  ['viande', 'colin'],
+  ['viande', 'dorade'],
+  ['viande hachée', 'poisson'],
+  ['viande hachée', 'saumon'],
+  ['viande hachée', 'thon'],
+  ['viande hachée', 'cabillaud'],
+  ['boeuf', 'poisson'],
   ['boeuf', 'saumon'],
+  ['boeuf', 'thon'],
+  ['boeuf', 'cabillaud'],
+  ['steak', 'poisson'],
+  ['steak', 'saumon'],
+  ['steak', 'thon'],
+  ['steak', 'cabillaud'],
+  ['veau', 'poisson'],
+  ['veau', 'saumon'],
+  ['agneau', 'poisson'],
+  ['agneau', 'saumon'],
+  
+  // VIANDES ROUGES + FRUITS DE MER
+  ['viande', 'moules'],
+  ['viande', 'crevettes'],
+  ['viande', 'calamars'],
+  ['viande', 'calamar'],
+  ['viande', 'fruits de mer'],
+  ['viande hachée', 'moules'],
+  ['viande hachée', 'crevettes'],
+  ['viande hachée', 'calamars'],
+  ['viande hachée', 'calamar'],
+  ['viande hachée', 'fruits de mer'],
+  ['boeuf', 'moules'],
+  ['boeuf', 'crevettes'],
+  ['boeuf', 'calamars'],
+  ['boeuf', 'calamar'],
+  ['boeuf', 'fruits de mer'],
+  ['steak', 'moules'],
+  ['steak', 'crevettes'],
+  ['steak', 'calamars'],
+  ['steak', 'calamar'],
+  ['steak', 'fruits de mer'],
+  ['veau', 'moules'],
+  ['veau', 'crevettes'],
+  ['agneau', 'moules'],
+  ['agneau', 'crevettes'],
+  
+  // VOLAILLES + POISSONS
+  ['poulet', 'poisson'],
+  ['poulet', 'saumon'],
+  ['poulet', 'thon'],
   ['poulet', 'cabillaud'],
+  ['poulet', 'colin'],
+  ['poulet', 'dorade'],
+  ['dinde', 'poisson'],
+  ['dinde', 'saumon'],
+  ['dinde', 'thon'],
+  ['dinde', 'cabillaud'],
+  ['volaille', 'poisson'],
+  ['volaille', 'saumon'],
+  
+  // VOLAILLES + FRUITS DE MER
+  ['poulet', 'moules'],
+  ['poulet', 'crevettes'],
+  ['poulet', 'calamars'],
+  ['poulet', 'calamar'],
+  ['poulet', 'fruits de mer'],
+  ['dinde', 'moules'],
+  ['dinde', 'crevettes'],
+  ['dinde', 'calamars'],
+  ['dinde', 'calamar'],
+  ['volaille', 'moules'],
+  ['volaille', 'crevettes'],
+  ['volaille', 'fruits de mer'],
+  
+  // SUCRÉ + PROTÉINES
+  ['confiture', 'viande'],
+  ['confiture', 'poisson'],
   ['confiture', 'thon'],
+  ['confiture', 'saumon'],
+  ['chocolat', 'viande'],
   ['chocolat', 'poulet'],
+  ['chocolat', 'poisson'],
+  ['chocolat', 'saumon'],
+  ['miel', 'viande'],
   ['miel', 'poisson'],
-  ['nutella', 'viande']
+  ['nutella', 'viande'],
+  ['nutella', 'poisson']
 ];
 
 /**
