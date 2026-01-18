@@ -8,10 +8,12 @@
  * - Fichiers Excel (.xls, .xlsx)
  * - Fichiers CSV
  * - Formats variés de colonnes
+ * - Complétion automatique des valeurs nutritionnelles manquantes
  */
 
 import * as XLSX from 'xlsx';
 import { getAllFiles, isUsingUploadedFiles } from './practitionerStorage.js';
+import { completerValeursNutritionnelles } from './nutritionSearch.js';
 
 /**
  * Colonnes possibles dans les fichiers Excel
@@ -245,7 +247,14 @@ async function parseAlimentsExcel(excelData) {
   console.log(`📊 Lignes traitées: ${excelData.length - 1 - lignesVidesIgnorees}`);
   console.log(`═══════════════════════════════════════════════════════\n`);
   
-  return aliments;
+  // ⚡ NOUVEAU v2.4.11: Complétion automatique des valeurs nutritionnelles manquantes
+  console.log(`🔍 [COMPLETION AUTO] Vérification des valeurs nutritionnelles...\n`);
+  
+  const alimentsCompletes = await completerValeursNutritionnelles(aliments);
+  
+  console.log(`✅ [COMPLETION AUTO] Terminée\n`);
+  
+  return alimentsCompletes;
 }
 
 /**
