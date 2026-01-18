@@ -1,0 +1,28 @@
+{
+    "files": {
+        "alimentsPetitDej": {
+            "versions": []
+        },
+        "alimentsDejeuner": {
+            "versions": []
+        },
+        "alimentsDiner": {
+            "versions": []
+        },
+        "fodmapList": {
+            "versions": []
+        },
+        "reglesGenerales": {
+            "versions": []
+        },
+        "pertePoidHomme": {
+            "versions": []
+        },
+        "pertePoidFemme": {
+            "versions": []
+        },
+        "vitalite": {
+            "versions": []
+        }
+    }
+}
