@@ -17,8 +17,9 @@ import {
 import { calculerBMR, calculerTDEE } from './bmrCalculator.js';
 import { diagnostiquerFichiersExcel, formaterMessageErreur } from './excelDiagnostic.js';
 import { 
-  chercherRecettes, 
-  selectionnerRecette 
+  chercherRecetteCoherente, 
+  construireRepasDepuisRecette,
+  validerIngredientsRepas
 } from './recipeSearchEngine.js';
 
 // Jours de la semaine
@@ -220,70 +221,116 @@ function selectionnerAliments(alimentsDisponibles, caloriesCible, alimentsUtilis
  */
 async function genererRepas(type, caloriesCible, alimentsDisponibles, alimentsUtilisesAujourdhui, regles = []) {
   console.log(`\n🍽️ GÉNÉRATION REPAS: ${type} (objectif: ${caloriesCible} kcal)`);
+  console.log(`  📋 ${alimentsDisponibles.length} aliments disponibles`);
   
-  // 🆕 ÉTAPE 1: Chercher des recettes cohérentes
+  // Filtrer les aliments selon les règles praticien
+  let alimentsAutorises = alimentsDisponibles;
+  if (regles.length > 0) {
+    alimentsAutorises = alimentsDisponibles.filter(aliment => 
+      verifierAlimentAutorise(aliment, regles)
+    );
+    console.log(`  🔍 Après règles praticien: ${alimentsAutorises.length} aliments autorisés`);
+  }
+  
+  // Filtrer les aliments déjà utilisés
+  alimentsAutorises = alimentsAutorises.filter(
+    a => !alimentsUtilisesAujourdhui.includes(a.nom)
+  );
+  console.log(`  ✅ Aliments finaux disponibles: ${alimentsAutorises.length}`);
+  
+  if (alimentsAutorises.length === 0) {
+    console.warn(`  ⚠️ Aucun aliment disponible pour ${type}`);
+    alimentsAutorises = alimentsDisponibles; // Fallback
+  }
+  
+  // 🆕 ÉTAPE 1: Chercher une recette cohérente
   try {
-    console.log(`🔍 Recherche de recettes cohérentes pour ${type}...`);
-    const recettesRealisables = await chercherRecettes(type, alimentsDisponibles, caloriesCible);
+    console.log(`\n🔍 ====== RECHERCHE RECETTE COHÉRENTE ======`);
+    const recette = chercherRecetteCoherente(alimentsAutorises, type, caloriesCible);
     
-    if (recettesRealisables && recettesRealisables.length > 0) {
-      console.log(`✅ ${recettesRealisables.length} recette(s) trouvée(s)`);
+    if (recette) {
+      console.log(`✨ Recette trouvée: ${recette.nom} (score: ${recette.score})`);
       
-      const repasRecette = selectionnerRecette(recettesRealisables, alimentsDisponibles, caloriesCible);
+      // Construire le repas depuis la recette
+      const repasRecette = construireRepasDepuisRecette(recette, alimentsAutorises, caloriesCible);
       
-      if (repasRecette && repasRecette.aliments) {
-        console.log(`✅ SUCCÈS: Repas depuis recette "${repasRecette.nom}"`);
+      if (repasRecette) {
+        // Valider que TOUS les ingrédients sont autorisés
+        const valide = validerIngredientsRepas(repasRecette, alimentsAutorises);
         
-        return {
-          type,
-          nom: repasRecette.nom,
-          ingredients: repasRecette.aliments,
-          nutrition: repasRecette.nutrition
-        };
+        if (valide) {
+          console.log(`✅ SUCCÈS: Repas cohérent "${repasRecette.nom}" généré depuis recette`);
+          console.log(`  📊 Nutrition: ${repasRecette.nutrition.calories} kcal`);
+          console.log(`  🍽️ Ingrédients: ${repasRecette.ingredients.map(i => i.nom).join(', ')}`);
+          
+          return {
+            type,
+            nom: repasRecette.nom,
+            ingredients: repasRecette.ingredients,
+            nutrition: repasRecette.nutrition,
+            source: 'recette_coherente',
+            score: repasRecette.score
+          };
+        } else {
+          console.warn(`⚠️ Recette rejetée: contient des ingrédients non autorisés`);
+        }
       }
     } else {
-      console.warn(`⚠️ Aucune recette cohérente, fallback aléatoire`);
+      console.log(`⚠️ Aucune recette cohérente trouvée, utilisation sélection aléatoire`);
     }
   } catch (error) {
     console.error(`❌ Erreur recherche recettes: ${error.message}`);
-    console.warn(`⚠️ Fallback aléatoire`);
+    console.warn(`⚠️ Fallback vers génération aléatoire`);
   }
   
-  // 🔄 FALLBACK: Génération aléatoire
-  console.log(`🎲 Génération aléatoire pour ${type}...`);
+  // 🔄 FALLBACK: Génération aléatoire (comme avant)
+  console.log(`\n🎲 ====== GÉNÉRATION ALÉATOIRE ======`);
   
   let meilleurRepas = null;
   let meilleurEcart = Infinity;
   
   for (let tentative = 0; tentative < MAX_TENTATIVES_REPAS; tentative++) {
     const { aliments, caloriesTotal } = selectionnerAliments(
-      alimentsDisponibles, 
+      alimentsAutorises, 
       caloriesCible,
-      alimentsUtilisesAujourdhui,
-      regles
+      [],  // Pas de filtre ici car déjà filtré
+      []   // Pas de règles ici car déjà filtré
     );
     
     const ecart = Math.abs(caloriesTotal - caloriesCible) / caloriesCible;
     
     if (ecart < meilleurEcart) {
       meilleurEcart = ecart;
+      
+      // Calculer la nutrition
+      const proteines = Math.round(aliments.reduce((sum, a) => sum + (a.proteines || 0), 0));
+      const glucides = Math.round(aliments.reduce((sum, a) => sum + (a.glucides || 0), 0));
+      const lipides = Math.round(aliments.reduce((sum, a) => sum + (a.lipides || 0), 0));
+      
       meilleurRepas = {
         type,
-        nom: `${type.charAt(0).toUpperCase() + type.slice(1)} du jour`,
+        nom: `${type} du jour`,
         ingredients: aliments,
         nutrition: {
-          calories: caloriesTotal,
-          proteines: aliments.reduce((sum, a) => sum + a.proteines, 0),
-          glucides: aliments.reduce((sum, a) => sum + a.glucides, 0),
-          lipides: aliments.reduce((sum, a) => sum + a.lipides, 0)
-        }
+          calories: Math.round(caloriesTotal),
+          proteines,
+          glucides,
+          lipides
+        },
+        source: 'selection_aleatoire'
       };
       
       // Si l'écart est acceptable, on arrête
       if (ecart <= TOLERANCE_CALORIES) {
+        console.log(`  ✅ Écart acceptable: ${(ecart * 100).toFixed(1)}% (tentative ${tentative + 1})`);
         break;
       }
     }
+  }
+  
+  if (meilleurRepas) {
+    console.log(`✅ Repas aléatoire généré: ${meilleurRepas.ingredients.length} ingrédients, ${meilleurRepas.nutrition.calories} kcal`);
+    console.log(`  🍽️ Ingrédients: ${meilleurRepas.ingredients.map(i => i.nom).join(', ')}`);
   }
   
   return meilleurRepas;
