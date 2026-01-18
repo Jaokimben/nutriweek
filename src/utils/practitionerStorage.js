@@ -35,6 +35,7 @@ const DEFAULT_FILES = {
   pertePoidHomme: null,
   pertePoidFemme: null,
   vitalite: null,
+  confortDigestif: null,  // NOUVEAU: Règles pour le confort digestif
   metadata: {
     lastUpdated: null,
     uploadedBy: null,
@@ -58,7 +59,8 @@ export const getFilesSummary = () => {
       'reglesGenerales',
       'pertePoidHomme',
       'pertePoidFemme',
-      'vitalite'
+      'vitalite',
+      'confortDigestif'  // NOUVEAU
     ]
 
     fileTypes.forEach(type => {
@@ -141,6 +143,14 @@ export const savePertePoidFemme = async (file) => {
 export const saveVitalite = async (file) => {
   validateWordFile(file)
   return await saveFile('vitalite', file)
+}
+
+/**
+ * Sauvegarder le fichier Word confort digestif
+ */
+export const saveConfortDigestif = async (file) => {
+  validateWordFile(file)
+  return await saveFile('confortDigestif', file)
 }
 
 /**

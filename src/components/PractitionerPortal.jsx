@@ -9,6 +9,7 @@ import {
   savePertePoidHomme,
   savePertePoidFemme,
   saveVitalite,
+  saveConfortDigestif,
   deleteFile,
   downloadFile,
   getStorageStats,
@@ -253,6 +254,14 @@ const PractitionerPortal = ({ onBack }) => {
       description: 'Document programme vitalité',
       icon: '⚡',
       saveFn: saveVitalite,
+      formats: '.doc, .docx, .txt'
+    },
+    {
+      key: 'confortDigestif',
+      title: 'Confort Digestif',
+      description: 'Règles et recommandations pour le confort digestif',
+      icon: '🌿',
+      saveFn: saveConfortDigestif,
       formats: '.doc, .docx, .txt'
     }
   ]
