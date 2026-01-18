@@ -92,17 +92,28 @@ async function parseExcelFromBase64(base64Data) {
 }
 
 /**
+ * Vérifie si une ligne est vide (toutes les cellules vides ou undefined)
+ */
+function isRowEmpty(row) {
+  if (!row || row.length === 0) return true;
+  return row.every(cell => cell === null || cell === undefined || String(cell).trim() === '');
+}
+
+/**
  * Parse et structure les données d'un fichier Excel
  * 
- * ⚠️ RÈGLE ABSOLUE (v2.4.7):
+ * ⚠️ RÈGLE ABSOLUE (v2.4.8 - Robuste aux lignes vides):
  * ============================
  * 1. Colonne A (index 0) = TOUJOURS les noms d'aliments
  * 2. Ligne 1 = TOUJOURS les en-têtes (ignorée systématiquement)
  * 3. Données = TOUJOURS à partir de ligne 2 (index 1 dans le tableau)
  * 4. Colonnes B, C, D... = composition nutritionnelle (détection auto)
+ * 5. Lignes vides = IGNORÉES automatiquement (peut être n'importe où)
  * 
- * PAS de détection d'en-têtes, PAS de fallback, PAS de vérification.
- * Format Excel STRICT : Ligne 1 = en-têtes, Colonne A = aliments.
+ * ⚡ NOUVEAU (v2.4.8):
+ * - Ignore intelligemment TOUTES les lignes vides (ligne 2, 3, 4, etc.)
+ * - Gère les fichiers avec des lignes vides intercalées
+ * - Robuste aux formats Excel variés
  */
 async function parseAlimentsExcel(excelData) {
   // Validation minimale
@@ -111,7 +122,7 @@ async function parseAlimentsExcel(excelData) {
   }
   
   console.log(`\n📋 ═══════════════════════════════════════════════════════`);
-  console.log(`📋 [PARSER EXCEL v2.4.7] Parsing de ${excelData.length} lignes`);
+  console.log(`📋 [PARSER EXCEL v2.4.8] Parsing de ${excelData.length} lignes`);
   console.log(`📋 ═══════════════════════════════════════════════════════\n`);
   
   // ✅ RÈGLE ABSOLUE 1: Ligne 1 (index 0) = EN-TÊTES (à ignorer)
@@ -190,13 +201,15 @@ async function parseAlimentsExcel(excelData) {
   
   // Parser les lignes de données (ligne 2 → fin)
   const aliments = [];
+  let lignesVidesIgnorees = 0;
   console.log(`\n🔄 Parsing des données (ligne 2 → ligne ${excelData.length})...\n`);
   
   for (let rowIndex = startRow; rowIndex < excelData.length; rowIndex++) {
     const row = excelData[rowIndex];
     
-    // Ignorer les lignes totalement vides
-    if (!row || row.length === 0) {
+    // ⚡ NOUVEAU v2.4.8: Ignorer les lignes TOTALEMENT vides (toutes les cellules vides)
+    if (isRowEmpty(row)) {
+      lignesVidesIgnorees++;
       console.log(`   ⊘ Ligne ${rowIndex + 1}: vide (ignorée)`);
       continue;
     }
@@ -204,7 +217,7 @@ async function parseAlimentsExcel(excelData) {
     // ✅ RÈGLE ABSOLUE: Colonne A (index 0) = nom de l'aliment
     const nomValue = row[0];
     
-    // Ignorer si le nom est vide ou manquant
+    // Ignorer si le nom est vide ou manquant (mais ligne pas totalement vide)
     if (!nomValue || String(nomValue).trim().length === 0) {
       console.log(`   ⊘ Ligne ${rowIndex + 1}: pas de nom en colonne A (ignorée)`);
       continue;
@@ -228,6 +241,8 @@ async function parseAlimentsExcel(excelData) {
   
   console.log(`\n═══════════════════════════════════════════════════════`);
   console.log(`✅ [PARSER EXCEL] ${aliments.length} aliments parsés avec succès`);
+  console.log(`📊 Lignes vides ignorées: ${lignesVidesIgnorees}`);
+  console.log(`📊 Lignes traitées: ${excelData.length - 1 - lignesVidesIgnorees}`);
   console.log(`═══════════════════════════════════════════════════════\n`);
   
   return aliments;
