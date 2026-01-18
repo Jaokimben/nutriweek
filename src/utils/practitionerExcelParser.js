@@ -95,45 +95,89 @@ async function parseExcelFromBase64(base64Data) {
  * Parse et structure les données d'un fichier Excel
  */
 async function parseAlimentsExcel(excelData) {
-  if (!excelData || excelData.length < 2) {
+  if (!excelData || excelData.length < 1) {
     throw new Error('Fichier Excel vide ou invalide');
   }
   
+  console.log(`📋 [parseAlimentsExcel] Parsing ${excelData.length} lignes...`);
+  
   // Première ligne = en-têtes
   const headers = excelData[0];
+  console.log('📋 [parseAlimentsExcel] En-têtes détectés:', headers);
   
   // Trouver les colonnes correspondantes
   const colIndexes = {
-    nom: headers.findIndex(h => findColumnName([h], COLUMN_MAPPINGS.nom)),
-    calories: headers.findIndex(h => findColumnName([h], COLUMN_MAPPINGS.calories)),
-    proteines: headers.findIndex(h => findColumnName([h], COLUMN_MAPPINGS.proteines)),
-    glucides: headers.findIndex(h => findColumnName([h], COLUMN_MAPPINGS.glucides)),
-    lipides: headers.findIndex(h => findColumnName([h], COLUMN_MAPPINGS.lipides)),
-    categorie: headers.findIndex(h => findColumnName([h], COLUMN_MAPPINGS.categorie))
+    nom: findColumnName(headers, COLUMN_MAPPINGS.nom),
+    calories: findColumnName(headers, COLUMN_MAPPINGS.calories),
+    proteines: findColumnName(headers, COLUMN_MAPPINGS.proteines),
+    glucides: findColumnName(headers, COLUMN_MAPPINGS.glucides),
+    lipides: findColumnName(headers, COLUMN_MAPPINGS.lipides),
+    categorie: findColumnName(headers, COLUMN_MAPPINGS.categorie)
   };
   
-  // Vérifier que les colonnes essentielles existent
-  if (colIndexes.nom === -1) {
-    throw new Error('Colonne "nom" ou "aliment" introuvable dans le fichier Excel');
+  // Convertir les noms de colonnes trouvés en index
+  const colIndexesResolved = {
+    nom: colIndexes.nom ? headers.indexOf(colIndexes.nom) : -1,
+    calories: colIndexes.calories ? headers.indexOf(colIndexes.calories) : -1,
+    proteines: colIndexes.proteines ? headers.indexOf(colIndexes.proteines) : -1,
+    glucides: colIndexes.glucides ? headers.indexOf(colIndexes.glucides) : -1,
+    lipides: colIndexes.lipides ? headers.indexOf(colIndexes.lipides) : -1,
+    categorie: colIndexes.categorie ? headers.indexOf(colIndexes.categorie) : -1
+  };
+  
+  console.log('🔍 [parseAlimentsExcel] Index colonnes:', colIndexesResolved);
+  
+  // Si aucune colonne "nom" n'est trouvée, assumer que la première colonne contient les aliments
+  let startRow = 1; // Par défaut, commencer à la ligne 1 (après les en-têtes)
+  if (colIndexesResolved.nom === -1) {
+    console.log('⚠️ [parseAlimentsExcel] Aucun en-tête "nom" trouvé, utilisation colonne 0 comme noms d\'aliments');
+    colIndexesResolved.nom = 0;
+    
+    // Vérifier si la première ligne contient des données (pas d'en-têtes)
+    const firstCell = excelData[0][0];
+    if (firstCell && typeof firstCell === 'string' && firstCell.length > 0) {
+      // La première ligne semble contenir des données, pas des en-têtes
+      const isLikelyHeader = COLUMN_MAPPINGS.nom.some(name => 
+        normalizeColumnName(firstCell).includes(normalizeColumnName(name))
+      );
+      
+      if (!isLikelyHeader) {
+        console.log('ℹ️ [parseAlimentsExcel] Première ligne semble être des données, pas des en-têtes');
+        startRow = 0; // Commencer à la ligne 0
+      }
+    }
   }
   
   // Parser les lignes de données
   const aliments = [];
-  for (let i = 1; i < excelData.length; i++) {
+  console.log(`🔄 [parseAlimentsExcel] Parsing lignes ${startRow} à ${excelData.length - 1}...`);
+  
+  for (let i = startRow; i < excelData.length; i++) {
     const row = excelData[i];
     
     // Ignorer les lignes vides
-    if (!row || row.length === 0 || !row[colIndexes.nom]) continue;
+    if (!row || row.length === 0 || !row[colIndexesResolved.nom]) continue;
+    
+    const nomValue = row[colIndexesResolved.nom];
+    
+    // Ignorer si le nom est vide ou est un en-tête
+    if (!nomValue || String(nomValue).trim().length === 0) continue;
+    
+    // Ignorer si c'est probablement un en-tête répété
+    const nomStr = String(nomValue).toLowerCase();
+    if (nomStr === 'nom' || nomStr === 'aliment' || nomStr === 'name') continue;
     
     const aliment = {
-      nom: String(row[colIndexes.nom]).trim(),
-      energie: colIndexes.calories !== -1 ? parseFloat(row[colIndexes.calories]) || 0 : 0,
-      proteines: colIndexes.proteines !== -1 ? parseFloat(row[colIndexes.proteines]) || 0 : 0,
-      glucides: colIndexes.glucides !== -1 ? parseFloat(row[colIndexes.glucides]) || 0 : 0,
-      lipides: colIndexes.lipides !== -1 ? parseFloat(row[colIndexes.lipides]) || 0 : 0,
-      categorie: colIndexes.categorie !== -1 ? String(row[colIndexes.categorie] || '').trim() : 'autre',
+      nom: String(nomValue).trim(),
+      energie: colIndexesResolved.calories !== -1 ? parseFloat(row[colIndexesResolved.calories]) || 0 : 0,
+      proteines: colIndexesResolved.proteines !== -1 ? parseFloat(row[colIndexesResolved.proteines]) || 0 : 0,
+      glucides: colIndexesResolved.glucides !== -1 ? parseFloat(row[colIndexesResolved.glucides]) || 0 : 0,
+      lipides: colIndexesResolved.lipides !== -1 ? parseFloat(row[colIndexesResolved.lipides]) || 0 : 0,
+      categorie: colIndexesResolved.categorie !== -1 ? String(row[colIndexesResolved.categorie] || '').trim() : 'autre',
       source: 'praticien'
     };
+    
+    console.log(`  📝 Ligne ${i}: ${aliment.nom} (${aliment.energie} kcal)`);
     
     // Valider que l'aliment a au moins un nom
     if (aliment.nom && aliment.nom.length > 0) {
