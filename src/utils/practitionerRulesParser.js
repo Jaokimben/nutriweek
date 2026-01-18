@@ -144,7 +144,8 @@ export async function chargerReglesPraticien(profil) {
       texteComplet: {
         generales: '',
         specifiques: ''
-      }
+      },
+      requireFODMAP: false  // 🆕 Flag pour filtrage FODMAP
     };
     
     console.log('📋 Chargement des règles praticien...');
@@ -180,6 +181,22 @@ export async function chargerReglesPraticien(profil) {
         reglesChargees.specifiques = parseRegles(texte);
         console.log(`  ✅ ${reglesChargees.specifiques.length} règles vitalité chargées`);
       }
+    } else if (profil.objectif === 'confort_digestif' || profil.objectif === 'confort') {
+      // 🆕 Pour l'objectif confort digestif
+      if (files.confortDigestif && files.confortDigestif.data) {
+        console.log('  📄 Chargement règles confort digestif...');
+        const texte = await parseWordFromBase64(files.confortDigestif.data);
+        reglesChargees.texteComplet.specifiques = texte;
+        reglesChargees.specifiques = parseRegles(texte);
+        console.log(`  ✅ ${reglesChargees.specifiques.length} règles confort digestif chargées`);
+        
+        // 🆕 Détecter si FODMAP est mentionné dans les règles
+        const requireFODMAP = detecterMentionFODMAP(texte);
+        if (requireFODMAP) {
+          console.log('  🚫 Mention FODMAP détectée → Filtrage FODMAP sera appliqué');
+          reglesChargees.requireFODMAP = true;
+        }
+      }
     }
     
     // Combiner toutes les règles
@@ -201,6 +218,32 @@ export async function chargerReglesPraticien(profil) {
       texteComplet: { generales: '', specifiques: '' }
     };
   }
+}
+
+/**
+ * Détecte si le texte mentionne FODMAP
+ */
+function detecterMentionFODMAP(texte) {
+  const motsClesFODMAP = [
+    'fodmap',
+    'pauvre en fodmap',
+    'pauvres en fodmap',
+    'éviter fodmap',
+    'aliments fodmap',
+    'sans fodmap',
+    'low fodmap',
+    'ballonnement',
+    'ballonnements'
+  ];
+  
+  const texteLower = texte.toLowerCase();
+  const mentionTrouvee = motsClesFODMAP.some(mc => texteLower.includes(mc));
+  
+  if (mentionTrouvee) {
+    console.log(`  🔍 Mention FODMAP détectée dans le document`);
+  }
+  
+  return mentionTrouvee;
 }
 
 /**

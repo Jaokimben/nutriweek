@@ -24,6 +24,79 @@ import {
 } from './recipeSearchEngine.js';
 import { chargerEtAppliquerReglesCaloriques } from './calorieRulesExtractor.js';
 
+// ========================================
+// GESTION FODMAP
+// ========================================
+
+/**
+ * Charge la liste des aliments FODMAP depuis le fichier Excel
+ * @returns {Promise<string[]>} Liste des noms d'aliments FODMAP (en minuscules)
+ */
+async function chargerListeFODMAP() {
+  try {
+    const files = getAllFiles();
+    
+    if (!files.fodmapList || !files.fodmapList.data) {
+      console.warn('⚠️ Fichier fodmapList.xlsx non trouvé');
+      return [];
+    }
+    
+    console.log('📋 Chargement de la liste FODMAP...');
+    const alimentsFodmap = await parseExcelFile(files.fodmapList.data);
+    
+    // Extraire les noms et normaliser (minuscules)
+    const nomsFodmap = alimentsFodmap.map(a => a.nom.toLowerCase().trim());
+    
+    console.log(`✅ ${nomsFodmap.length} aliments FODMAP chargés`);
+    console.log(`   Exemples: ${nomsFodmap.slice(0, 5).join(', ')}`);
+    
+    return nomsFodmap;
+    
+  } catch (error) {
+    console.error('❌ Erreur chargement liste FODMAP:', error);
+    return [];
+  }
+}
+
+/**
+ * Filtre les aliments en excluant ceux de la liste FODMAP
+ * @param {Object} alimentsExcel - {petitDejeuner: [], dejeuner: [], diner: []}
+ * @param {string[]} fodmapList - Liste des noms FODMAP en minuscules
+ * @returns {Object} Aliments filtrés
+ */
+function filtrerAlimentsFODMAP(alimentsExcel, fodmapList) {
+  console.log('\n🚫 Application du filtrage FODMAP...');
+  
+  const fodmapSet = new Set(fodmapList);
+  
+  const filtrer = (aliments, typeRepas) => {
+    const avant = aliments.length;
+    const apres = aliments.filter(aliment => {
+      const nomNormalise = aliment.nom.toLowerCase().trim();
+      const estFodmap = fodmapSet.has(nomNormalise);
+      
+      if (estFodmap) {
+        console.log(`  ❌ ${typeRepas}: "${aliment.nom}" exclu (FODMAP)`);
+      }
+      
+      return !estFodmap;
+    });
+    
+    console.log(`  ${typeRepas}: ${avant} → ${apres.length} aliments (${avant - apres.length} exclus)`);
+    return apres;
+  };
+  
+  return {
+    petitDejeuner: filtrer(alimentsExcel.petitDejeuner, 'Petit-déjeuner'),
+    dejeuner: filtrer(alimentsExcel.dejeuner, 'Déjeuner'),
+    diner: filtrer(alimentsExcel.diner, 'Dîner')
+  };
+}
+
+// ========================================
+// PARAMÈTRES ET CONSTANTES
+// ========================================
+
 // Jours de la semaine
 const JOURS_SEMAINE = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
 
@@ -486,11 +559,27 @@ export async function genererMenuHebdomadaireExcel(profil) {
   console.log('Profil:', profil);
   
   // Charger les aliments depuis les fichiers Excel (lance erreur si insuffisant)
-  const alimentsExcel = await chargerAlimentsExcel();
+  let alimentsExcel = await chargerAlimentsExcel();
   
   // Charger les règles praticien depuis les documents Word
   const reglesData = await chargerReglesPraticien(profil);
   console.log(`📋 Règles chargées: ${reglesData.toutesLesRegles.length} règles actives`);
+  
+  // 🆕 APPLIQUER LE FILTRAGE FODMAP SI REQUIS
+  if (reglesData.requireFODMAP) {
+    console.log('\n🚫 ========== FILTRAGE FODMAP REQUIS ==========');
+    const fodmapList = await chargerListeFODMAP();
+    
+    if (fodmapList.length > 0) {
+      alimentsExcel = filtrerAlimentsFODMAP(alimentsExcel, fodmapList);
+      console.log(`✅ Filtrage FODMAP appliqué: ${fodmapList.length} aliments exclus`);
+    } else {
+      console.warn('⚠️ ATTENTION: Filtrage FODMAP requis mais fodmapList.xlsx absent ou vide');
+      console.warn('   → Les aliments FODMAP ne seront PAS filtrés');
+    }
+  } else {
+    console.log('ℹ️ Pas de filtrage FODMAP requis pour cet objectif');
+  }
   
   // Calculer les besoins nutritionnels (BMR/TDEE)
   const bmr = calculerBMR(profil);
