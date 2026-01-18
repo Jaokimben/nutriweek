@@ -296,7 +296,7 @@ const COMBINAISONS_INTERDITES = [
  * @param {string[]} ingredients - Liste des ingrédients
  * @returns {boolean} true si la combinaison est cohérente
  */
-function verifierCoherenceCombina ison(ingredients) {
+function verifierCoherenceCombinaison(ingredients) {
   const ingredientsLower = ingredients.map(i => i.toLowerCase());
   
   for (const [ing1, ing2] of COMBINAISONS_INTERDITES) {
@@ -367,7 +367,7 @@ export function chercherRecetteCoherente(alimentsDisponibles, typeRepas, calorie
       
       if (tousDisponibles) {
         // Vérifier la cohérence de la combinaison
-        if (!verifierCoherenceCombinai son(recette.ingredients)) {
+        if (!verifierCoherenceCombinaison(recette.ingredients)) {
           console.log(`    ⚠️ Recette ${recette.nom} rejetée: combinaison incohérente`);
           continue;
         }
@@ -565,5 +565,5 @@ export default {
   chercherRecetteCoherente,
   construireRepasDepuisRecette,
   validerIngredientsRepas,
-  verifierCoherenceCombinai son
+  verifierCoherenceCombinaison
 };
