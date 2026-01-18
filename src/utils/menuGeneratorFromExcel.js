@@ -480,27 +480,44 @@ export async function genererMenuHebdomadaireExcel(profil) {
     }
   }
   
-  // VALIDATION FINALE STRICTE : Vérifier que TOUS les aliments proviennent des fichiers Excel
-  console.log('\n🔍 VALIDATION FINALE STRICTE : Vérification de la conformité 100% Excel...');
+  // VALIDATION FINALE STRICTE : Vérifier que TOUS les aliments proviennent des fichiers Excel CORRESPONDANTS
+  console.log('\n🔍 VALIDATION FINALE STRICTE : Vérification de la conformité 100% Excel PAR REPAS...');
   
-  const alimentsAutorises = new Set([
-    ...alimentsExcel.petitDejeuner.map(a => a.nom.toLowerCase()),
-    ...alimentsExcel.dejeuner.map(a => a.nom.toLowerCase()),
-    ...alimentsExcel.diner.map(a => a.nom.toLowerCase())
-  ]);
+  // Créer des Sets séparés pour chaque type de repas
+  const alimentsParRepas = {
+    petitDejeuner: new Set(alimentsExcel.petitDejeuner.map(a => a.nom.toLowerCase())),
+    dejeuner: new Set(alimentsExcel.dejeuner.map(a => a.nom.toLowerCase())),
+    diner: new Set(alimentsExcel.diner.map(a => a.nom.toLowerCase()))
+  };
+  
+  console.log('📋 Aliments autorisés par repas:');
+  console.log(`  Petit-déjeuner: ${alimentsParRepas.petitDejeuner.size} aliments`);
+  console.log(`  Déjeuner: ${alimentsParRepas.dejeuner.size} aliments`);
+  console.log(`  Dîner: ${alimentsParRepas.diner.size} aliments`);
   
   const alimentsExternesDetectes = [];
   
   menuComplet.semaine.forEach(jour => {
     Object.entries(jour.menu).forEach(([typeRepas, repas]) => {
       if (repas && repas.ingredients) {
+        // Déterminer quelle liste utiliser selon le type de repas
+        let alimentsAutorises;
+        if (typeRepas === 'petitDejeuner') {
+          alimentsAutorises = alimentsParRepas.petitDejeuner;
+        } else if (typeRepas === 'dejeuner') {
+          alimentsAutorises = alimentsParRepas.dejeuner;
+        } else if (typeRepas === 'diner') {
+          alimentsAutorises = alimentsParRepas.diner;
+        }
+        
         repas.ingredients.forEach(ingredient => {
           const nomIngredient = ingredient.nom.toLowerCase();
           if (!alimentsAutorises.has(nomIngredient)) {
             alimentsExternesDetectes.push({
               jour: jour.jour,
               repas: typeRepas,
-              ingredient: ingredient.nom
+              ingredient: ingredient.nom,
+              raison: `Cet aliment n'est pas dans le fichier Excel ${typeRepas}`
             });
           }
         });
@@ -509,26 +526,33 @@ export async function genererMenuHebdomadaireExcel(profil) {
   });
   
   if (alimentsExternesDetectes.length > 0) {
-    console.error('❌ ERREUR CRITIQUE : Des aliments EXTERNES ont été détectés !');
-    console.error('Aliments non autorisés:');
+    console.error('❌ ERREUR CRITIQUE : Des aliments EXTERNES ou MAL PLACÉS ont été détectés !');
+    console.error('Aliments non autorisés pour leur repas:');
     alimentsExternesDetectes.forEach(item => {
       console.error(`  - ${item.jour} ${item.repas}: ${item.ingredient}`);
+      console.error(`    → ${item.raison}`);
     });
     throw new Error(
-      'ERREUR CRITIQUE : Des aliments externes ont été utilisés dans la génération.\n' +
-      'Tous les aliments doivent provenir UNIQUEMENT des fichiers Excel uploadés.\n' +
-      `${alimentsExternesDetectes.length} aliment(s) externe(s) détecté(s).`
+      'ERREUR CRITIQUE : Des aliments non autorisés ont été utilisés.\n' +
+      'Chaque repas doit utiliser UNIQUEMENT les aliments de son fichier Excel correspondant.\n' +
+      `${alimentsExternesDetectes.length} aliment(s) non autorisé(s) détecté(s).`
     );
   }
   
-  console.log(`✅ VALIDATION STRICTE RÉUSSIE : ${alimentsAutorises.size} aliments Excel vérifiés`);
-  console.log('✅ AUCUN aliment externe détecté - Conformité 100%');
+  const totalAliments = alimentsParRepas.petitDejeuner.size + alimentsParRepas.dejeuner.size + alimentsParRepas.diner.size;
+  console.log(`✅ VALIDATION STRICTE PAR REPAS RÉUSSIE : ${totalAliments} aliments Excel vérifiés`);
+  console.log('✅ AUCUN aliment mal placé détecté - Conformité 100% par repas');
   
   menuComplet.metadata.validationStricte = {
     conforme: true,
-    nombreAlimentsExcel: alimentsAutorises.size,
+    nombreAlimentsExcel: totalAliments,
+    nombreAlimentsParRepas: {
+      petitDejeuner: alimentsParRepas.petitDejeuner.size,
+      dejeuner: alimentsParRepas.dejeuner.size,
+      diner: alimentsParRepas.diner.size
+    },
     nombreAlimentsExternes: 0,
-    message: 'Menu généré à 100% depuis les fichiers Excel du praticien'
+    message: 'Menu généré à 100% depuis les fichiers Excel du praticien (validation par repas)'
   };
   
   return menuComplet;
