@@ -26,7 +26,8 @@ export async function diagnostiquerFichierExcel(fileKey, fileName) {
   }
 
   try {
-    const aliments = await parseExcelFile(file);
+    // ✅ CORRECTION: Passer file.data (base64) au parser, pas file entier
+    const aliments = await parseExcelFile(file.data);
     
     const diagnostic = {
       present: true,
