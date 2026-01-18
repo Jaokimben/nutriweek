@@ -93,99 +93,142 @@ async function parseExcelFromBase64(base64Data) {
 
 /**
  * Parse et structure les données d'un fichier Excel
+ * 
+ * ⚠️ RÈGLE ABSOLUE (v2.4.7):
+ * ============================
+ * 1. Colonne A (index 0) = TOUJOURS les noms d'aliments
+ * 2. Ligne 1 = TOUJOURS les en-têtes (ignorée systématiquement)
+ * 3. Données = TOUJOURS à partir de ligne 2 (index 1 dans le tableau)
+ * 4. Colonnes B, C, D... = composition nutritionnelle (détection auto)
+ * 
+ * PAS de détection d'en-têtes, PAS de fallback, PAS de vérification.
+ * Format Excel STRICT : Ligne 1 = en-têtes, Colonne A = aliments.
  */
 async function parseAlimentsExcel(excelData) {
-  if (!excelData || excelData.length < 1) {
-    throw new Error('Fichier Excel vide ou invalide');
+  // Validation minimale
+  if (!excelData || excelData.length < 2) {
+    throw new Error('❌ Fichier Excel vide ou invalide. Format attendu: Ligne 1 = en-têtes, Ligne 2+ = données.');
   }
   
-  console.log(`📋 [parseAlimentsExcel] Parsing ${excelData.length} lignes...`);
+  console.log(`\n📋 ═══════════════════════════════════════════════════════`);
+  console.log(`📋 [PARSER EXCEL v2.4.7] Parsing de ${excelData.length} lignes`);
+  console.log(`📋 ═══════════════════════════════════════════════════════\n`);
   
-  // Première ligne = en-têtes
+  // ✅ RÈGLE ABSOLUE 1: Ligne 1 (index 0) = EN-TÊTES (à ignorer)
   const headers = excelData[0];
-  console.log('📋 [parseAlimentsExcel] En-têtes détectés:', headers);
+  console.log('✅ RÈGLE 1: Ligne 1 = EN-TÊTES (ignorée)');
+  console.log('   📋 En-têtes détectés:', headers);
   
-  // Trouver les colonnes correspondantes
+  // ✅ RÈGLE ABSOLUE 2: Colonne A (index 0) = NOMS D'ALIMENTS
+  console.log('\n✅ RÈGLE 2: Colonne A (index 0) = NOMS D\'ALIMENTS (fixe)');
+  
+  // ✅ RÈGLE ABSOLUE 3: Données à partir de ligne 2 (index 1)
+  const startRow = 1;
+  console.log(`\n✅ RÈGLE 3: Données à partir de ligne 2 (index ${startRow})`);
+  
+  // Détection automatique des colonnes de composition (B, C, D, E...)
+  console.log('\n🔍 Détection des colonnes de composition nutritionnelle:');
+  
   const colIndexes = {
-    nom: findColumnName(headers, COLUMN_MAPPINGS.nom),
-    calories: findColumnName(headers, COLUMN_MAPPINGS.calories),
-    proteines: findColumnName(headers, COLUMN_MAPPINGS.proteines),
-    glucides: findColumnName(headers, COLUMN_MAPPINGS.glucides),
-    lipides: findColumnName(headers, COLUMN_MAPPINGS.lipides),
-    categorie: findColumnName(headers, COLUMN_MAPPINGS.categorie)
+    nom: 0  // ✅ TOUJOURS colonne A (RÈGLE ABSOLUE)
   };
   
-  // Convertir les noms de colonnes trouvés en index
-  const colIndexesResolved = {
-    nom: colIndexes.nom ? headers.indexOf(colIndexes.nom) : -1,
-    calories: colIndexes.calories ? headers.indexOf(colIndexes.calories) : -1,
-    proteines: colIndexes.proteines ? headers.indexOf(colIndexes.proteines) : -1,
-    glucides: colIndexes.glucides ? headers.indexOf(colIndexes.glucides) : -1,
-    lipides: colIndexes.lipides ? headers.indexOf(colIndexes.lipides) : -1,
-    categorie: colIndexes.categorie ? headers.indexOf(colIndexes.categorie) : -1
-  };
-  
-  console.log('🔍 [parseAlimentsExcel] Index colonnes:', colIndexesResolved);
-  
-  // Si aucune colonne "nom" n'est trouvée, assumer que la première colonne contient les aliments
-  let startRow = 1; // Par défaut, commencer à la ligne 1 (après les en-têtes)
-  if (colIndexesResolved.nom === -1) {
-    console.log('⚠️ [parseAlimentsExcel] Aucun en-tête "nom" trouvé, utilisation colonne 0 comme noms d\'aliments');
-    colIndexesResolved.nom = 0;
+  // Parcourir les colonnes B, C, D, E... pour détecter calories, protéines, etc.
+  for (let colIndex = 1; colIndex < headers.length; colIndex++) {
+    const header = headers[colIndex];
+    if (!header) continue;
     
-    // Vérifier si la première ligne contient des données (pas d'en-têtes)
-    const firstCell = excelData[0][0];
-    if (firstCell && typeof firstCell === 'string' && firstCell.length > 0) {
-      // La première ligne semble contenir des données, pas des en-têtes
-      const isLikelyHeader = COLUMN_MAPPINGS.nom.some(name => 
-        normalizeColumnName(firstCell).includes(normalizeColumnName(name))
-      );
-      
-      if (!isLikelyHeader) {
-        console.log('ℹ️ [parseAlimentsExcel] Première ligne semble être des données, pas des en-têtes');
-        startRow = 0; // Commencer à la ligne 0
+    const headerNorm = normalizeColumnName(String(header));
+    
+    // Détecter Calories / Énergie / Kcal
+    if (!colIndexes.calories) {
+      if (COLUMN_MAPPINGS.calories.some(name => headerNorm.includes(normalizeColumnName(name)))) {
+        colIndexes.calories = colIndex;
+        console.log(`   ✓ Colonne ${colIndex} (${header}) → CALORIES`);
+        continue;
+      }
+    }
+    
+    // Détecter Protéines
+    if (!colIndexes.proteines) {
+      if (COLUMN_MAPPINGS.proteines.some(name => headerNorm.includes(normalizeColumnName(name)))) {
+        colIndexes.proteines = colIndex;
+        console.log(`   ✓ Colonne ${colIndex} (${header}) → PROTÉINES`);
+        continue;
+      }
+    }
+    
+    // Détecter Glucides
+    if (!colIndexes.glucides) {
+      if (COLUMN_MAPPINGS.glucides.some(name => headerNorm.includes(normalizeColumnName(name)))) {
+        colIndexes.glucides = colIndex;
+        console.log(`   ✓ Colonne ${colIndex} (${header}) → GLUCIDES`);
+        continue;
+      }
+    }
+    
+    // Détecter Lipides
+    if (!colIndexes.lipides) {
+      if (COLUMN_MAPPINGS.lipides.some(name => headerNorm.includes(normalizeColumnName(name)))) {
+        colIndexes.lipides = colIndex;
+        console.log(`   ✓ Colonne ${colIndex} (${header}) → LIPIDES`);
+        continue;
+      }
+    }
+    
+    // Détecter Catégorie
+    if (!colIndexes.categorie) {
+      if (COLUMN_MAPPINGS.categorie.some(name => headerNorm.includes(normalizeColumnName(name)))) {
+        colIndexes.categorie = colIndex;
+        console.log(`   ✓ Colonne ${colIndex} (${header}) → CATÉGORIE`);
+        continue;
       }
     }
   }
   
-  // Parser les lignes de données
-  const aliments = [];
-  console.log(`🔄 [parseAlimentsExcel] Parsing lignes ${startRow} à ${excelData.length - 1}...`);
+  console.log('\n🔍 Résumé des colonnes détectées:', colIndexes);
   
-  for (let i = startRow; i < excelData.length; i++) {
-    const row = excelData[i];
+  // Parser les lignes de données (ligne 2 → fin)
+  const aliments = [];
+  console.log(`\n🔄 Parsing des données (ligne 2 → ligne ${excelData.length})...\n`);
+  
+  for (let rowIndex = startRow; rowIndex < excelData.length; rowIndex++) {
+    const row = excelData[rowIndex];
     
-    // Ignorer les lignes vides
-    if (!row || row.length === 0 || !row[colIndexesResolved.nom]) continue;
+    // Ignorer les lignes totalement vides
+    if (!row || row.length === 0) {
+      console.log(`   ⊘ Ligne ${rowIndex + 1}: vide (ignorée)`);
+      continue;
+    }
     
-    const nomValue = row[colIndexesResolved.nom];
+    // ✅ RÈGLE ABSOLUE: Colonne A (index 0) = nom de l'aliment
+    const nomValue = row[0];
     
-    // Ignorer si le nom est vide ou est un en-tête
-    if (!nomValue || String(nomValue).trim().length === 0) continue;
+    // Ignorer si le nom est vide ou manquant
+    if (!nomValue || String(nomValue).trim().length === 0) {
+      console.log(`   ⊘ Ligne ${rowIndex + 1}: pas de nom en colonne A (ignorée)`);
+      continue;
+    }
     
-    // Ignorer si c'est probablement un en-tête répété
-    const nomStr = String(nomValue).toLowerCase();
-    if (nomStr === 'nom' || nomStr === 'aliment' || nomStr === 'name') continue;
-    
+    // Construire l'aliment avec les valeurs détectées
     const aliment = {
       nom: String(nomValue).trim(),
-      energie: colIndexesResolved.calories !== -1 ? parseFloat(row[colIndexesResolved.calories]) || 0 : 0,
-      proteines: colIndexesResolved.proteines !== -1 ? parseFloat(row[colIndexesResolved.proteines]) || 0 : 0,
-      glucides: colIndexesResolved.glucides !== -1 ? parseFloat(row[colIndexesResolved.glucides]) || 0 : 0,
-      lipides: colIndexesResolved.lipides !== -1 ? parseFloat(row[colIndexesResolved.lipides]) || 0 : 0,
-      categorie: colIndexesResolved.categorie !== -1 ? String(row[colIndexesResolved.categorie] || '').trim() : 'autre',
+      energie: colIndexes.calories ? (parseFloat(row[colIndexes.calories]) || 0) : 0,
+      proteines: colIndexes.proteines ? (parseFloat(row[colIndexes.proteines]) || 0) : 0,
+      glucides: colIndexes.glucides ? (parseFloat(row[colIndexes.glucides]) || 0) : 0,
+      lipides: colIndexes.lipides ? (parseFloat(row[colIndexes.lipides]) || 0) : 0,
+      categorie: colIndexes.categorie ? (String(row[colIndexes.categorie] || '').trim() || 'autre') : 'autre',
       source: 'praticien'
     };
     
-    console.log(`  📝 Ligne ${i}: ${aliment.nom} (${aliment.energie} kcal)`);
+    console.log(`   ✓ Ligne ${rowIndex + 1}: ${aliment.nom} | ${aliment.energie} kcal | P:${aliment.proteines}g G:${aliment.glucides}g L:${aliment.lipides}g`);
     
-    // Valider que l'aliment a au moins un nom
-    if (aliment.nom && aliment.nom.length > 0) {
-      aliments.push(aliment);
-    }
+    aliments.push(aliment);
   }
   
-  console.log(`✅ ${aliments.length} aliments parsés depuis Excel praticien`);
+  console.log(`\n═══════════════════════════════════════════════════════`);
+  console.log(`✅ [PARSER EXCEL] ${aliments.length} aliments parsés avec succès`);
+  console.log(`═══════════════════════════════════════════════════════\n`);
   
   return aliments;
 }
