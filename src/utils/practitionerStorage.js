@@ -107,7 +107,7 @@ export const saveAlimentsDiner = async (file) => {
  * Sauvegarder la liste FODMAP
  */
 export const saveFodmapList = async (file) => {
-  validateTextFile(file)
+  validateExcelFile(file)
   return await saveFile('fodmapList', file)
 }
 

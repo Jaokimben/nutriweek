@@ -218,10 +218,10 @@ const PractitionerPortal = ({ onBack }) => {
     {
       key: 'fodmapList',
       title: 'Liste FODMAP',
-      description: 'Aliments à éviter pour personnes sensibles',
+      description: 'Aliments à éviter pour personnes sensibles (tableau Excel)',
       icon: '🚫',
       saveFn: saveFodmapList,
-      formats: '.txt, .csv, .json'
+      formats: '.xls, .xlsx, .csv'
     },
     {
       key: 'reglesGenerales',
