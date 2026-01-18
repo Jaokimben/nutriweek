@@ -16,6 +16,10 @@ import {
 } from './practitionerRulesParser.js';
 import { calculerBMR, calculerTDEE } from './bmrCalculator.js';
 import { diagnostiquerFichiersExcel, formaterMessageErreur } from './excelDiagnostic.js';
+import { 
+  chercherRecettes, 
+  selectionnerRecette 
+} from './recipeSearchEngine.js';
 
 // Jours de la semaine
 const JOURS_SEMAINE = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
@@ -212,8 +216,42 @@ function selectionnerAliments(alimentsDisponibles, caloriesCible, alimentsUtilis
 /**
  * Génère un repas (petit-déjeuner, déjeuner ou dîner)
  * + Applique les règles praticien
+ * 🆕 MODE RECETTES COHÉRENTES : Cherche d'abord des recettes réelles
  */
-function genererRepas(type, caloriesCible, alimentsDisponibles, alimentsUtilisesAujourdhui, regles = []) {
+async function genererRepas(type, caloriesCible, alimentsDisponibles, alimentsUtilisesAujourdhui, regles = []) {
+  console.log(`\n🍽️ GÉNÉRATION REPAS: ${type} (objectif: ${caloriesCible} kcal)`);
+  
+  // 🆕 ÉTAPE 1: Chercher des recettes cohérentes
+  try {
+    console.log(`🔍 Recherche de recettes cohérentes pour ${type}...`);
+    const recettesRealisables = await chercherRecettes(type, alimentsDisponibles, caloriesCible);
+    
+    if (recettesRealisables && recettesRealisables.length > 0) {
+      console.log(`✅ ${recettesRealisables.length} recette(s) trouvée(s)`);
+      
+      const repasRecette = selectionnerRecette(recettesRealisables, alimentsDisponibles, caloriesCible);
+      
+      if (repasRecette && repasRecette.aliments) {
+        console.log(`✅ SUCCÈS: Repas depuis recette "${repasRecette.nom}"`);
+        
+        return {
+          type,
+          nom: repasRecette.nom,
+          ingredients: repasRecette.aliments,
+          nutrition: repasRecette.nutrition
+        };
+      }
+    } else {
+      console.warn(`⚠️ Aucune recette cohérente, fallback aléatoire`);
+    }
+  } catch (error) {
+    console.error(`❌ Erreur recherche recettes: ${error.message}`);
+    console.warn(`⚠️ Fallback aléatoire`);
+  }
+  
+  // 🔄 FALLBACK: Génération aléatoire
+  console.log(`🎲 Génération aléatoire pour ${type}...`);
+  
   let meilleurRepas = null;
   let meilleurEcart = Infinity;
   
@@ -255,7 +293,7 @@ function genererRepas(type, caloriesCible, alimentsDisponibles, alimentsUtilises
  * Génère un menu pour une journée
  * + Applique les règles praticien
  */
-function genererMenuJour(caloriesJournalieres, jeuneIntermittent, alimentsExcel, regles = []) {
+async function genererMenuJour(caloriesJournalieres, jeuneIntermittent, alimentsExcel, regles = []) {
   const distribution = jeuneIntermittent ? DISTRIBUTION_JEUNE : DISTRIBUTION_NORMALE;
   const alimentsUtilisesAujourdhui = [];
   
@@ -265,7 +303,7 @@ function genererMenuJour(caloriesJournalieres, jeuneIntermittent, alimentsExcel,
     // Petit-déjeuner (si pas de jeûne)
     if (!jeuneIntermittent && alimentsExcel.petitDejeuner.length > 0) {
       const caloriesPetitDej = Math.round(caloriesJournalieres * distribution.petitDejeuner);
-      repas.petitDejeuner = genererRepas(
+      repas.petitDejeuner = await genererRepas(
         'Petit-déjeuner',
         caloriesPetitDej,
         alimentsExcel.petitDejeuner,
@@ -283,7 +321,7 @@ function genererMenuJour(caloriesJournalieres, jeuneIntermittent, alimentsExcel,
     // Déjeuner
     if (alimentsExcel.dejeuner.length > 0) {
       const caloriesDejeuner = Math.round(caloriesJournalieres * distribution.dejeuner);
-      repas.dejeuner = genererRepas(
+      repas.dejeuner = await genererRepas(
         'Déjeuner',
         caloriesDejeuner,
         alimentsExcel.dejeuner,
@@ -301,7 +339,7 @@ function genererMenuJour(caloriesJournalieres, jeuneIntermittent, alimentsExcel,
     // Dîner
     if (alimentsExcel.diner.length > 0) {
       const caloriesDiner = Math.round(caloriesJournalieres * distribution.diner);
-      repas.diner = genererRepas(
+      repas.diner = await genererRepas(
         'Dîner',
         caloriesDiner,
         alimentsExcel.diner,
@@ -379,7 +417,7 @@ export async function genererMenuHebdomadaireExcel(profil) {
     const jourNom = JOURS_SEMAINE[i];
     console.log(`\n📅 Génération ${jourNom}...`);
     
-    const menuJour = genererMenuJour(
+    const menuJour = await genererMenuJour(
       caloriesJournalieres,
       profil.jeuneIntermittent,
       alimentsExcel,
@@ -591,5 +629,5 @@ export async function regenererRepasExcel(jourIndex, typeRepas, profil) {
       throw new Error('Type de repas invalide');
   }
   
-  return genererRepas(typeRepas, caloriesCible, alimentsDisponibles, [], reglesData.toutesLesRegles);
+  return await genererRepas(typeRepas, caloriesCible, alimentsDisponibles, [], reglesData.toutesLesRegles);
 }
