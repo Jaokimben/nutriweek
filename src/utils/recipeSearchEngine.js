@@ -857,10 +857,7 @@ export function validerIngredientsRepas(repas, alimentsAutorises) {
 // EXPORTS
 // ========================================
 
-// Export nommés pour imports directs
-export { chercherRecetteCoherente };
-export { construireRepasDepuisRecette };
-export { validerIngredientsRepas };
+// Export de la fonction de validation (non exportée dans sa déclaration)
 export { verifierCoherenceCombinaison };
 
 // Export par défaut pour compatibilité
