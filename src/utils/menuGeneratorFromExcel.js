@@ -19,7 +19,8 @@ import { diagnostiquerFichiersExcel, formaterMessageErreur } from './excelDiagno
 import { 
   chercherRecetteCoherente, 
   construireRepasDepuisRecette,
-  validerIngredientsRepas
+  validerIngredientsRepas,
+  verifierCoherenceCombinaison
 } from './recipeSearchEngine.js';
 
 // Jours de la semaine
@@ -288,6 +289,8 @@ async function genererRepas(type, caloriesCible, alimentsDisponibles, alimentsUt
   
   let meilleurRepas = null;
   let meilleurEcart = Infinity;
+  let tentativesCoherentes = 0;
+  let tentativesIncoherentes = 0;
   
   for (let tentative = 0; tentative < MAX_TENTATIVES_REPAS; tentative++) {
     const { aliments, caloriesTotal } = selectionnerAliments(
@@ -296,6 +299,19 @@ async function genererRepas(type, caloriesCible, alimentsDisponibles, alimentsUt
       [],  // Pas de filtre ici car déjà filtré
       []   // Pas de règles ici car déjà filtré
     );
+    
+    // 🆕 VALIDATION COHÉRENCE : Vérifier que la combinaison d'aliments est cohérente
+    const nomsAliments = aliments.map(a => a.nom);
+    const validationCoherence = verifierCoherenceCombinaison(nomsAliments);
+    
+    if (!validationCoherence.coherent) {
+      tentativesIncoherentes++;
+      console.log(`  ⚠️ Tentative ${tentative + 1}: Combinaison incohérente rejetée`);
+      validationCoherence.raisons.forEach(r => console.log(`     ${r}`));
+      continue; // Rejeter cette combinaison et essayer une autre
+    }
+    
+    tentativesCoherentes++;
     
     const ecart = Math.abs(caloriesTotal - caloriesCible) / caloriesCible;
     
@@ -317,7 +333,8 @@ async function genererRepas(type, caloriesCible, alimentsDisponibles, alimentsUt
           glucides,
           lipides
         },
-        source: 'selection_aleatoire'
+        source: 'selection_aleatoire',
+        coherence: validationCoherence // Ajouter les infos de cohérence
       };
       
       // Si l'écart est acceptable, on arrête
@@ -328,8 +345,14 @@ async function genererRepas(type, caloriesCible, alimentsDisponibles, alimentsUt
     }
   }
   
+  // Statistiques de cohérence
+  console.log(`\n📊 Statistiques génération aléatoire:`);
+  console.log(`  ✅ Tentatives cohérentes: ${tentativesCoherentes}`);
+  console.log(`  ❌ Tentatives incohérentes rejetées: ${tentativesIncoherentes}`);
+  console.log(`  📈 Taux de cohérence: ${((tentativesCoherentes / (tentativesCoherentes + tentativesIncoherentes)) * 100).toFixed(1)}%`);
+  
   if (meilleurRepas) {
-    console.log(`✅ Repas aléatoire généré: ${meilleurRepas.ingredients.length} ingrédients, ${meilleurRepas.nutrition.calories} kcal`);
+    console.log(`\n✅ Repas aléatoire généré: ${meilleurRepas.ingredients.length} ingrédients, ${meilleurRepas.nutrition.calories} kcal`);
     console.log(`  🍽️ Ingrédients: ${meilleurRepas.ingredients.map(i => i.nom).join(', ')}`);
   }
   
