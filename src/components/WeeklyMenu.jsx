@@ -12,26 +12,55 @@ import './WeeklyMenu.css'
 
 // Fonction pour transformer le format du menu strict vers le format d'affichage
 function transformerMenuPourAffichage(menuData) {
-  const { menu, metadata } = menuData
-  const jours = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche']
+  console.log('🔄 [transformerMenuPourAffichage] Transformation du menu:', menuData)
   
-  const semaine = jours.map((jour, index) => {
-    const jourData = menu[jour]
-    const date = new Date()
-    date.setDate(date.getDate() + index)
+  // Gérer les deux formats: { menu: {...}, metadata: {...} } et { semaine: [...], metadata: {...} }
+  let semaine
+  const { metadata } = menuData
+  
+  if (menuData.semaine && Array.isArray(menuData.semaine)) {
+    // Format Excel: { semaine: [...], metadata: {...} }
+    console.log('✅ [transformerMenuPourAffichage] Format Excel détecté (semaine array)')
+    semaine = menuData.semaine.map((jour) => {
+      return {
+        jour: jour.jour,
+        date: jour.date,
+        jeune: jour.jeune || false,
+        menu: {
+          petitDejeuner: jour.menu.petitDejeuner ? transformerRepasPourAffichage(jour.menu.petitDejeuner) : null,
+          dejeuner: jour.menu.dejeuner ? transformerRepasPourAffichage(jour.menu.dejeuner) : null,
+          diner: jour.menu.diner ? transformerRepasPourAffichage(jour.menu.diner) : null
+        },
+        totaux: jour.totaux
+      }
+    })
+  } else if (menuData.menu) {
+    // Format classique: { menu: { Lundi: {...}, Mardi: {...}, ... }, metadata: {...} }
+    console.log('✅ [transformerMenuPourAffichage] Format classique détecté (menu object)')
+    const jours = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche']
+    const { menu } = menuData
     
-    return {
-      jour,
-      date: date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' }),
-      jeune: false,
-      menu: {
-        petitDejeuner: transformerRepasPourAffichage(jourData.repas.find(r => r.type === 'petit_dejeuner')),
-        dejeuner: transformerRepasPourAffichage(jourData.repas.find(r => r.type === 'dejeuner')),
-        diner: transformerRepasPourAffichage(jourData.repas.find(r => r.type === 'diner'))
-      },
-      totaux: jourData.totaux
-    }
-  })
+    semaine = jours.map((jour, index) => {
+      const jourData = menu[jour]
+      const date = new Date()
+      date.setDate(date.getDate() + index)
+      
+      return {
+        jour,
+        date: date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' }),
+        jeune: false,
+        menu: {
+          petitDejeuner: transformerRepasPourAffichage(jourData.repas.find(r => r.type === 'petit_dejeuner')),
+          dejeuner: transformerRepasPourAffichage(jourData.repas.find(r => r.type === 'dejeuner')),
+          diner: transformerRepasPourAffichage(jourData.repas.find(r => r.type === 'diner'))
+        },
+        totaux: jourData.totaux
+      }
+    })
+  } else {
+    console.error('❌ [transformerMenuPourAffichage] Format de menu non reconnu:', menuData)
+    throw new Error('Format de menu non reconnu. Attendu: { menu: {...} } ou { semaine: [...] }')
+  }
   
   return {
     semaine,
@@ -56,7 +85,7 @@ function transformerMenuPourAffichage(menuData) {
       '🏃 Combinez votre alimentation avec une activité physique régulière',
       '😴 Privilégiez un sommeil de qualité (7-8h par nuit)'
     ],
-    rawMenu: menu, // Garder le menu brut pour les régénérations
+    rawMenu: menuData.menu || menuData.semaine, // Garder le menu brut pour les régénérations
     metadata
   }
 }

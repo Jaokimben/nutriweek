@@ -404,15 +404,18 @@ export async function genererMenuHebdomadaireExcel(profil) {
     const date = new Date();
     date.setDate(date.getDate() + i);
     
+    // Extraire les repas sans le champ totaux
+    const { totaux, ...repasSeuls } = menuJour;
+    
     semaine.push({
       jour: jourNom,
-      date: date.toLocaleDateString('fr-FR'),
+      date: date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' }),
       jeune: profil.jeuneIntermittent,
-      menu: menuJour,
-      totaux: menuJour.totaux
+      menu: repasSeuls,  // Uniquement petitDejeuner, dejeuner, diner
+      totaux: totaux      // totaux à part
     });
     
-    console.log(`✅ ${jourNom} généré: ${menuJour.totaux.calories} kcal`);
+    console.log(`✅ ${jourNom} généré: ${totaux.calories} kcal`);
   }
   
   // Calculer les statistiques hebdomadaires
