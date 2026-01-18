@@ -275,16 +275,16 @@ const WeeklyMenu = ({ userProfile, initialMenu = null, onMenuGenerated, onBack }
       } else {
         // Générer de nouvelles alternatives
         console.log('🔄 Génération de nouvelles alternatives...')
-        
-        const jourNames = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche']
-        const jourName = jourNames[dayIndex]
-        const menuActuel = weeklyMenu.rawMenu
+        console.log(`📊 Paramètres: dayIndex=${dayIndex}, mealType=${mealType}`)
         
         // Générer 3 alternatives d'un coup
+        // regenererRepas attend: (jourIndex: number, typeRepas: string, profil: object)
         const alternatives = []
         for (let i = 0; i < 3; i++) {
-          const alternative = await regenererRepas(jourName, mealType, menuActuel, userProfile)
+          console.log(`🔄 Génération alternative ${i + 1}/3...`)
+          const alternative = await regenererRepas(dayIndex, mealType, userProfile)
           alternatives.push(alternative)
+          console.log(`✅ Alternative ${i + 1} générée:`, alternative)
         }
         
         // Utiliser la première, mettre les autres en cache

@@ -362,7 +362,7 @@ export async function genererMenuHebdomadaireExcel(profil) {
   
   // Calculer les besoins nutritionnels
   const bmr = calculerBMR(profil);
-  const tdee = calculerTDEE(bmr, profil.activite);
+  const tdee = calculerTDEE(bmr, profil.activitePhysique || profil.activite || 'moderee');
   const caloriesJournalieres = calculerCaloriesJournalieres(tdee, profil.objectif);
   const macrosCibles = calculerMacrosCibles(caloriesJournalieres, profil.objectif);
   
@@ -542,7 +542,7 @@ export async function regenererRepasExcel(jourIndex, typeRepas, profil) {
   const reglesData = await chargerReglesPraticien(profil);
   
   const caloriesJournalieres = calculerCaloriesJournalieres(
-    calculerTDEE(calculerBMR(profil), profil.activite),
+    calculerTDEE(calculerBMR(profil), profil.activitePhysique || profil.activite || 'moderee'),
     profil.objectif
   );
   
