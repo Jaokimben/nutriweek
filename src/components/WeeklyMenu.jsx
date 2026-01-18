@@ -171,29 +171,30 @@ const WeeklyMenu = ({ userProfile, initialMenu = null, onMenuGenerated, onBack }
 
   // Afficher l'erreur si présente
   if (error) {
+    // Parser le message d'erreur pour l'afficher proprement
+    const errorLines = error.message ? error.message.split('\n') : ['Erreur inconnue'];
+    
     return (
       <div className="error-container">
         <div className="error-icon">⚠️</div>
         <h2>Impossible de générer le menu</h2>
-        <p className="error-message">{error.message}</p>
-        {error.details && (
-          <div className="error-details">
-            <p>{error.details}</p>
-            <p className="error-hint">
-              💡 <strong>Solution</strong> : Le praticien doit accéder au <a href="/practitioner">Portail Praticien</a> et uploader les fichiers Excel suivants :
+        <div className="error-message-detailed">
+          {errorLines.map((line, index) => (
+            <p key={index} className={line.startsWith('📊') || line.startsWith('🚨') || line.startsWith('💡') || line.startsWith('🔧') || line.startsWith('📍') ? 'error-section-header' : 'error-line'}>
+              {line}
             </p>
-            <ul className="file-list">
-              <li>📄 alimentsPetitDejeuner.xlsx</li>
-              <li>📄 alimentsDejeuner.xlsx</li>
-              <li>📄 alimentsDiner.xlsx</li>
-            </ul>
-          </div>
-        )}
+          ))}
+        </div>
         {onBack && (
           <button className="btn-back" onClick={onBack}>
             ← Retour au questionnaire
           </button>
         )}
+        <div className="error-actions">
+          <a href="/practitioner" className="btn-practitioner">
+            🩺 Ouvrir le Portail Praticien
+          </a>
+        </div>
       </div>
     )
   }

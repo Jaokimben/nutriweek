@@ -15,6 +15,7 @@ import {
   appliquerReglesAuMenu 
 } from './practitionerRulesParser.js';
 import { calculerBMR, calculerTDEE } from './bmrCalculator.js';
+import { diagnostiquerFichiersExcel, formaterMessageErreur } from './excelDiagnostic.js';
 
 // Jours de la semaine
 const JOURS_SEMAINE = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
@@ -386,7 +387,17 @@ export async function genererMenuHebdomadaireExcel(profil) {
     );
     
     if (!menuJour) {
-      throw new Error(`Impossible de générer un menu valide pour ${jourNom}. Vérifiez les fichiers Excel uploadés.`);
+      console.error(`❌ Échec génération pour ${jourNom}`);
+      console.log('🔍 Lancement du diagnostic des fichiers Excel...');
+      
+      // Effectuer un diagnostic détaillé
+      const diagnostic = await diagnostiquerFichiersExcel();
+      const messageDetaille = formaterMessageErreur(jourNom, diagnostic);
+      
+      // Créer une erreur avec le message détaillé
+      const error = new Error(messageDetaille);
+      error.diagnostic = diagnostic; // Attacher le diagnostic à l'erreur
+      throw error;
     }
     
     // Calculer la date
