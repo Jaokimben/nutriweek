@@ -273,43 +273,323 @@ const RECETTES_COHERENTES = {
 };
 
 // ========================================
-// COMBINAISONS INTERDITES
+// SYSTÈME DE CATÉGORISATION DES ALIMENTS
 // ========================================
 
 /**
- * Paires d'ingrédients qui ne vont PAS ensemble
- * (incohérences culinaires)
+ * Catégories d'aliments selon les principes culinaires
+ * Basé sur la gastronomie française et internationale
  */
-const COMBINAISONS_INTERDITES = [
-  ['viande hachée', 'moules'],
-  ['viande hachée', 'poisson'],
-  ['poulet', 'poisson'],
-  ['boeuf', 'poisson'],
-  ['confiture', 'viande'],
-  ['confiture', 'poisson'],
-  ['chocolat', 'viande'],
-  ['chocolat', 'poisson']
+const CATEGORIES_ALIMENTS = {
+  // PROTÉINES ANIMALES
+  viandes_rouges: [
+    'boeuf', 'veau', 'agneau', 'mouton', 'steak', 'viande hachée',
+    'viande rouge', 'bifteck', 'entrecôte', 'faux-filet', 'bavette'
+  ],
+  viandes_blanches: [
+    'poulet', 'dinde', 'porc', 'lapin', 'escalope', 'blanc de poulet',
+    'cuisse de poulet', 'filet de poulet', 'jambon', 'lardons'
+  ],
+  poissons_maigres: [
+    'cabillaud', 'colin', 'merlan', 'lieu', 'sole', 'limande',
+    'poisson blanc', 'bar', 'dorade', 'daurade'
+  ],
+  poissons_gras: [
+    'saumon', 'thon', 'maquereau', 'sardine', 'hareng', 'truite',
+    'anchois'
+  ],
+  fruits_mer: [
+    'moules', 'crevettes', 'coquilles saint-jacques', 'huîtres',
+    'palourdes', 'bulots', 'calamars', 'poulpe', 'fruits de mer',
+    'crustacés', 'coquillages'
+  ],
+  oeufs: ['oeufs', 'oeuf', 'blanc d\'oeuf', 'jaune d\'oeuf'],
+  
+  // FÉCULENTS
+  cereales: [
+    'riz', 'pâtes', 'quinoa', 'boulgour', 'couscous', 'semoule',
+    'blé', 'orge', 'millet', 'avoine', 'flocons d\'avoine'
+  ],
+  pains: [
+    'pain', 'pain complet', 'pain blanc', 'baguette', 'brioche',
+    'pain de mie', 'pain grillé', 'toast', 'biscottes'
+  ],
+  legumineuses: [
+    'lentilles', 'pois chiches', 'haricots', 'fèves', 'pois cassés',
+    'flageolets', 'haricots blancs', 'haricots rouges'
+  ],
+  tubercules: [
+    'pommes de terre', 'patates douces', 'igname', 'manioc'
+  ],
+  
+  // LÉGUMES
+  legumes_verts: [
+    'haricots verts', 'courgettes', 'brocoli', 'épinards', 'salade',
+    'chou', 'concombre', 'poivrons verts', 'petits pois',
+    'asperges', 'céleri', 'fenouil'
+  ],
+  legumes_racines: [
+    'carottes', 'navets', 'betteraves', 'radis', 'céleri-rave',
+    'panais', 'topinambour'
+  ],
+  legumes_divers: [
+    'tomates', 'poivrons', 'aubergines', 'champignons', 'oignons',
+    'échalotes', 'ail', 'poireaux', 'endives'
+  ],
+  
+  // PRODUITS LAITIERS
+  laitages: [
+    'lait', 'yaourt', 'fromage blanc', 'fromage', 'crème',
+    'crème fraîche', 'beurre', 'parmesan', 'mozzarella', 'gruyère'
+  ],
+  
+  // FRUITS
+  fruits_frais: [
+    'pomme', 'poire', 'banane', 'orange', 'kiwi', 'fraise',
+    'framboise', 'myrtille', 'raisin', 'melon', 'pastèque',
+    'pêche', 'abricot', 'prune', 'cerise'
+  ],
+  fruits_secs: [
+    'raisins secs', 'abricots secs', 'dattes', 'figues sèches',
+    'pruneaux', 'fruits secs'
+  ],
+  
+  // SUCRÉS
+  sucres: [
+    'confiture', 'miel', 'sirop', 'sucre', 'chocolat', 'nutella',
+    'pâte à tartiner', 'caramel', 'compote'
+  ],
+  
+  // MATIÈRES GRASSES
+  huiles: [
+    'huile d\'olive', 'huile de colza', 'huile de tournesol',
+    'huile de noix', 'huile'
+  ],
+  
+  // CONDIMENTS
+  condiments: [
+    'sel', 'poivre', 'herbes', 'épices', 'moutarde', 'vinaigre',
+    'sauce soja', 'bouillon', 'fond de veau', 'vin'
+  ]
+};
+
+// ========================================
+// RÈGLES DE COHÉRENCE CULINAIRE
+// ========================================
+
+/**
+ * Règles de combinaisons INTERDITES basées sur la gastronomie
+ * Format: [categorie1, categorie2] ou [ingredient_specifique1, ingredient_specifique2]
+ */
+const REGLES_INCOHERENCE = [
+  // RÈGLE 1: PAS DE MIX VIANDE ROUGE + POISSON/FRUITS DE MER
+  {
+    categories: ['viandes_rouges', 'poissons_maigres'],
+    raison: 'Les viandes rouges et poissons ne se mélangent jamais dans un même plat'
+  },
+  {
+    categories: ['viandes_rouges', 'poissons_gras'],
+    raison: 'Les viandes rouges et poissons ne se mélangent jamais dans un même plat'
+  },
+  {
+    categories: ['viandes_rouges', 'fruits_mer'],
+    raison: 'Viande rouge et fruits de mer sont incompatibles (ex: steak haché + moules)'
+  },
+  
+  // RÈGLE 2: PAS DE MIX VIANDE BLANCHE + POISSON/FRUITS DE MER
+  {
+    categories: ['viandes_blanches', 'poissons_maigres'],
+    raison: 'Volaille et poisson ne se combinent pas dans un même plat'
+  },
+  {
+    categories: ['viandes_blanches', 'poissons_gras'],
+    raison: 'Volaille et poisson ne se combinent pas dans un même plat'
+  },
+  {
+    categories: ['viandes_blanches', 'fruits_mer'],
+    raison: 'Volaille et fruits de mer sont généralement séparés'
+  },
+  
+  // RÈGLE 3: PAS DE MIX POISSON + FRUITS DE MER (sauf cas spéciaux)
+  // Note: On autorise certains mix comme bouillabaisse, mais pas tous
+  {
+    categories: ['poissons_maigres', 'fruits_mer'],
+    raison: 'Poisson et fruits de mer ensemble nécessitent une recette spécifique',
+    severite: 'avertissement' // Moins strict
+  },
+  
+  // RÈGLE 4: PAS DE SUCRÉ-SALÉ INAPPROPRIÉ
+  {
+    categories: ['sucres', 'viandes_rouges'],
+    raison: 'Confiture/chocolat et viande ne vont pas ensemble'
+  },
+  {
+    categories: ['sucres', 'viandes_blanches'],
+    raison: 'Confiture/chocolat et volaille ne vont pas ensemble',
+    exceptions: ['canard à l\'orange', 'poulet aux abricots'] // Exceptions connues
+  },
+  {
+    categories: ['sucres', 'poissons_maigres'],
+    raison: 'Confiture/chocolat et poisson ne vont pas ensemble'
+  },
+  {
+    categories: ['sucres', 'poissons_gras'],
+    raison: 'Confiture/chocolat et poisson ne vont pas ensemble'
+  },
+  {
+    categories: ['sucres', 'fruits_mer'],
+    raison: 'Confiture/chocolat et fruits de mer ne vont pas ensemble'
+  },
+  
+  // RÈGLE 5: PAS DE MIX VIANDES DIFFÉRENTES (sauf charcuteries)
+  {
+    categories: ['viandes_rouges', 'viandes_blanches'],
+    raison: 'On ne mélange généralement pas boeuf et poulet dans un même plat',
+    severite: 'avertissement'
+  },
+  
+  // RÈGLE 6: FRUITS FRAIS + VIANDE/POISSON (sauf recettes spécifiques)
+  {
+    categories: ['fruits_frais', 'viandes_rouges'],
+    raison: 'Fruits frais et viande rouge rarement compatibles',
+    severite: 'avertissement',
+    exceptions: ['canard aux figues', 'magret aux poires']
+  },
+  {
+    categories: ['fruits_frais', 'poissons_maigres'],
+    raison: 'Fruits frais et poisson seulement dans recettes asiatiques spécifiques',
+    severite: 'avertissement',
+    exceptions: ['ceviche', 'poisson à l\'ananas']
+  }
 ];
 
 /**
- * Vérifie si une combinaison d'ingrédients est cohérente
- * @param {string[]} ingredients - Liste des ingrédients
- * @returns {boolean} true si la combinaison est cohérente
+ * Paires d'ingrédients SPÉCIFIQUES qui ne vont PAS ensemble
+ * Pour des cas très précis non couverts par les catégories
  */
-function verifierCoherenceCombinaison(ingredients) {
-  const ingredientsLower = ingredients.map(i => i.toLowerCase());
+const COMBINAISONS_INTERDITES_SPECIFIQUES = [
+  // Cas très spécifiques
+  ['viande hachée', 'moules'],
+  ['steak', 'crevettes'],
+  ['boeuf', 'saumon'],
+  ['poulet', 'cabillaud'],
+  ['confiture', 'thon'],
+  ['chocolat', 'poulet'],
+  ['miel', 'poisson'],
+  ['nutella', 'viande']
+];
+
+/**
+ * Détermine la catégorie d'un ingrédient
+ * @param {string} ingredient - Nom de l'ingrédient
+ * @returns {string[]} Liste des catégories correspondantes
+ */
+function categoriserIngredient(ingredient) {
+  const categories = [];
+  const ingNormalise = normaliserNomIngredient(ingredient);
   
-  for (const [ing1, ing2] of COMBINAISONS_INTERDITES) {
-    const hasIng1 = ingredientsLower.some(i => i.includes(ing1.toLowerCase()));
-    const hasIng2 = ingredientsLower.some(i => i.includes(ing2.toLowerCase()));
-    
-    if (hasIng1 && hasIng2) {
-      console.log(`⚠️ Combinaison incohérente détectée: ${ing1} + ${ing2}`);
-      return false;
+  for (const [categorie, termes] of Object.entries(CATEGORIES_ALIMENTS)) {
+    for (const terme of termes) {
+      const termeNormalise = normaliserNomIngredient(terme);
+      if (ingNormalise.includes(termeNormalise) || termeNormalise.includes(ingNormalise)) {
+        categories.push(categorie);
+        break;
+      }
     }
   }
   
-  return true;
+  return categories;
+}
+
+/**
+ * Vérifie si une combinaison d'ingrédients est cohérente selon les règles culinaires
+ * @param {string[]} ingredients - Liste des ingrédients
+ * @returns {{coherent: boolean, raisons: string[]}} Résultat de la validation
+ */
+function verifierCoherenceCombinaison(ingredients) {
+  const raisons = [];
+  
+  // Normaliser les ingrédients
+  const ingredientsNormalises = ingredients.map(i => normaliserNomIngredient(i));
+  
+  console.log(`\n🔍 Vérification cohérence pour: ${ingredients.join(', ')}`);
+  
+  // ÉTAPE 1: Vérifier les combinaisons spécifiques interdites
+  for (const [ing1, ing2] of COMBINAISONS_INTERDITES_SPECIFIQUES) {
+    const hasIng1 = ingredientsNormalises.some(i => i.includes(normaliserNomIngredient(ing1)));
+    const hasIng2 = ingredientsNormalises.some(i => i.includes(normaliserNomIngredient(ing2)));
+    
+    if (hasIng1 && hasIng2) {
+      const raison = `❌ Combinaison spécifique interdite: "${ing1}" + "${ing2}"`;
+      console.log(`  ${raison}`);
+      raisons.push(raison);
+      return { coherent: false, raisons };
+    }
+  }
+  
+  // ÉTAPE 2: Catégoriser tous les ingrédients
+  const categoriesPresentes = new Map(); // Map<categorie, [ingredients]>
+  
+  for (const ingredient of ingredients) {
+    const categories = categoriserIngredient(ingredient);
+    console.log(`  📋 "${ingredient}" → catégories: ${categories.join(', ') || 'aucune'}`);
+    
+    for (const categorie of categories) {
+      if (!categoriesPresentes.has(categorie)) {
+        categoriesPresentes.set(categorie, []);
+      }
+      categoriesPresentes.get(categorie).push(ingredient);
+    }
+  }
+  
+  // ÉTAPE 3: Vérifier les règles d'incohérence entre catégories
+  for (const regle of REGLES_INCOHERENCE) {
+    const [cat1, cat2] = regle.categories;
+    
+    if (categoriesPresentes.has(cat1) && categoriesPresentes.has(cat2)) {
+      const ingredients1 = categoriesPresentes.get(cat1);
+      const ingredients2 = categoriesPresentes.get(cat2);
+      
+      // Vérifier les exceptions si définies
+      if (regle.exceptions) {
+        const nomRecette = ingredients.join(' ').toLowerCase();
+        const estException = regle.exceptions.some(exc => 
+          nomRecette.includes(exc.toLowerCase())
+        );
+        
+        if (estException) {
+          console.log(`  ✅ Exception autorisée: recette spéciale détectée`);
+          continue;
+        }
+      }
+      
+      const severite = regle.severite || 'erreur';
+      const symbole = severite === 'erreur' ? '❌' : '⚠️';
+      
+      const raison = `${symbole} ${regle.raison}\n` +
+                     `   → ${cat1}: ${ingredients1.join(', ')}\n` +
+                     `   → ${cat2}: ${ingredients2.join(', ')}`;
+      
+      console.log(`  ${raison}`);
+      
+      if (severite === 'erreur') {
+        raisons.push(raison);
+        return { coherent: false, raisons };
+      } else {
+        raisons.push(raison);
+      }
+    }
+  }
+  
+  // ÉTAPE 4: Validation positive
+  if (raisons.length === 0) {
+    console.log(`  ✅ Combinaison cohérente: aucune incohérence détectée`);
+    return { coherent: true, raisons: ['✅ Combinaison culinairement cohérente'] };
+  }
+  
+  // Avertissements seulement
+  console.log(`  ⚠️ Combinaison avec avertissements (${raisons.length})`);
+  return { coherent: true, raisons }; // On autorise mais on avertit
 }
 
 // ========================================
@@ -367,13 +647,18 @@ export function chercherRecetteCoherente(alimentsDisponibles, typeRepas, calorie
       
       if (tousDisponibles) {
         // Vérifier la cohérence de la combinaison
-        if (!verifierCoherenceCombinaison(recette.ingredients)) {
+        const validationCoherence = verifierCoherenceCombinaison(recette.ingredients);
+        
+        if (!validationCoherence.coherent) {
           console.log(`    ⚠️ Recette ${recette.nom} rejetée: combinaison incohérente`);
+          console.log(`    Raisons:`, validationCoherence.raisons);
           continue;
         }
         
         console.log(`    ✅ Recette possible: ${recette.nom} (score: ${recette.score})`);
-        
+        if (validationCoherence.raisons.length > 0) {
+          console.log(`    💡 Notes:`, validationCoherence.raisons);
+        }
         if (recette.score > meilleurScore) {
           meilleurScore = recette.score;
           meilleureRecette = recette;
@@ -520,12 +805,23 @@ export function construireRepasDepuisRecette(recette, alimentsDisponibles, calor
   
   console.log(`  ✅ Repas construit: ${ingredients.length} ingrédients, ${nutrition.calories} kcal`);
   
+  // Vérifier la cohérence finale du repas construit
+  const nomsIngredients = ingredients.map(ing => ing.nom);
+  const validationCoherence = verifierCoherenceCombinaison(nomsIngredients);
+  
+  if (!validationCoherence.coherent) {
+    console.log(`  ❌ ATTENTION: Le repas construit contient des incohérences:`);
+    validationCoherence.raisons.forEach(r => console.log(`     ${r}`));
+    return null; // Rejeter le repas incohérent
+  }
+  
   return {
     nom: recette.nom,
     ingredients,
     nutrition,
     score: recette.score,
-    source: 'recette_coherente'
+    source: 'recette_coherente',
+    coherence: validationCoherence
   };
 }
 
