@@ -22,6 +22,7 @@ import {
   validerIngredientsRepas,
   verifierCoherenceCombinaison
 } from './recipeSearchEngine.js';
+import { chargerEtAppliquerReglesCaloriques } from './calorieRulesExtractor.js';
 
 // Jours de la semaine
 const JOURS_SEMAINE = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
@@ -468,15 +469,38 @@ export async function genererMenuHebdomadaireExcel(profil) {
   const reglesData = await chargerReglesPraticien(profil);
   console.log(`📋 Règles chargées: ${reglesData.toutesLesRegles.length} règles actives`);
   
-  // Calculer les besoins nutritionnels
+  // Calculer les besoins nutritionnels (BMR/TDEE)
   const bmr = calculerBMR(profil);
   const tdee = calculerTDEE(bmr, profil.activitePhysique || profil.activite || 'moderee');
-  const caloriesJournalieres = calculerCaloriesJournalieres(tdee, profil.objectif);
-  const macrosCibles = calculerMacrosCibles(caloriesJournalieres, profil.objectif);
+  let caloriesJournalieres = calculerCaloriesJournalieres(tdee, profil.objectif);
   
-  console.log('📊 Besoins nutritionnels:');
+  console.log('📊 Besoins nutritionnels calculés (BMR/TDEE):');
   console.log('  BMR:', Math.round(bmr), 'kcal');
   console.log('  TDEE:', Math.round(tdee), 'kcal');
+  console.log('  Objectif journalier (avant règles praticien):', caloriesJournalieres, 'kcal');
+  
+  // 🆕 APPLIQUER LES RÈGLES CALORIQUES DU PRATICIEN
+  let regleCaloriqueAppliquee = null;
+  if (reglesData.texteComplet.specifiques || reglesData.texteComplet.generales) {
+    const texteRegles = reglesData.texteComplet.specifiques || reglesData.texteComplet.generales;
+    const resultatRegles = chargerEtAppliquerReglesCaloriques(texteRegles, caloriesJournalieres, profil);
+    
+    if (resultatRegles.regleAppliquee) {
+      console.log(`\n🔒 RÈGLE PRATICIEN APPLIQUÉE:`);
+      console.log(`  📉 Calories ajustées: ${caloriesJournalieres} → ${resultatRegles.calories} kcal`);
+      console.log(`  📝 Raison: ${resultatRegles.ajustement}`);
+      console.log(`  📄 Contexte: "${resultatRegles.regleAppliquee.contexte}"`);
+      
+      caloriesJournalieres = resultatRegles.calories;
+      regleCaloriqueAppliquee = resultatRegles.regleAppliquee;
+    } else {
+      console.log(`\n✅ Aucune règle calorique praticien → Utilisation calcul BMR/TDEE`);
+    }
+  }
+  
+  const macrosCibles = calculerMacrosCibles(caloriesJournalieres, profil.objectif);
+  
+  console.log('\n📊 Besoins nutritionnels FINAUX (après règles praticien):');
   console.log('  Objectif journalier:', caloriesJournalieres, 'kcal');
   console.log('  Macros cibles:', macrosCibles);
   
@@ -553,6 +577,8 @@ export async function genererMenuHebdomadaireExcel(profil) {
         bmr: Math.round(bmr),
         tdee: Math.round(tdee),
         caloriesJournalieres,
+        caloriesAvantReglesPraticien: calculerCaloriesJournalieres(tdee, profil.objectif), // Calories BMR/TDEE brutes
+        regleCaloriqueAppliquee: regleCaloriqueAppliquee, // Règle calorique du document Word si appliquée
         macrosCibles
       },
       totaux: totalSemaine,
