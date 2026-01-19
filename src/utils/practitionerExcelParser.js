@@ -12,7 +12,7 @@
  */
 
 import * as XLSX from 'xlsx';
-import { getAllFiles, isUsingUploadedFiles } from './practitionerStorage.js';
+import { getAllFiles, isUsingUploadedFiles } from './practitionerStorageV2.js';
 import { completerValeursNutritionnelles } from './nutritionSearch.js';
 
 /**

@@ -19,7 +19,7 @@ import {
   activateUploadedFiles,
   deactivateUploadedFiles,
   getActivationStatus
-} from '../utils/practitionerStorage'
+} from '../utils/practitionerStorageV2'
 import './PractitionerPortal.css'
 
 const PractitionerPortal = ({ onBack }) => {

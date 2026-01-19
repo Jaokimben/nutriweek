@@ -8,7 +8,7 @@
  * - Sinon → ERREUR - Refus de générer (pas de mode par défaut)
  */
 
-import { getAllFiles } from './practitionerStorage.js';
+import { getAllFiles } from './practitionerStorageV2.js';
 import { genererMenuHebdomadaireExcel, regenererRepasExcel } from './menuGeneratorFromExcel.js';
 
 /**

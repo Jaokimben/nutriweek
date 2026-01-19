@@ -160,7 +160,7 @@ router.get('/:type/versions', (req, res) => {
  * POST /api/files/upload
  * Upload un nouveau fichier (crée une nouvelle version)
  */
-router.post('/upload', upload.single('file'), (req, res) => {
+router.post('/upload', upload.single('file'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({
@@ -193,9 +193,30 @@ router.post('/upload', upload.single('file'), (req, res) => {
     };
 
     // Ajouter la version à la base de données
-    const currentVersions = db.getData(`/files/${fileType}/versions`) || [];
+    let currentVersions;
+    try {
+      // Vérifier si /files existe
+      await db.getData('/files');
+    } catch (error) {
+      // Créer la structure de base
+      await db.push('/files', {});
+    }
+    
+    try {
+      currentVersions = await db.getData(`/files/${fileType}/versions`);
+    } catch (error) {
+      // Si le chemin n'existe pas, créer la structure
+      currentVersions = [];
+      await db.push(`/files/${fileType}`, { versions: [] });
+    }
+    
+    // S'assurer que c'est bien un array
+    if (!Array.isArray(currentVersions)) {
+      currentVersions = [];
+    }
+    
     currentVersions.push(versionEntry);
-    db.push(`/files/${fileType}/versions`, currentVersions);
+    await db.push(`/files/${fileType}/versions`, currentVersions);
 
     console.log(`✅ Nouveau fichier uploadé: ${fileType} v${versionEntry.version}`);
 

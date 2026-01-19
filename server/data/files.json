@@ -23,6 +23,9 @@
         },
         "vitalite": {
             "versions": []
+        },
+        "confortDigestif": {
+            "versions": []
         }
     }
 }

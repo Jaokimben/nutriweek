@@ -7,7 +7,7 @@
  */
 
 import { parseExcelFile } from './practitionerExcelParser.js';
-import { getAllFiles } from './practitionerStorage.js';
+import { getAllFiles } from './practitionerStorageV2.js';
 
 /**
  * Analyse un fichier Excel et génère un diagnostic

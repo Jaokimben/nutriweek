@@ -8,7 +8,7 @@
  * - vitalite.docx : Règles pour l'objectif vitalité
  */
 
-import { getAllFiles } from './practitionerStorage.js';
+import { getAllFiles } from './practitionerStorageV2.js';
 import mammoth from 'mammoth';
 
 /**
