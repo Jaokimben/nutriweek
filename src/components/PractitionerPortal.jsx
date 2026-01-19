@@ -47,12 +47,12 @@ const PractitionerPortal = ({ onBack }) => {
     }
   }, [])
 
-  const loadData = () => {
+  const loadData = async () => {
     console.log('🔄 [PractitionerPortal] Chargement des données...')
     try {
-      const loadedFiles = getAllFiles()
-      const loadedStats = getStorageStats()
-      const loadedStatus = getActivationStatus()
+      const loadedFiles = await getAllFiles()
+      const loadedStats = await getStorageStats()
+      const loadedStatus = await getActivationStatus()
       
       console.log('📁 [PractitionerPortal] Fichiers chargés:', loadedFiles)
       console.log('📊 [PractitionerPortal] Stats:', loadedStats)
@@ -65,9 +65,9 @@ const PractitionerPortal = ({ onBack }) => {
       console.error('❌ [PractitionerPortal] Erreur chargement:', error)
       showToast('⚠️ Erreur de chargement. Réinitialisation...', 'error')
       // En cas d'erreur, initialiser avec des valeurs par défaut
-      setFiles(getAllFiles())
-      setStats(getStorageStats())
-      setActivationStatus(getActivationStatus())
+      setFiles(await getAllFiles())
+      setStats(await getStorageStats())
+      setActivationStatus(await getActivationStatus())
     }
   }
 
@@ -90,7 +90,7 @@ const PractitionerPortal = ({ onBack }) => {
       console.log(`✅ [handleFileUpload] saveFn retourné:`, result)
       
       console.log(`🔄 [handleFileUpload] Rechargement des données...`)
-      loadData()
+      await loadData()
       
       showToast(`✅ Fichier uploadé: ${file.name}`)
     } catch (error) {
@@ -107,7 +107,7 @@ const PractitionerPortal = ({ onBack }) => {
 
     try {
       await deleteFile(fileType)
-      loadData()
+      await loadData()
       showToast('🗑️ Fichier supprimé')
     } catch (error) {
       showToast(`❌ Erreur: ${error.message}`, 'error')
@@ -138,7 +138,7 @@ const PractitionerPortal = ({ onBack }) => {
 
     try {
       await importAllFiles(file)
-      loadData()
+      await loadData()
       showToast('📥 Import réussi')
     } catch (error) {
       showToast(`❌ Erreur: ${error.message}`, 'error')
@@ -150,7 +150,7 @@ const PractitionerPortal = ({ onBack }) => {
 
     try {
       await resetAllFiles()
-      loadData()
+      await loadData()
       showToast('🗑️ Tous les fichiers supprimés')
     } catch (error) {
       showToast(`❌ Erreur: ${error.message}`, 'error')
@@ -160,7 +160,7 @@ const PractitionerPortal = ({ onBack }) => {
   const handleActivate = async () => {
     try {
       await activateUploadedFiles()
-      loadData()
+      await loadData()
       showToast('✅ Fichiers activés ! L\'application utilise maintenant vos fichiers uploadés.', 'success')
     } catch (error) {
       showToast(`❌ ${error.message}`, 'error')
@@ -172,7 +172,7 @@ const PractitionerPortal = ({ onBack }) => {
     
     try {
       await deactivateUploadedFiles()
-      loadData()
+      await loadData()
       showToast('⚠️ Fichiers désactivés. L\'application utilise les données par défaut.', 'success')
     } catch (error) {
       showToast(`❌ Erreur: ${error.message}`, 'error')

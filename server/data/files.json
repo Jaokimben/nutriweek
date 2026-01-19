@@ -1,10 +1,62 @@
 {
     "files": {
         "alimentsPetitDej": {
-            "versions": []
+            "versions": [
+                {
+                    "version": 1768854612834,
+                    "originalName": "test_aliments.xlsx",
+                    "fileName": "unknown_v1768854612823_test_aliments.xlsx",
+                    "filePath": "/home/user/webapp/server/uploads/versions/unknown_v1768854612823_test_aliments.xlsx",
+                    "size": 32,
+                    "mimeType": "application/octet-stream",
+                    "uploadedAt": "2026-01-19T20:30:12.834Z",
+                    "uploadedBy": "praticien"
+                },
+                {
+                    "version": 1768854618750,
+                    "originalName": "test_aliments.xlsx",
+                    "fileName": "unknown_v1768854618739_test_aliments.xlsx",
+                    "filePath": "/home/user/webapp/server/uploads/versions/unknown_v1768854618739_test_aliments.xlsx",
+                    "size": 32,
+                    "mimeType": "application/octet-stream",
+                    "uploadedAt": "2026-01-19T20:30:18.750Z",
+                    "uploadedBy": "praticien"
+                },
+                {
+                    "version": 1768854651116,
+                    "originalName": "test_aliments.xlsx",
+                    "fileName": "unknown_v1768854651096_test_aliments.xlsx",
+                    "filePath": "/home/user/webapp/server/uploads/versions/unknown_v1768854651096_test_aliments.xlsx",
+                    "size": 32,
+                    "mimeType": "application/octet-stream",
+                    "uploadedAt": "2026-01-19T20:30:51.116Z",
+                    "uploadedBy": "praticien"
+                },
+                {
+                    "version": 1768855032558,
+                    "originalName": "Aliments Petit Dejeuner n.xlsx",
+                    "fileName": "unknown_v1768855032554_Aliments_Petit_Dejeuner_n.xlsx",
+                    "filePath": "/home/user/webapp/server/uploads/versions/unknown_v1768855032554_Aliments_Petit_Dejeuner_n.xlsx",
+                    "size": 15226,
+                    "mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    "uploadedAt": "2026-01-19T20:37:12.558Z",
+                    "uploadedBy": "praticien"
+                }
+            ]
         },
         "alimentsDejeuner": {
-            "versions": []
+            "versions": [
+                {
+                    "version": 1768855048040,
+                    "originalName": "Aliments Dejeuner n.xlsx",
+                    "fileName": "unknown_v1768855048036_Aliments_Dejeuner_n.xlsx",
+                    "filePath": "/home/user/webapp/server/uploads/versions/unknown_v1768855048036_Aliments_Dejeuner_n.xlsx",
+                    "size": 21010,
+                    "mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    "uploadedAt": "2026-01-19T20:37:28.040Z",
+                    "uploadedBy": "praticien"
+                }
+            ]
         },
         "alimentsDiner": {
             "versions": []

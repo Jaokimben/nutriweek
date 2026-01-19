@@ -16,7 +16,8 @@ const fs = require('fs');
 const { JsonDB, Config } = require('node-json-db');
 
 // Database
-const dbPath = path.join(__dirname, '../db/files.json');
+const dbPath = path.join(__dirname, '../data/files');
+console.log('🔍 [Routes] DB Path:', dbPath);
 const db = new JsonDB(new Config(dbPath, true, true, '/'));
 
 // Configuration Multer pour upload
@@ -68,23 +69,27 @@ const upload = multer({
  */
 router.get('/', (req, res) => {
   try {
+    console.log('📋 [GET /] DB path:', dbPath);
+    
     const files = db.getData('/files');
+    
+    console.log('📋 [GET /] Files keys:', Object.keys(files));
+    
     const result = {};
 
     Object.keys(files).forEach(fileType => {
       const versions = files[fileType].versions || [];
+      console.log(`  - ${fileType}: ${versions.length} versions`);
+      
       if (versions.length > 0) {
         result[fileType] = {
           current: versions[versions.length - 1],
           totalVersions: versions.length
         };
-      } else {
-        result[fileType] = {
-          current: null,
-          totalVersions: 0
-        };
       }
     });
+
+    console.log('📋 [GET /] Result keys:', Object.keys(result));
 
     res.json({
       success: true,
@@ -92,6 +97,7 @@ router.get('/', (req, res) => {
       timestamp: new Date().toISOString()
     });
   } catch (error) {
+    console.error('❌ [GET /] Error:', error);
     res.status(500).json({
       success: false,
       error: error.message
