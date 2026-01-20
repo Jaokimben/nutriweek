@@ -1,5 +1,5 @@
 /**
- * 📁 ROUTES FILES - Gestion des fichiers praticien (SQLite)
+ * 📁 ROUTES FILES - Gestion des fichiers praticien
  * 
  * Routes pour:
  * - Upload avec versioning
@@ -15,6 +15,7 @@ const path = require('path');
 const fs = require('fs');
 
 // Note: DB instance is provided via req.db from the main app
+// No need to create a separate instance here
 
 // Configuration Multer pour upload
 const storage = multer.diskStorage({
@@ -66,7 +67,7 @@ const upload = multer({
 router.get('/', (req, res) => {
   try {
     const db = req.db;
-    console.log('📋 [GET /] Fetching all files from SQLite');
+    console.log('📋 [GET /] Using SQLite database');
     
     const allFiles = db.getAllFiles();
     
@@ -87,8 +88,10 @@ router.get('/', (req, res) => {
         },
         totalVersions: file.totalVersions
       };
-      console.log(`  ✓ ${file.fileType}: ${file.totalVersions} version(s)`);
+      console.log(`  - ${file.fileType}: ${file.totalVersions} versions`);
     });
+
+    console.log('📋 [GET /] Result keys:', Object.keys(result));
 
     res.json({
       success: true,
@@ -106,35 +109,28 @@ router.get('/', (req, res) => {
 
 /**
  * GET /api/files/:type
- * Obtenir le fichier le plus récent d'un type spécifique
+ * Obtenir la dernière version d'un type de fichier spécifique
  */
 router.get('/:type', (req, res) => {
   try {
-    const db = req.db;
     const { type } = req.params;
-    const latestVersion = db.getLatestVersion(type);
+    const fileData = req.db.getData(`/files/${type}`);
+    const versions = fileData.versions || [];
 
-    if (!latestVersion) {
+    if (versions.length === 0) {
       return res.status(404).json({
         success: false,
         message: `Aucun fichier trouvé pour le type: ${type}`
       });
     }
 
+    const latestVersion = versions[versions.length - 1];
+
     res.json({
       success: true,
       fileType: type,
-      currentVersion: {
-        version: latestVersion.version,
-        originalName: latestVersion.originalName,
-        fileName: latestVersion.fileName,
-        filePath: latestVersion.filePath,
-        size: latestVersion.size,
-        mimeType: latestVersion.mimeType,
-        uploadedAt: latestVersion.uploadedAt,
-        uploadedBy: latestVersion.uploadedBy
-      },
-      totalVersions: db.countVersions(type)
+      currentVersion: latestVersion,
+      totalVersions: versions.length
     });
   } catch (error) {
     res.status(500).json({
@@ -146,26 +142,18 @@ router.get('/:type', (req, res) => {
 
 /**
  * GET /api/files/:type/versions
- * Obtenir l'historique de toutes les versions d'un type
+ * Obtenir l'historique complet des versions d'un type de fichier
  */
 router.get('/:type/versions', (req, res) => {
   try {
-    const db = req.db;
     const { type } = req.params;
-    const versions = db.getFileVersions(type);
+    const fileData = req.db.getData(`/files/${type}`);
+    const versions = fileData.versions || [];
 
     res.json({
       success: true,
       fileType: type,
-      versions: versions.map(v => ({
-        version: v.version,
-        originalName: v.originalName,
-        fileName: v.fileName,
-        size: v.size,
-        mimeType: v.mimeType,
-        uploadedAt: v.uploadedAt,
-        uploadedBy: v.uploadedBy
-      })),
+      versions: versions,
       totalVersions: versions.length
     });
   } catch (error) {
@@ -180,7 +168,7 @@ router.get('/:type/versions', (req, res) => {
  * POST /api/files/upload
  * Upload un nouveau fichier (crée une nouvelle version)
  */
-router.post('/upload', upload.single('file'), (req, res) => {
+router.post('/upload', upload.single('file'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({
@@ -200,10 +188,8 @@ router.post('/upload', upload.single('file'), (req, res) => {
       });
     }
 
-    const db = req.db;
-
     // Créer l'entrée de version
-    const versionData = {
+    const versionEntry = {
       version: Date.now(),
       originalName: req.file.originalname,
       fileName: req.file.filename,
@@ -214,26 +200,41 @@ router.post('/upload', upload.single('file'), (req, res) => {
       uploadedBy: req.body.uploadedBy || 'praticien'
     };
 
-    // Ajouter à la base de données SQLite
-    const result = db.addFileVersion(fileType, versionData);
+    // Ajouter la version à la base de données
+    const db = req.db;
+    let currentVersions;
+    try {
+      // Vérifier si /files existe
+      await req.db.getData('/files');
+    } catch (error) {
+      // Créer la structure de base
+      await req.db.push('/files', {});
+    }
+    
+    try {
+      currentVersions = await req.db.getData(`/files/${fileType}/versions`);
+    } catch (error) {
+      // Si le chemin n'existe pas, créer la structure
+      currentVersions = [];
+      await req.db.push(`/files/${fileType}`, { versions: [] });
+    }
+    
+    // S'assurer que c'est bien un array
+    if (!Array.isArray(currentVersions)) {
+      currentVersions = [];
+    }
+    
+    currentVersions.push(versionEntry);
+    await req.db.push(`/files/${fileType}/versions`, currentVersions);
 
-    console.log(`✅ Nouveau fichier uploadé: ${fileType} v${versionData.version}`);
+    console.log(`✅ Nouveau fichier uploadé: ${fileType} v${versionEntry.version}`);
 
     res.json({
       success: true,
       message: 'Fichier uploadé avec succès',
       fileType: fileType,
-      version: {
-        version: versionData.version,
-        originalName: versionData.originalName,
-        fileName: versionData.fileName,
-        filePath: versionData.filePath,
-        size: versionData.size,
-        mimeType: versionData.mimeType,
-        uploadedAt: versionData.uploadedAt,
-        uploadedBy: versionData.uploadedBy
-      },
-      totalVersions: db.countVersions(fileType)
+      version: versionEntry,
+      totalVersions: currentVersions.length
     });
   } catch (error) {
     // Nettoyer le fichier en cas d'erreur
@@ -245,7 +246,6 @@ router.post('/upload', upload.single('file'), (req, res) => {
       }
     }
 
-    console.error('❌ Erreur upload:', error);
     res.status(500).json({
       success: false,
       error: error.message
@@ -254,56 +254,93 @@ router.post('/upload', upload.single('file'), (req, res) => {
 });
 
 /**
- * GET /api/files/download/:type
- * Télécharger la dernière version d'un type de fichier
+ * GET /api/files/download/:type/:version?
+ * Télécharger un fichier (dernière version si version non spécifiée)
  */
 router.get('/download/:type', (req, res) => {
+  handleDownload(req, res);
+});
+
+router.get('/download/:type/:version', (req, res) => {
+  handleDownload(req, res);
+});
+
+const handleDownload = (req, res) => {
   try {
-    const db = req.db;
-    const { type } = req.params;
-    const latestVersion = db.getLatestVersion(type);
+    const { type, version } = req.params;
+    const fileData = req.db.getData(`/files/${type}`);
+    const versions = fileData.versions || [];
 
-    if (!latestVersion) {
+    if (versions.length === 0) {
       return res.status(404).json({
         success: false,
-        message: `Aucun fichier trouvé pour: ${type}`
+        message: `Aucun fichier trouvé pour le type: ${type}`
       });
     }
 
-    if (!fs.existsSync(latestVersion.filePath)) {
+    let fileToDownload;
+
+    if (version) {
+      // Télécharger une version spécifique
+      fileToDownload = versions.find(v => v.version === parseInt(version));
+      if (!fileToDownload) {
+        return res.status(404).json({
+          success: false,
+          message: `Version ${version} non trouvée pour le type: ${type}`
+        });
+      }
+    } else {
+      // Télécharger la dernière version
+      fileToDownload = versions[versions.length - 1];
+    }
+
+    // Vérifier que le fichier existe
+    if (!fs.existsSync(fileToDownload.filePath)) {
       return res.status(404).json({
         success: false,
-        message: 'Fichier physique introuvable'
+        message: 'Fichier physique introuvable sur le serveur'
       });
     }
 
-    res.download(latestVersion.filePath, latestVersion.originalName);
-    console.log(`📥 Téléchargement: ${type} v${latestVersion.version}`);
+    // Définir les headers pour le téléchargement
+    res.setHeader('Content-Disposition', `attachment; filename="${fileToDownload.originalName}"`);
+    res.setHeader('Content-Type', fileToDownload.mimeType);
+    res.setHeader('Content-Length', fileToDownload.size);
+
+    // Envoyer le fichier
+    const fileStream = fs.createReadStream(fileToDownload.filePath);
+    fileStream.pipe(res);
+
+    console.log(`📥 Téléchargement: ${type} v${fileToDownload.version}`);
   } catch (error) {
     res.status(500).json({
       success: false,
       error: error.message
     });
   }
-});
+};
 
 /**
  * DELETE /api/files/:type/versions/:version
- * Supprimer une version spécifique
+ * Supprimer une version spécifique (optionnel, rarement utilisé)
  */
 router.delete('/:type/versions/:version', (req, res) => {
   try {
     const db = req.db;
     const { type, version } = req.params;
-    const versions = db.getFileVersions(type);
-    const versionToDelete = versions.find(v => v.version === parseInt(version));
+    const fileData = req.db.getData(`/files/${type}`);
+    const versions = fileData.versions || [];
 
-    if (!versionToDelete) {
+    const versionIndex = versions.findIndex(v => v.version === parseInt(version));
+
+    if (versionIndex === -1) {
       return res.status(404).json({
         success: false,
         message: `Version ${version} non trouvée`
       });
     }
+
+    const versionToDelete = versions[versionIndex];
 
     // Supprimer le fichier physique
     if (fs.existsSync(versionToDelete.filePath)) {
@@ -311,14 +348,15 @@ router.delete('/:type/versions/:version', (req, res) => {
     }
 
     // Retirer de la base de données
-    db.deleteVersion(type, parseInt(version));
+    versions.splice(versionIndex, 1);
+    req.db.push(`/files/${type}/versions`, versions);
 
     console.log(`🗑️ Version supprimée: ${type} v${version}`);
 
     res.json({
       success: true,
       message: 'Version supprimée avec succès',
-      remainingVersions: db.countVersions(type)
+      remainingVersions: versions.length
     });
   } catch (error) {
     res.status(500).json({

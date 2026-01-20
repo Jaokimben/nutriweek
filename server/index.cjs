@@ -54,33 +54,16 @@ const dbDir = path.join(__dirname, 'data');
   }
 });
 
-// Database simple (JSON file)
-const { JsonDB, Config } = require('node-json-db');
-const db = new JsonDB(new Config(path.join(dbDir, 'files'), true, true, '/'));
+// Database SQLite
+const FileDatabase = require('./database.cjs');
+const dbPath = path.join(dbDir, 'files.db');
+const db = new FileDatabase(dbPath);
 
-// Initialize database structure
-const initDB = async () => {
-  try {
-    await db.getData('/files');
-    console.log('🗄️ Database déjà initialisée');
-  } catch (error) {
-    await db.push('/files', {
-      alimentsPetitDej: { versions: [] },
-      alimentsDejeuner: { versions: [] },
-      alimentsDiner: { versions: [] },
-      fodmapList: { versions: [] },
-      reglesGenerales: { versions: [] },
-      pertePoidHomme: { versions: [] },
-      pertePoidFemme: { versions: [] },
-      vitalite: { versions: [] },
-      confortDigestif: { versions: [] }  // 🆕 AJOUTÉ
-    });
-    console.log('🗄️ Database initialisée');
-  }
-};
-
-// Initialize DB synchronously at startup
-initDB().catch(err => console.error('❌ Erreur initialisation DB:', err));
+// Make DB available to routes via middleware
+app.use((req, res, next) => {
+  req.db = db;
+  next();
+});
 
 // Routes
 const filesRoutes = require('./routes/files.cjs');
@@ -100,26 +83,28 @@ app.get('/api/health', (req, res) => {
 // Stats endpoint
 app.get('/api/stats', (req, res) => {
   try {
-    const files = db.getData('/files');
-    const stats = {
-      totalFiles: 0,
-      totalVersions: 0,
-      fileTypes: {}
-    };
-
-    Object.keys(files).forEach(fileType => {
-      const versions = files[fileType].versions || [];
-      stats.totalVersions += versions.length;
-      if (versions.length > 0) {
-        stats.totalFiles++;
-      }
-      stats.fileTypes[fileType] = {
-        versions: versions.length,
-        latestVersion: versions.length > 0 ? versions[versions.length - 1] : null
+    const stats = db.getStats();
+    const allFiles = db.getAllFiles();
+    
+    const fileTypes = {};
+    allFiles.forEach(file => {
+      fileTypes[file.fileType] = {
+        versions: file.totalVersions,
+        latestVersion: {
+          version: file.version,
+          originalName: file.originalName,
+          size: file.size,
+          uploadedAt: file.uploadedAt
+        }
       };
     });
 
-    res.json(stats);
+    res.json({
+      totalFiles: stats.totalFileTypes,
+      totalVersions: stats.totalVersions,
+      totalSize: stats.totalSize || 0,
+      fileTypes
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
