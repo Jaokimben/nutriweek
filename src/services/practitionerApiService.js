@@ -38,11 +38,16 @@ export const FILE_TYPES = {
  */
 export async function checkBackendHealth() {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/health`, {
+    // Cache busting: ajouter timestamp pour forcer le rechargement
+    const healthUrl = `${API_BASE_URL}/api/health?t=${Date.now()}`;
+    console.log('🏥 [Health Check] URL utilisée:', healthUrl);
+    
+    const response = await fetch(healthUrl, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json'
-      }
+      },
+      cache: 'no-cache' // Force pas de cache
     });
     
     if (!response.ok) {
