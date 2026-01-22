@@ -385,11 +385,6 @@ export const getActivationStatus = async () => {
   try {
     const files = await getAllFiles();
     
-    // Avec le backend, les fichiers sont toujours actifs si présents
-    const isActive = USE_BACKEND && await checkBackendAvailability() 
-      ? true 
-      : files.metadata?.useUploadedFiles || false;
-    
     // Construire la liste des fichiers uploadés
     const uploadedFiles = [];
     if (files.alimentsPetitDej) uploadedFiles.push('Petit-Déjeuner');
@@ -404,6 +399,18 @@ export const getActivationStatus = async () => {
     
     // Au moins un fichier Excel requis
     const hasExcelFiles = !!(files.alimentsPetitDej || files.alimentsDejeuner || files.alimentsDiner);
+    
+    // Déterminer si les fichiers sont actifs
+    let isActive;
+    if (USE_BACKEND && await checkBackendAvailability()) {
+      // Backend: actif SI des fichiers sont uploadés
+      isActive = uploadedFiles.length > 0;
+      console.log(`📡 [getActivationStatus] Backend mode: ${uploadedFiles.length} fichiers → isActive = ${isActive}`);
+    } else {
+      // localStorage: actif selon le flag
+      isActive = files.metadata?.useUploadedFiles || false;
+      console.log(`💾 [getActivationStatus] localStorage mode: isActive = ${isActive}`);
+    }
     
     return {
       isActive,

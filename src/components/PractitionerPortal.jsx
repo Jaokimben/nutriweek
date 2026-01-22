@@ -171,9 +171,17 @@ const PractitionerPortal = ({ onBack }) => {
     if (!confirm('Désactiver vos fichiers ? L\'application utilisera les données par défaut.')) return
     
     try {
-      await deactivateUploadedFiles()
-      await loadData()
-      showToast('⚠️ Fichiers désactivés. L\'application utilise les données par défaut.', 'success')
+      const result = await deactivateUploadedFiles()
+      
+      if (result.success) {
+        // localStorage: désactivation réussie
+        await loadData()
+        showToast('⚠️ Fichiers désactivés. L\'application utilise les données par défaut.', 'success')
+      } else {
+        // Backend: désactivation impossible
+        console.log('⚠️ [handleDeactivate] Désactivation impossible:', result.message)
+        showToast(result.message || '❌ Désactivation non applicable avec le backend', 'error')
+      }
     } catch (error) {
       showToast(`❌ Erreur: ${error.message}`, 'error')
     }
