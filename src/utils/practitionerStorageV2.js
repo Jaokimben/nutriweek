@@ -316,14 +316,17 @@ export const activateUploadedFiles = async () => {
   console.log('✅ Activation des fichiers uploadés');
   
   if (USE_BACKEND && await checkBackendAvailability()) {
-    // Backend: pas besoin d'activation explicite
-    return { success: true, source: 'backend' };
+    // Backend: les fichiers sont automatiquement actifs
+    console.log('📡 Backend mode: fichiers déjà actifs automatiquement');
+    return { success: true, source: 'backend', message: 'Fichiers backend déjà actifs' };
   } else {
     // localStorage: mettre à jour le flag
     const allFiles = getFilesFromLocalStorage();
     allFiles.metadata.useUploadedFiles = true;
+    allFiles.metadata.lastUpdated = new Date().toISOString();
     localStorage.setItem(STORAGE_KEY, JSON.stringify(allFiles));
-    return { success: true, source: 'localStorage' };
+    console.log('💾 localStorage: fichiers activés');
+    return { success: true, source: 'localStorage', message: 'Fichiers activés avec succès' };
   }
 };
 
@@ -337,8 +340,44 @@ export const deactivateUploadedFiles = async () => {
 };
 
 export const getActivationStatus = async () => {
-  const files = await getAllFiles();
-  return files.metadata?.useUploadedFiles || false;
+  try {
+    const files = await getAllFiles();
+    
+    // Avec le backend, les fichiers sont toujours actifs si présents
+    const isActive = USE_BACKEND && await checkBackendAvailability() 
+      ? true 
+      : files.metadata?.useUploadedFiles || false;
+    
+    // Construire la liste des fichiers uploadés
+    const uploadedFiles = [];
+    if (files.alimentsPetitDej) uploadedFiles.push('Petit-Déjeuner');
+    if (files.alimentsDejeuner) uploadedFiles.push('Déjeuner');
+    if (files.alimentsDiner) uploadedFiles.push('Dîner');
+    if (files.fodmapList) uploadedFiles.push('FODMAP');
+    if (files.reglesGenerales) uploadedFiles.push('Règles Générales');
+    if (files.pertePoidHomme) uploadedFiles.push('Perte Poids Homme');
+    if (files.pertePoidFemme) uploadedFiles.push('Perte Poids Femme');
+    if (files.vitalite) uploadedFiles.push('Vitalité');
+    if (files.confortDigestif) uploadedFiles.push('Confort Digestif');
+    
+    // Au moins un fichier Excel requis
+    const hasExcelFiles = !!(files.alimentsPetitDej || files.alimentsDejeuner || files.alimentsDiner);
+    
+    return {
+      isActive,
+      uploadedFiles,
+      hasExcelFiles,
+      lastUpdated: files.metadata?.lastUpdated || new Date().toISOString()
+    };
+  } catch (error) {
+    console.error('❌ Erreur getActivationStatus:', error);
+    return {
+      isActive: false,
+      uploadedFiles: [],
+      hasExcelFiles: false,
+      lastUpdated: null
+    };
+  }
 };
 
 /**
