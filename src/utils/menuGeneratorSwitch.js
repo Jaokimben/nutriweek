@@ -15,17 +15,19 @@ import { genererMenuHebdomadaireExcel, regenererRepasExcel } from './menuGenerat
  * Vérifie si le praticien a uploadé des fichiers Excel
  * ⚠️ OBLIGATOIRE - Sans fichiers Excel, la génération est REFUSÉE
  */
-function verifierFichiersExcelPresents() {
-  const files = getAllFiles();
+async function verifierFichiersExcelPresents() {
+  const files = await getAllFiles();
   
-  const aFichierPetitDej = files.alimentsPetitDej && files.alimentsPetitDej.data;
-  const aFichierDejeuner = files.alimentsDejeuner && files.alimentsDejeuner.data;
-  const aFichierDiner = files.alimentsDiner && files.alimentsDiner.data;
+  // Avec backend SQLite, data = null (chargé à la demande)
+  // On vérifie juste si le fichier existe (name présent)
+  const aFichierPetitDej = files.alimentsPetitDej && files.alimentsPetitDej.name;
+  const aFichierDejeuner = files.alimentsDejeuner && files.alimentsDejeuner.name;
+  const aFichierDiner = files.alimentsDiner && files.alimentsDiner.name;
   
   console.log('🔍 Vérification fichiers Excel praticien:');
-  console.log('  Petit-déjeuner:', aFichierPetitDej ? '✅' : '❌');
-  console.log('  Déjeuner:', aFichierDejeuner ? '✅' : '❌');
-  console.log('  Dîner:', aFichierDiner ? '✅' : '❌');
+  console.log('  Petit-déjeuner:', aFichierPetitDej ? `✅ ${files.alimentsPetitDej.name}` : '❌');
+  console.log('  Déjeuner:', aFichierDejeuner ? `✅ ${files.alimentsDejeuner.name}` : '❌');
+  console.log('  Dîner:', aFichierDiner ? `✅ ${files.alimentsDiner.name}` : '❌');
   
   const nbFichiers = [aFichierPetitDej, aFichierDejeuner, aFichierDiner].filter(Boolean).length;
   
@@ -57,7 +59,7 @@ function verifierFichiersExcelPresents() {
  */
 export async function genererMenuHebdomadaire(profil) {
   // Vérification obligatoire - lance une erreur si pas de fichiers
-  const fichiersPresents = verifierFichiersExcelPresents();
+  const fichiersPresents = await verifierFichiersExcelPresents();
   
   console.log('📊 MODE STRICT ACTIVÉ : Utilisation EXCLUSIVE des fichiers Excel praticien');
   console.log(`   ${fichiersPresents.nbFichiers}/3 fichiers disponibles`);
@@ -72,7 +74,7 @@ export async function genererMenuHebdomadaire(profil) {
  */
 export async function regenererRepas(jourIndex, typeRepas, profil) {
   // Vérification obligatoire - lance une erreur si pas de fichiers
-  verifierFichiersExcelPresents();
+  await verifierFichiersExcelPresents();
   
   console.log('📊 Régénération STRICTE depuis fichiers Excel praticien');
   return await regenererRepasExcel(jourIndex, typeRepas, profil);
@@ -82,10 +84,10 @@ export async function regenererRepas(jourIndex, typeRepas, profil) {
  * Obtient des informations sur le mode actuel
  * ⚠️ MODE STRICT UNIQUEMENT - Plus de mode par défaut
  */
-export function getModeInfo() {
+export async function getModeInfo() {
   try {
-    const fichiersPresents = verifierFichiersExcelPresents();
-    const files = getAllFiles();
+    const fichiersPresents = await verifierFichiersExcelPresents();
+    const files = await getAllFiles();
     
     return {
       mode: 'excel_strict',
@@ -120,9 +122,9 @@ export function getModeInfo() {
 /**
  * Vérifie si le système peut générer des menus
  */
-export function peutGenererMenus() {
+export async function peutGenererMenus() {
   try {
-    verifierFichiersExcelPresents();
+    await verifierFichiersExcelPresents();
     return true;
   } catch (error) {
     return false;
