@@ -9,6 +9,7 @@
 
 import { parseExcelFile } from './practitionerExcelParser.js';
 import { getAllFiles } from './practitionerStorageV2.js';
+import * as API from '../services/practitionerApiService.js';
 import { 
   chargerReglesPraticien, 
   verifierAlimentAutorise,
@@ -164,19 +165,43 @@ function calculerMacrosCibles(caloriesJournalieres, objectif) {
  */
 async function chargerAlimentsExcel() {
   try {
-    const files = getAllFiles();
+    const files = await getAllFiles();
     
-    const alimentsPetitDej = files.alimentsPetitDej 
-      ? await parseExcelFile(files.alimentsPetitDej.data)
-      : [];
+    console.log('📂 Chargement des fichiers Excel...');
     
-    const alimentsDejeuner = files.alimentsDejeuner
-      ? await parseExcelFile(files.alimentsDejeuner.data)
-      : [];
+    // Fonction helper pour charger un fichier (backend ou localStorage)
+    const chargerFichier = async (fileType, fileInfo) => {
+      if (!fileInfo) return [];
+      
+      try {
+        // Backend: télécharger le fichier
+        if (fileInfo.data === null && files.metadata?.source === 'backend') {
+          console.log(`⬇️ Téléchargement ${fileType} depuis le backend...`);
+          const result = await API.downloadFile(fileType);
+          if (result.success && result.data) {
+            const arrayBuffer = await result.data.arrayBuffer();
+            return await parseExcelFile(arrayBuffer);
+          }
+          console.warn(`⚠️ Échec téléchargement ${fileType}`);
+          return [];
+        }
+        
+        // localStorage: utiliser data directement
+        if (fileInfo.data) {
+          console.log(`📦 Parsing ${fileType} depuis localStorage...`);
+          return await parseExcelFile(fileInfo.data);
+        }
+        
+        return [];
+      } catch (error) {
+        console.error(`❌ Erreur chargement ${fileType}:`, error.message);
+        return [];
+      }
+    };
     
-    const alimentsDiner = files.alimentsDiner
-      ? await parseExcelFile(files.alimentsDiner.data)
-      : [];
+    const alimentsPetitDej = await chargerFichier('alimentsPetitDej', files.alimentsPetitDej);
+    const alimentsDejeuner = await chargerFichier('alimentsDejeuner', files.alimentsDejeuner);
+    const alimentsDiner = await chargerFichier('alimentsDiner', files.alimentsDiner);
     
     console.log('📊 Aliments chargés depuis Excel:');
     console.log('  Petit-déjeuner:', alimentsPetitDej.length, 'aliments');
