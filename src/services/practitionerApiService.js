@@ -5,8 +5,17 @@
  */
 
 // Configuration de l'API backend
-const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+// SOLUTION DE SECOURS: URL hardcodée pour le sandbox (si .env.local ne charge pas)
+const API_BASE_URL = import.meta.env.VITE_BACKEND_URL 
+  || (typeof window !== 'undefined' && window.location.hostname.includes('sandbox.novita.ai')
+    ? 'https://3001-i3apeogi3krbe5bmmtels-5185f4aa.sandbox.novita.ai'
+    : 'http://localhost:3001');
 const API_FILES_ENDPOINT = `${API_BASE_URL}/api/files`;
+
+// Log pour diagnostic
+console.log('🔧 [API Config] Backend URL:', API_BASE_URL);
+console.log('🔧 [API Config] VITE_BACKEND_URL:', import.meta.env.VITE_BACKEND_URL);
+console.log('🔧 [API Config] Hostname:', typeof window !== 'undefined' ? window.location.hostname : 'N/A');
 
 /**
  * Types de fichiers supportés
