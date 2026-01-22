@@ -163,9 +163,15 @@ const WeeklyMenu = ({ userProfile, initialMenu = null, onMenuGenerated, onBack }
         setLoading(false)
       } catch (error) {
         console.error('❌ Erreur lors de la génération du menu:', error)
+        console.log('📊 Type d\'erreur:', error.constructor.name);
+        console.log('📊 Message complet:', error.message);
+        
+        // Ne montrer le message "uploader les fichiers" QUE si vraiment aucun fichier n'est uploadé
+        const estProblemeUploadManquant = error.message?.includes('AUCUN FICHIER EXCEL UPLOADÉ');
+        
         setError({
           message: error.message || 'Erreur lors de la génération du menu',
-          details: error.message?.includes('EXCEL') 
+          details: estProblemeUploadManquant
             ? 'Le praticien doit uploader les fichiers Excel contenant les aliments autorisés avant de pouvoir générer des menus.' 
             : null
         })
