@@ -164,12 +164,12 @@ function convertBackendFilesToFormat(backendFiles) {
     if (fileInfo.current) {
       result[fileType] = {
         name: fileInfo.current.originalName,
-        type: fileInfo.current.mimetype || 'application/octet-stream',
-        size: fileInfo.current.size,
+        type: fileInfo.current.mimeType || 'application/octet-stream',
+        size: fileInfo.current.size || 0,
         data: null, // Les données seront chargées à la demande
         uploadedAt: fileInfo.current.uploadedAt,
         version: fileInfo.current.version,
-        path: fileInfo.current.path
+        path: fileInfo.current.filePath
       };
     }
   });
@@ -287,26 +287,55 @@ export const fileToBase64 = (file) => {
  * Obtenir les statistiques de stockage
  */
 export const getStorageStats = async () => {
-  const files = await getAllFiles();
-  
-  let totalSize = 0;
-  let uploadedCount = 0;
-  
-  Object.keys(DEFAULT_FILES).forEach(key => {
-    if (key !== 'metadata' && files[key]) {
-      totalSize += files[key].size || 0;
-      uploadedCount++;
-    }
-  });
-  
-  return {
-    totalFiles: uploadedCount,
-    totalSize: totalSize,
-    maxSize: 50 * 1024 * 1024, // 50MB max total
-    percentUsed: (totalSize / (50 * 1024 * 1024)) * 100,
-    source: files.metadata?.source || 'none',
-    backendAvailable: await checkBackendAvailability()
-  };
+  try {
+    const files = await getAllFiles();
+    
+    let totalSize = 0;
+    let uploadedCount = 0;
+    
+    // Compter les fichiers et calculer la taille totale
+    Object.keys(DEFAULT_FILES).forEach(key => {
+      if (key !== 'metadata' && files[key]) {
+        const fileSize = files[key].size || 0;
+        totalSize += fileSize;
+        uploadedCount++;
+        console.log(`📊 [Stats] ${key}: ${formatBytes(fileSize)}`);
+      }
+    });
+    
+    const maxSize = 50 * 1024 * 1024; // 50MB max total
+    const percentUsed = totalSize > 0 ? ((totalSize / maxSize) * 100).toFixed(1) : 0;
+    
+    console.log(`📊 [Stats] Total: ${uploadedCount} fichiers, ${formatBytes(totalSize)}`);
+    
+    return {
+      // Format attendu par le composant
+      fileCount: uploadedCount,
+      formattedSize: formatBytes(totalSize),
+      formattedMax: formatBytes(maxSize),
+      usedPercent: parseFloat(percentUsed),
+      
+      // Informations supplémentaires
+      totalFiles: uploadedCount,
+      totalSize: totalSize,
+      maxSize: maxSize,
+      source: files.metadata?.source || 'none',
+      backendAvailable: await checkBackendAvailability()
+    };
+  } catch (error) {
+    console.error('❌ [getStorageStats] Erreur:', error);
+    return {
+      fileCount: 0,
+      formattedSize: '0 KB',
+      formattedMax: '50 MB',
+      usedPercent: 0,
+      totalFiles: 0,
+      totalSize: 0,
+      maxSize: 50 * 1024 * 1024,
+      source: 'none',
+      backendAvailable: false
+    };
+  }
 };
 
 /**
@@ -333,10 +362,23 @@ export const activateUploadedFiles = async () => {
 export const deactivateUploadedFiles = async () => {
   console.log('⚠️ Désactivation des fichiers uploadés');
   
-  const allFiles = getFilesFromLocalStorage();
-  allFiles.metadata.useUploadedFiles = false;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(allFiles));
-  return { success: true };
+  if (USE_BACKEND && await checkBackendAvailability()) {
+    // Backend: impossible de désactiver (fichiers toujours actifs)
+    console.log('⚠️ Backend mode: désactivation non applicable (fichiers backend toujours actifs)');
+    return { 
+      success: false, 
+      source: 'backend', 
+      message: 'Impossible de désactiver: avec le backend SQLite, les fichiers sont toujours actifs pour tous les utilisateurs. Pour utiliser les données par défaut, vous devez supprimer les fichiers uploadés.' 
+    };
+  } else {
+    // localStorage: mettre à jour le flag
+    const allFiles = getFilesFromLocalStorage();
+    allFiles.metadata.useUploadedFiles = false;
+    allFiles.metadata.lastUpdated = new Date().toISOString();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(allFiles));
+    console.log('💾 localStorage: fichiers désactivés');
+    return { success: true, source: 'localStorage', message: 'Fichiers désactivés avec succès' };
+  }
 };
 
 export const getActivationStatus = async () => {
