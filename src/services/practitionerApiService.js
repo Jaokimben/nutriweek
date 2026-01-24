@@ -5,17 +5,35 @@
  */
 
 // Configuration de l'API backend
-// SOLUTION DE SECOURS: URL hardcodée pour le sandbox (si .env.local ne charge pas)
-const API_BASE_URL = import.meta.env.VITE_BACKEND_URL 
-  || (typeof window !== 'undefined' && window.location.hostname.includes('sandbox.novita.ai')
-    ? 'https://3001-i3apeogi3krbe5bmmtels-5185f4aa.sandbox.novita.ai'
-    : 'http://localhost:3001');
-const API_FILES_ENDPOINT = `${API_BASE_URL}/api/files`;
+// FONCTION DYNAMIQUE: Calcule l'URL à chaque appel (pour éviter problèmes de cache/timing)
+function getApiBaseUrl() {
+  const viteUrl = import.meta.env.VITE_BACKEND_URL;
+  
+  if (viteUrl) {
+    console.log('🔧 [getApiBaseUrl] Utilisation VITE_BACKEND_URL:', viteUrl);
+    return viteUrl;
+  }
+  
+  // Détection automatique sandbox
+  if (typeof window !== 'undefined' && window.location.hostname.includes('sandbox.novita.ai')) {
+    const sandboxUrl = 'https://3001-i3apeogi3krbe5bmmtels-5185f4aa.sandbox.novita.ai';
+    console.log('🔧 [getApiBaseUrl] Détection sandbox:', sandboxUrl);
+    return sandboxUrl;
+  }
+  
+  // Fallback localhost
+  console.log('🔧 [getApiBaseUrl] Fallback localhost');
+  return 'http://localhost:3001';
+}
 
-// Log pour diagnostic
-console.log('🔧 [API Config] Backend URL:', API_BASE_URL);
+// Getters dynamiques
+const getApiFilesEndpoint = () => `${getApiBaseUrl()}/api/files`;
+
+// Log au chargement du module
+console.log('🔧 [API Config] Module chargé');
 console.log('🔧 [API Config] VITE_BACKEND_URL:', import.meta.env.VITE_BACKEND_URL);
 console.log('🔧 [API Config] Hostname:', typeof window !== 'undefined' ? window.location.hostname : 'N/A');
+console.log('🔧 [API Config] Backend URL initial:', getApiBaseUrl());
 
 /**
  * Types de fichiers supportés
@@ -39,7 +57,8 @@ export const FILE_TYPES = {
 export async function checkBackendHealth() {
   try {
     // Cache busting: ajouter timestamp pour forcer le rechargement
-    const healthUrl = `${API_BASE_URL}/api/health?t=${Date.now()}`;
+    const baseUrl = getApiBaseUrl();
+    const healthUrl = `${baseUrl}/api/health?t=${Date.now()}`;
     console.log('🏥 [Health Check] URL utilisée:', healthUrl);
     
     const response = await fetch(healthUrl, {
@@ -78,7 +97,7 @@ export async function uploadFile(fileType, file) {
     formData.append('file', file);
     formData.append('fileType', fileType);
     
-    const response = await fetch(`${API_FILES_ENDPOINT}/upload`, {
+    const response = await fetch(`${getApiFilesEndpoint()}/upload`, {
       method: 'POST',
       body: formData
       // Pas de Content-Type header - laissé automatique pour FormData
@@ -106,7 +125,7 @@ export async function getAllFiles() {
   try {
     console.log('📥 Récupération de tous les fichiers...');
     
-    const response = await fetch(`${API_FILES_ENDPOINT}`, {
+    const response = await fetch(`${getApiFilesEndpoint()}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json'
@@ -135,7 +154,7 @@ export async function getFile(fileType) {
   try {
     console.log(`📥 Récupération ${fileType}...`);
     
-    const response = await fetch(`${API_FILES_ENDPOINT}/${fileType}`, {
+    const response = await fetch(`${getApiFilesEndpoint()}/${fileType}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json'
@@ -170,9 +189,10 @@ export async function downloadFile(fileType, version = 'latest') {
   try {
     console.log(`⬇️ Téléchargement ${fileType} (version: ${version})...`);
     
+    const filesEndpoint = getApiFilesEndpoint();
     const url = version === 'latest' 
-      ? `${API_FILES_ENDPOINT}/download/${fileType}`
-      : `${API_FILES_ENDPOINT}/download/${fileType}/${version}`;
+      ? `${filesEndpoint}/download/${fileType}`
+      : `${filesEndpoint}/download/${fileType}/${version}`;
     
     const response = await fetch(url, {
       method: 'GET'
@@ -200,7 +220,7 @@ export async function getFileVersions(fileType) {
   try {
     console.log(`📋 Récupération historique ${fileType}...`);
     
-    const response = await fetch(`${API_FILES_ENDPOINT}/${fileType}/versions`, {
+    const response = await fetch(`${getApiFilesEndpoint()}/${fileType}/versions`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json'
@@ -228,7 +248,7 @@ export async function getStats() {
   try {
     console.log('📊 Récupération statistiques...');
     
-    const response = await fetch(`${API_BASE_URL}/api/stats`, {
+    const response = await fetch(`${getApiBaseUrl()}/api/stats`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json'
