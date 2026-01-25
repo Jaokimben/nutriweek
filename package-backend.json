@@ -1,0 +1,26 @@
+{
+  "name": "nutriweek-backend",
+  "version": "1.0.0",
+  "description": "Backend API for NutriWeek practitioner file management with versioning",
+  "main": "server/index.js",
+  "scripts": {
+    "server": "node server/index.js",
+    "server:dev": "nodemon server/index.js",
+    "start": "npm run server"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "multer": "^1.4.5-lts.1",
+    "dotenv": "^16.3.1",
+    "compression": "^1.7.4",
+    "helmet": "^7.1.0",
+    "node-json-db": "^2.3.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  },
+  "keywords": ["nutrition", "backend", "file-management", "versioning"],
+  "author": "NutriWeek",
+  "license": "MIT"
+}

@@ -6,8 +6,19 @@
  * - Liste FODMAP
  * - Fichiers Word (règles générales, perte de poids H/F, vitalité)
  * 
- * Stockage: LocalStorage avec limitation de 5MB
+ * 🔒 PERSISTANCE:
+ * - Stockage: LocalStorage (persistant)
+ * - Partagé entre toutes les sessions/connexions du navigateur
+ * - Survit aux rechargements de page
+ * - Survit aux déconnexions/reconnexions
+ * - NE S'EFFACE QUE SI:
+ *   1. Le praticien clique "Réinitialiser tout"
+ *   2. Le praticien supprime un fichier individuellement
+ *   3. Le praticien remplace un fichier
+ *   4. Le cache du navigateur est vidé manuellement
+ * 
  * Format: Base64 pour compatibilité
+ * Limitation: 5MB total
  */
 
 const STORAGE_KEY = 'nutriweek_practitioner_files'
@@ -24,6 +35,7 @@ const DEFAULT_FILES = {
   pertePoidHomme: null,
   pertePoidFemme: null,
   vitalite: null,
+  confortDigestif: null,  // NOUVEAU: Règles pour le confort digestif
   metadata: {
     lastUpdated: null,
     uploadedBy: null,
@@ -47,7 +59,8 @@ export const getFilesSummary = () => {
       'reglesGenerales',
       'pertePoidHomme',
       'pertePoidFemme',
-      'vitalite'
+      'vitalite',
+      'confortDigestif'  // NOUVEAU
     ]
 
     fileTypes.forEach(type => {
@@ -96,7 +109,7 @@ export const saveAlimentsDiner = async (file) => {
  * Sauvegarder la liste FODMAP
  */
 export const saveFodmapList = async (file) => {
-  validateTextFile(file)
+  validateExcelFile(file)
   return await saveFile('fodmapList', file)
 }
 
@@ -133,18 +146,44 @@ export const saveVitalite = async (file) => {
 }
 
 /**
+ * Sauvegarder le fichier Word confort digestif
+ */
+export const saveConfortDigestif = async (file) => {
+  validateWordFile(file)
+  return await saveFile('confortDigestif', file)
+}
+
+/**
  * Obtenir tous les fichiers stockés
  */
 export const getAllFiles = () => {
   try {
+    console.log('🔍 [getAllFiles] Lecture depuis localStorage...')
     const data = localStorage.getItem(STORAGE_KEY)
+    
     if (!data) {
-      return DEFAULT_FILES
+      console.log('⚠️ [getAllFiles] Aucune donnée trouvée, retour DEFAULT_FILES')
+      return { ...DEFAULT_FILES }
     }
-    return JSON.parse(data)
+    
+    const parsed = JSON.parse(data)
+    console.log('✅ [getAllFiles] Données chargées:', {
+      alimentsPetitDej: !!parsed.alimentsPetitDej,
+      alimentsDejeuner: !!parsed.alimentsDejeuner,
+      alimentsDiner: !!parsed.alimentsDiner,
+      fodmapList: !!parsed.fodmapList,
+      reglesGenerales: !!parsed.reglesGenerales,
+      pertePoidHomme: !!parsed.pertePoidHomme,
+      pertePoidFemme: !!parsed.pertePoidFemme,
+      vitalite: !!parsed.vitalite,
+      useUploadedFiles: parsed.metadata?.useUploadedFiles
+    })
+    
+    return parsed
   } catch (error) {
-    console.error('❌ Erreur lecture fichiers:', error)
-    return DEFAULT_FILES
+    console.error('❌ [getAllFiles] Erreur lecture fichiers:', error)
+    console.error('❌ [getAllFiles] Stack:', error.stack)
+    return { ...DEFAULT_FILES }
   }
 }
 
@@ -165,9 +204,12 @@ export const saveFile = async (fileType, file) => {
     }
 
     // Lire le fichier en Base64
+    console.log(`📄 [saveFile] Conversion ${fileType} en Base64...`, file.name)
     const base64 = await fileToBase64(file)
+    console.log(`✓ [saveFile] Base64 créé: ${base64.substring(0, 50)}...`)
 
     // Charger les données existantes
+    console.log(`🔄 [saveFile] Chargement données existantes...`)
     const allFiles = getAllFiles()
 
     // Mettre à jour le fichier spécifique
@@ -183,9 +225,20 @@ export const saveFile = async (fileType, file) => {
     allFiles.metadata.lastUpdated = new Date().toISOString()
 
     // Sauvegarder
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(allFiles))
+    console.log(`💾 [saveFile] Sauvegarde dans localStorage...`)
+    const stringified = JSON.stringify(allFiles)
+    console.log(`💾 [saveFile] Taille totale: ${(stringified.length / 1024).toFixed(2)} KB`)
+    localStorage.setItem(STORAGE_KEY, stringified)
 
-    console.log(`✅ Fichier ${fileType} sauvegardé:`, file.name)
+    // Vérifier que la sauvegarde a réussi
+    const verification = localStorage.getItem(STORAGE_KEY)
+    if (!verification) {
+      throw new Error('Échec de la sauvegarde dans localStorage')
+    }
+
+    console.log(`✅ [saveFile] Fichier ${fileType} sauvegardé avec succès:`, file.name)
+    console.log(`✅ [saveFile] Vérification: présent dans localStorage`)
+    
     return { success: true, fileName: file.name }
 
   } catch (error) {
@@ -390,6 +443,27 @@ export const getActivationStatus = () => {
       hasExcelFiles: false,
       lastUpdated: null
     }
+  }
+}
+
+/**
+ * Obtenir les informations de persistance
+ */
+export const getPersistenceInfo = () => {
+  return {
+    storageType: 'LocalStorage',
+    isPersistent: true,
+    isSharedAcrossSessions: true,
+    survivesPageReload: true,
+    survivesLogout: true,
+    onlyDeletedBy: [
+      'Bouton "Réinitialiser tout"',
+      'Suppression individuelle de fichier',
+      'Remplacement de fichier',
+      'Vidage manuel du cache navigateur'
+    ],
+    maxSize: '5 MB',
+    storageKey: STORAGE_KEY
   }
 }
 

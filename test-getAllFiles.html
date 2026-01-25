@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test getAllFiles()</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            background: #1e1e1e;
+            color: #d4d4d4;
+        }
+        .section {
+            background: #2d2d2d;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #007acc;
+        }
+        .error {
+            border-left-color: #f48771;
+        }
+        .success {
+            border-left-color: #89d185;
+        }
+        pre {
+            background: #1e1e1e;
+            padding: 10px;
+            border-radius: 3px;
+            overflow-x: auto;
+        }
+        button {
+            background: #007acc;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #005a9e;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test getAllFiles() - Diagnostic Complet</h1>
+    
+    <button onclick="runTest()">▶️ Lancer le Test</button>
+    
+    <div id="output"></div>
+
+    <script type="module">
+        window.runTest = async function() {
+            const output = document.getElementById('output');
+            output.innerHTML = '<div class="section">⏳ Test en cours...</div>';
+            
+            try {
+                // Import de la fonction
+                const { getAllFiles } = await import('./src/utils/practitionerStorageV2.js');
+                
+                output.innerHTML += '<div class="section success">✅ Import réussi</div>';
+                
+                // 1. Test getAllFiles()
+                output.innerHTML += '<div class="section">📡 Appel de getAllFiles()...</div>';
+                const files = await getAllFiles();
+                
+                output.innerHTML += '<div class="section success">✅ getAllFiles() terminé</div>';
+                
+                // 2. Afficher la structure complète
+                output.innerHTML += '<div class="section"><h3>📦 Structure Retournée:</h3><pre>' + 
+                    JSON.stringify(files, null, 2) + '</pre></div>';
+                
+                // 3. Vérifier les 3 fichiers Excel
+                output.innerHTML += '<div class="section"><h3>🔍 Vérification des Fichiers Excel:</h3>';
+                
+                const fichiers = {
+                    'alimentsPetitDej': files.alimentsPetitDej,
+                    'alimentsDejeuner': files.alimentsDejeuner,
+                    'alimentsDiner': files.alimentsDiner
+                };
+                
+                let html = '<table border="1" cellpadding="10" style="border-collapse: collapse; width: 100%;">';
+                html += '<tr><th>Fichier</th><th>Existe?</th><th>name</th><th>type</th><th>size</th><th>data</th><th>path</th></tr>';
+                
+                for (const [key, fileObj] of Object.entries(fichiers)) {
+                    const exists = fileObj ? '✅' : '❌';
+                    const name = fileObj?.name || 'N/A';
+                    const type = fileObj?.type || 'N/A';
+                    const size = fileObj?.size || 'N/A';
+                    const data = fileObj?.data ? '✅ présent' : '❌ null';
+                    const path = fileObj?.path || 'N/A';
+                    
+                    html += `<tr>
+                        <td><strong>${key}</strong></td>
+                        <td>${exists}</td>
+                        <td>${name}</td>
+                        <td>${type}</td>
+                        <td>${size}</td>
+                        <td>${data}</td>
+                        <td>${path}</td>
+                    </tr>`;
+                }
+                html += '</table></div>';
+                output.innerHTML += html;
+                
+                // 4. Test de la condition de vérification
+                const aFichierPetitDej = files.alimentsPetitDej && files.alimentsPetitDej.name;
+                const aFichierDejeuner = files.alimentsDejeuner && files.alimentsDejeuner.name;
+                const aFichierDiner = files.alimentsDiner && files.alimentsDiner.name;
+                
+                const nbFichiers = [aFichierPetitDej, aFichierDejeuner, aFichierDiner].filter(Boolean).length;
+                
+                const conditionClass = nbFichiers > 0 ? 'success' : 'error';
+                const conditionIcon = nbFichiers > 0 ? '✅' : '❌';
+                
+                output.innerHTML += `<div class="section ${conditionClass}">
+                    <h3>🎯 Résultat de la Vérification:</h3>
+                    <p><strong>Fichiers détectés:</strong> ${nbFichiers}/3</p>
+                    <p><strong>Status:</strong> ${conditionIcon} ${nbFichiers > 0 ? 'OK - Génération possible' : 'ERREUR - Aucun fichier détecté'}</p>
+                </div>`;
+                
+                // 5. Test direct API backend
+                output.innerHTML += '<div class="section">🌐 Test direct API Backend...</div>';
+                const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+                const response = await fetch(`${backendUrl}/files`);
+                const backendData = await response.json();
+                
+                output.innerHTML += '<div class="section success">✅ API Backend répond</div>';
+                output.innerHTML += '<div class="section"><h3>📡 Réponse Backend:</h3><pre>' + 
+                    JSON.stringify(backendData, null, 2) + '</pre></div>';
+                
+                // 6. Comparaison
+                output.innerHTML += '<div class="section"><h3>⚖️ Comparaison Backend vs getAllFiles():</h3>';
+                const backendHasPetitDej = !!backendData.files?.alimentsPetitDej;
+                const backendHasDejeuner = !!backendData.files?.alimentsDejeuner;
+                const backendHasDiner = !!backendData.files?.alimentsDiner;
+                
+                output.innerHTML += `
+                    <table border="1" cellpadding="10" style="border-collapse: collapse; width: 100%;">
+                        <tr><th>Fichier</th><th>Backend</th><th>getAllFiles()</th><th>Match?</th></tr>
+                        <tr>
+                            <td>alimentsPetitDej</td>
+                            <td>${backendHasPetitDej ? '✅' : '❌'}</td>
+                            <td>${aFichierPetitDej ? '✅' : '❌'}</td>
+                            <td>${backendHasPetitDej === !!aFichierPetitDej ? '✅' : '❌'}</td>
+                        </tr>
+                        <tr>
+                            <td>alimentsDejeuner</td>
+                            <td>${backendHasDejeuner ? '✅' : '❌'}</td>
+                            <td>${aFichierDejeuner ? '✅' : '❌'}</td>
+                            <td>${backendHasDejeuner === !!aFichierDejeuner ? '✅' : '❌'}</td>
+                        </tr>
+                        <tr>
+                            <td>alimentsDiner</td>
+                            <td>${backendHasDiner ? '✅' : '❌'}</td>
+                            <td>${aFichierDiner ? '✅' : '❌'}</td>
+                            <td>${backendHasDiner === !!aFichierDiner ? '✅' : '❌'}</td>
+                        </tr>
+                    </table>
+                </div>`;
+                
+                console.log('📊 Fichiers retournés:', files);
+                console.log('📊 Backend data:', backendData);
+                
+            } catch (error) {
+                output.innerHTML += `<div class="section error">
+                    <h3>❌ ERREUR:</h3>
+                    <p><strong>Message:</strong> ${error.message}</p>
+                    <pre>${error.stack}</pre>
+                </div>`;
+                console.error('❌ Erreur test:', error);
+            }
+        }
+    </script>
+</body>
+</html>

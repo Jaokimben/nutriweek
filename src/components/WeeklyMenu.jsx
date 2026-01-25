@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { generateWeeklyMenu, regenerateSingleMeal } from '../utils/menuGenerator'
-import { genererMenuHebdomadaire, regenererRepas } from '../utils/menuGeneratorStrict'
+import { genererMenuHebdomadaire, regenererRepas, getModeInfo } from '../utils/menuGeneratorSwitch'
 import { calculateIMC, calculateCalories } from '../utils/nutritionCalculator'
 import { loadCIQUAL } from '../utils/ciqualParser'
 import { loadAlimentsSimple } from '../utils/alimentsSimpleParser'
@@ -12,26 +12,55 @@ import './WeeklyMenu.css'
 
 // Fonction pour transformer le format du menu strict vers le format d'affichage
 function transformerMenuPourAffichage(menuData) {
-  const { menu, metadata } = menuData
-  const jours = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche']
+  console.log('🔄 [transformerMenuPourAffichage] Transformation du menu:', menuData)
   
-  const semaine = jours.map((jour, index) => {
-    const jourData = menu[jour]
-    const date = new Date()
-    date.setDate(date.getDate() + index)
+  // Gérer les deux formats: { menu: {...}, metadata: {...} } et { semaine: [...], metadata: {...} }
+  let semaine
+  const { metadata } = menuData
+  
+  if (menuData.semaine && Array.isArray(menuData.semaine)) {
+    // Format Excel: { semaine: [...], metadata: {...} }
+    console.log('✅ [transformerMenuPourAffichage] Format Excel détecté (semaine array)')
+    semaine = menuData.semaine.map((jour) => {
+      return {
+        jour: jour.jour,
+        date: jour.date,
+        jeune: jour.jeune || false,
+        menu: {
+          petitDejeuner: jour.menu.petitDejeuner ? transformerRepasPourAffichage(jour.menu.petitDejeuner) : null,
+          dejeuner: jour.menu.dejeuner ? transformerRepasPourAffichage(jour.menu.dejeuner) : null,
+          diner: jour.menu.diner ? transformerRepasPourAffichage(jour.menu.diner) : null
+        },
+        totaux: jour.totaux
+      }
+    })
+  } else if (menuData.menu) {
+    // Format classique: { menu: { Lundi: {...}, Mardi: {...}, ... }, metadata: {...} }
+    console.log('✅ [transformerMenuPourAffichage] Format classique détecté (menu object)')
+    const jours = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche']
+    const { menu } = menuData
     
-    return {
-      jour,
-      date: date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' }),
-      jeune: false,
-      menu: {
-        petitDejeuner: transformerRepasPourAffichage(jourData.repas.find(r => r.type === 'petit_dejeuner')),
-        dejeuner: transformerRepasPourAffichage(jourData.repas.find(r => r.type === 'dejeuner')),
-        diner: transformerRepasPourAffichage(jourData.repas.find(r => r.type === 'diner'))
-      },
-      totaux: jourData.totaux
-    }
-  })
+    semaine = jours.map((jour, index) => {
+      const jourData = menu[jour]
+      const date = new Date()
+      date.setDate(date.getDate() + index)
+      
+      return {
+        jour,
+        date: date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' }),
+        jeune: false,
+        menu: {
+          petitDejeuner: transformerRepasPourAffichage(jourData.repas.find(r => r.type === 'petit_dejeuner')),
+          dejeuner: transformerRepasPourAffichage(jourData.repas.find(r => r.type === 'dejeuner')),
+          diner: transformerRepasPourAffichage(jourData.repas.find(r => r.type === 'diner'))
+        },
+        totaux: jourData.totaux
+      }
+    })
+  } else {
+    console.error('❌ [transformerMenuPourAffichage] Format de menu non reconnu:', menuData)
+    throw new Error('Format de menu non reconnu. Attendu: { menu: {...} } ou { semaine: [...] }')
+  }
   
   return {
     semaine,
@@ -56,7 +85,7 @@ function transformerMenuPourAffichage(menuData) {
       '🏃 Combinez votre alimentation avec une activité physique régulière',
       '😴 Privilégiez un sommeil de qualité (7-8h par nuit)'
     ],
-    rawMenu: menu, // Garder le menu brut pour les régénérations
+    rawMenu: menuData.menu || menuData.semaine, // Garder le menu brut pour les régénérations
     metadata
   }
 }
@@ -86,6 +115,7 @@ function transformerRepasPourAffichage(repas) {
 const WeeklyMenu = ({ userProfile, initialMenu = null, onMenuGenerated, onBack }) => {
   const [weeklyMenu, setWeeklyMenu] = useState(initialMenu)
   const [loading, setLoading] = useState(!initialMenu)
+  const [error, setError] = useState(null) // Nouveau: état d'erreur
   const [selectedDay, setSelectedDay] = useState(0)
   const [showShoppingList, setShowShoppingList] = useState(false)
   const [regeneratingMeal, setRegeneratingMeal] = useState(null)
@@ -132,7 +162,19 @@ const WeeklyMenu = ({ userProfile, initialMenu = null, onMenuGenerated, onBack }
         
         setLoading(false)
       } catch (error) {
-        console.error('❌ Erreur lors de la génération du menu strict:', error)
+        console.error('❌ Erreur lors de la génération du menu:', error)
+        console.log('📊 Type d\'erreur:', error.constructor.name);
+        console.log('📊 Message complet:', error.message);
+        
+        // Ne montrer le message "uploader les fichiers" QUE si vraiment aucun fichier n'est uploadé
+        const estProblemeUploadManquant = error.message?.includes('AUCUN FICHIER EXCEL UPLOADÉ');
+        
+        setError({
+          message: error.message || 'Erreur lors de la génération du menu',
+          details: estProblemeUploadManquant
+            ? 'Le praticien doit uploader les fichiers Excel contenant les aliments autorisés avant de pouvoir générer des menus.' 
+            : null
+        })
         setLoading(false)
       }
     }
@@ -158,6 +200,36 @@ const WeeklyMenu = ({ userProfile, initialMenu = null, onMenuGenerated, onBack }
       <div className="loading-container">
         <div className="spinner"></div>
         <p>Génération de votre menu personnalisé...</p>
+      </div>
+    )
+  }
+
+  // Afficher l'erreur si présente
+  if (error) {
+    // Parser le message d'erreur pour l'afficher proprement
+    const errorLines = error.message ? error.message.split('\n') : ['Erreur inconnue'];
+    
+    return (
+      <div className="error-container">
+        <div className="error-icon">⚠️</div>
+        <h2>Impossible de générer le menu</h2>
+        <div className="error-message-detailed">
+          {errorLines.map((line, index) => (
+            <p key={index} className={line.startsWith('📊') || line.startsWith('🚨') || line.startsWith('💡') || line.startsWith('🔧') || line.startsWith('📍') ? 'error-section-header' : 'error-line'}>
+              {line}
+            </p>
+          ))}
+        </div>
+        {onBack && (
+          <button className="btn-back" onClick={onBack}>
+            ← Retour au questionnaire
+          </button>
+        )}
+        <div className="error-actions">
+          <a href="/practitioner" className="btn-practitioner">
+            🩺 Ouvrir le Portail Praticien
+          </a>
+        </div>
       </div>
     )
   }
@@ -209,16 +281,16 @@ const WeeklyMenu = ({ userProfile, initialMenu = null, onMenuGenerated, onBack }
       } else {
         // Générer de nouvelles alternatives
         console.log('🔄 Génération de nouvelles alternatives...')
-        
-        const jourNames = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche']
-        const jourName = jourNames[dayIndex]
-        const menuActuel = weeklyMenu.rawMenu
+        console.log(`📊 Paramètres: dayIndex=${dayIndex}, mealType=${mealType}`)
         
         // Générer 3 alternatives d'un coup
+        // regenererRepas attend: (jourIndex: number, typeRepas: string, profil: object)
         const alternatives = []
         for (let i = 0; i < 3; i++) {
-          const alternative = await regenererRepas(jourName, mealType, menuActuel, userProfile)
+          console.log(`🔄 Génération alternative ${i + 1}/3...`)
+          const alternative = await regenererRepas(dayIndex, mealType, userProfile)
           alternatives.push(alternative)
+          console.log(`✅ Alternative ${i + 1} générée:`, alternative)
         }
         
         // Utiliser la première, mettre les autres en cache

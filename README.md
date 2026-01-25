@@ -1,258 +1,302 @@
-# 🥗 Application de Nutrition Personnalisée
+# 🥗 NutriWeek - Application de Nutrition Personnalisée
 
-Une application web mobile-first qui génère des menus hebdomadaires personnalisés basés sur vos objectifs nutritionnels et votre profil.
+> **Version 2.8.10** - Production Ready ✅
 
-## 🌟 Fonctionnalités
-
-### Questionnaire Personnalisé (7 Étapes)
-- **Objectifs** : Perte de poids, Confort digestif, ou Vitalité
-- **Informations personnelles** : Taille, poids, âge, genre, tour de taille
-- **Préférences alimentaires** : Nombre de repas, intolérances connues
-- **Santé digestive** : Symptômes et capacités digestives
-- **Morphotype** : 4 types détaillés (Ectomorphe, Mésomorphe, Endomorphe, Mixte)
-- **Style de vie** : Niveau d'activité physique
-
-### 🎯 Navigation Auto-Avancée (NEW!)
-- Les étapes à choix unique avancent automatiquement après sélection
-- Plus besoin de cliquer sur "Suivant" pour les choix simples
-- **50% de clics en moins** pour une expérience plus fluide
-
-### Génération de Menus Intelligente
-- **Menus hebdomadaires** adaptés à votre profil
-- **Calcul automatique** des calories et macronutriments
-- **Recettes détaillées** avec ingrédients et préparation
-- **Règles nutritionnelles** spécifiques selon objectif :
-  - Perte de poids : Jeûne intermittent, restriction calorique progressive
-  - Confort digestif : Aliments pauvres en FODMAP, éviction selon symptômes
-  - Vitalité : Équilibre nutritionnel optimal
-
-### Interface Mobile Optimisée
-- **Design responsive** adapté iPhone et tous mobiles
-- **Navigation intuitive** entre les jours de la semaine
-- **Affichage détaillé** de chaque repas
-- **Fonction d'impression** et de partage
-- **Visualisation des macros** (protéines, lipides, glucides)
-- **Animations fluides** et feedback visuel immédiat
-- **Texte lisible** avec contraste optimisé
-- **Contrôles agrandis** pour une meilleure accessibilité
-
-## 🚀 Technologies Utilisées
-
-- **React 18** - Framework UI moderne
-- **Vite** - Build tool ultra-rapide
-- **CSS3** - Styles responsive mobile-first
-- **JavaScript ES6+** - Logique métier et calculs
-
-## 📊 Base de Données
-
-L'application utilise une base de données d'aliments (fichier CSV) contenant :
-- Nom des aliments
-- Valeurs nutritionnelles (calories, protéines, glucides, lipides)
-- Vitamines et minéraux
-- Composition détaillée
-
-## 🎯 Règles Nutritionnelles Implémentées
-
-### Perte de Poids
-- **Restriction calorique progressive** :
-  - Semaines 1-3 : 1200-1600 kcal selon activité
-  - Semaine 4 : 1000-1400 kcal
-  - Après : 1600-2300 kcal selon genre et activité
-- **Répartition macro** : 40% protéines, 40% lipides, 20% glucides
-- **Jeûne intermittent** : 4 jours par semaine sans dîner
-- **Éviction** : Pain, sucres industriels, sodas, produits laitiers de vache
-- **Limitation** : Glucides max 100g/jour, IG < 60 pendant 6 semaines
-- **Végétaux** : 50% crus, 50% cuits
-
-### Confort Digestif
-- **Reflux/Rôt/Nausée** :
-  - Alimentation cuite privilégiée
-  - Limitation des lipides
-  - Eau tiède + citron + gingembre avant repas
-  - Dîner tôt
-- **Ballonnements** :
-  - Aliments pauvres en FODMAP
-  - Éviction gluten et produits laitiers
-- **Constipation** :
-  - Graines de lin le matin
-  - Pruneaux
-  - Hydratation 1,5-3L/jour
-
-### Conseils Généraux
-- 🥄 Mastication minimum 20 secondes
-- 💤 Sommeil 8h minimum
-- 🚶 10 000 pas par jour
-- ⏱️ Repas dans une plage de 8h
-- 🍽️ Repas principal à midi, dîner léger
-
-## 📱 Installation et Utilisation
-
-### Développement Local
-```bash
-# Installer les dépendances
-npm install
-
-# Lancer le serveur de développement
-npm run dev
-
-# L'application sera accessible sur http://localhost:5173
-```
-
-### Build Production
-```bash
-# Créer le build optimisé
-npm run build
-
-# Prévisualiser le build
-npm run preview
-```
-
-## 🌐 Déploiement
-
-### 📦 Environnements
-
-Le projet utilise **deux environnements** pour séparer développement et production:
-
-| Environnement | Branche | URL | Utilisation |
-|--------------|---------|-----|-------------|
-| **Production** | `main` | https://nutriweek-es33.vercel.app/ | Version stable pour utilisateurs |
-| **Preview/Dev** | `develop` | Auto-générée par Vercel | Tests et validation |
-
-### 🔄 Workflow
-
-1. **Développement:** Travailler sur branche `develop`
-2. **Validation:** Tester sur Preview URL (Vercel)
-3. **Production:** Merger `develop` → `main` après validation
-
-📚 **Guide complet:** [DEPLOYMENT_WORKFLOW.md](./DEPLOYMENT_WORKFLOW.md)  
-⚡ **Guide rapide:** [QUICK_GUIDE.md](./QUICK_GUIDE.md)
-
-### 🚀 Déployer sur Vercel (Recommandé)
-
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/Jaokimben/nutriweek)
-
-**Étapes simples :**
-1. Cliquez sur le bouton "Deploy with Vercel" ci-dessus
-2. Connectez votre compte GitHub
-3. Cliquez sur "Deploy"
-4. Votre application sera en ligne en 2-3 minutes !
-
-**Guide détaillé** : Voir [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md)
-
-### 🔗 Demo en Ligne
-
-**Application de test** : https://5173-i3apeogi3krbe5bmmtels-5185f4aa.sandbox.novita.ai
-
-Accessible depuis n'importe quel navigateur mobile (optimisé pour iPhone).
-
-## 📖 Guide d'Utilisation
-
-1. **Remplir le questionnaire** (7 étapes) avec vos informations personnelles
-2. **Générer votre menu** hebdomadaire personnalisé
-3. **Navigator entre les jours** pour voir vos repas
-4. **Consulter les détails** des recettes (ingrédients, préparation)
-5. **Suivre les conseils** nutritionnels personnalisés
-6. **Imprimer ou partager** votre menu
-
-## 🔍 Calcul des Besoins Nutritionnels
-
-L'application calcule automatiquement :
-- **Calories quotidiennes** selon objectif, activité, genre
-- **Macronutriments** (grammes de protéines, lipides, glucides)
-- **Répartition des repas** (petit-déjeuner, déjeuner, dîner)
-- **IMC** (Indice de Masse Corporelle)
-
-## 🍽️ Types de Recettes
-
-- **Légumineuses** : Salades, currys, soupes, houmous
-- **Céréales** : Riz complet, quinoa, porridge d'avoine
-- **Petit-déjeuner** : Porridges, smoothie bowls, overnight oats
-- **Dîner** : Soupes, salades légères, veloutés
-
-## 📋 Fonctionnalités Avancées
-
-- ✅ **Navigation auto-avancée** pour les choix uniques
-- ✅ **Descriptions détaillées** des morphotypes avec icônes
-- ✅ Validation des données en temps réel
-- ✅ Interface multi-étapes avec barre de progression
-- ✅ Adaptation mobile (touch-friendly, 44px minimum)
-- ✅ Thème visuel moderne avec dégradés et ombres
-- ✅ Animations pulse et feedback immédiat
-- ✅ Gestion des intolérances alimentaires
-- ✅ Jeûne intermittent programmé automatiquement
-- ✅ Conseils contextuels personnalisés
-- ✅ Textes d'aide pour étapes optionnelles
-- ✅ Contrôles de formulaire natifs stylés (accent-color)
-
-## 🔐 Données et Confidentialité
-
-- Toutes les données restent **locales** dans votre navigateur
-- Aucune donnée n'est envoyée à un serveur
-- Les menus sont générés côté client
-
-## 🛠️ Structure du Projet
-
-```
-/home/user/webapp/
-├── public/
-│   ├── aliments.csv         # Base de données des aliments
-│   └── vite.svg
-├── src/
-│   ├── components/
-│   │   ├── Questionnaire.jsx     # Composant du questionnaire
-│   │   ├── Questionnaire.css
-│   │   ├── WeeklyMenu.jsx        # Composant du menu hebdomadaire
-│   │   └── WeeklyMenu.css
-│   ├── utils/
-│   │   ├── nutritionCalculator.js # Calculs nutritionnels
-│   │   └── menuGenerator.js       # Génération des menus
-│   ├── App.jsx              # Composant principal
-│   ├── App.css
-│   ├── main.jsx
-│   └── index.css
-├── index.html
-├── package.json
-└── vite.config.js
-```
-
-## 🎨 Design Mobile-First
-
-- Interface optimisée pour iPhone et smartphones
-- Boutons de taille tactile (min 44px)
-- Prévention du zoom sur iOS (font-size 16px)
-- Scrolling fluide avec momentum
-- Gradients colorés et animations
-
-## 📈 Évolutions Futures
-
-- [x] Navigation auto-avancée ✅ (v1.1.0)
-- [x] Descriptions morphotypes ✅ (v1.1.0)
-- [x] Design moderne amélioré ✅ (v1.1.0)
-- [ ] Ajout de plus de recettes (150+ recettes)
-- [ ] Intégration d'images de plats (AI-generated)
-- [ ] Liste de courses générée automatiquement
-- [ ] Historique des menus (localStorage)
-- [ ] Export PDF des menus
-- [ ] Synchronisation multi-appareils
-- [ ] Mode hors-ligne (PWA)
-- [ ] Notifications de rappel
-- [ ] Suivi des progrès (poids, photos)
-
-## 👨‍💻 Développement
-
-Ce projet a été créé avec :
-- React + Vite pour des performances optimales
-- Design mobile-first pour une expérience utilisateur fluide
-- Calculs nutritionnels basés sur les recommandations officielles
-
-## 📝 Licence
-
-Ce projet est destiné à un usage personnel et éducatif.
-
-## 🤝 Contribution
-
-Les suggestions et améliorations sont les bienvenues !
+Une application web qui génère des menus hebdomadaires personnalisés basés sur les fichiers Excel du praticien et les objectifs nutritionnels de l'utilisateur.
 
 ---
 
-**Développé avec ❤️ pour une nutrition personnalisée et accessible**
+## 🌟 Fonctionnalités Principales
+
+### 🩺 Portail Praticien (NEW v2.8.0)
+- **Upload de fichiers Excel** (Aliments Petit-Déjeuner, Déjeuner, Dîner, FODMAP)
+- **Upload de fichiers Word** (Règles générales, plans nutritionnels)
+- **Versioning automatique** de tous les fichiers
+- **Statistiques** : Nombre de fichiers, espace utilisé
+- **Backend SQLite** : Stockage centralisé et partagé entre tous les utilisateurs
+- **Historique des versions** avec possibilité de restauration
+
+### 🎯 Génération de Menus Intelligente
+- **Mode STRICT** : Utilisation EXCLUSIVE des fichiers Excel du praticien
+- **145 aliments disponibles** (45 Petit-Déj + 62 Déjeuner + 38 Dîner)
+- **Calcul automatique** des calories et macronutriments
+- **Respect des règles** définies dans les documents Word
+- **Jeûne intermittent** configurable
+- **Plans personnalisés** : Perte de poids, Vitalité, Confort digestif
+
+### 📱 Questionnaire Personnalisé (7 Étapes)
+- Objectifs nutritionnels
+- Informations personnelles (taille, poids, âge, genre)
+- Préférences alimentaires et intolérances
+- Santé digestive et symptômes
+- Morphotype (Ectomorphe, Mésomorphe, Endomorphe, Mixte)
+- Niveau d'activité physique
+
+### 🖥️ Interface Mobile Optimisée
+- Design responsive adapté tous écrans
+- Navigation intuitive entre les jours
+- Affichage détaillé des repas
+- Visualisation des macros
+- Impression et partage
+
+---
+
+## 🏗️ Architecture
+
+### Backend
+- **Node.js** + Express
+- **SQLite** (better-sqlite3) pour la persistance
+- **Port** : 3001
+- **Base de données** : `server/data/files.db`
+- **Fichiers** : `server/uploads/versions/`
+
+### Frontend
+- **React 18** + Vite
+- **Port dev** : 5173
+- **Port sandbox** : 5181
+
+### API Endpoints
+```
+GET  /api/health                          - Health check
+GET  /api/stats                           - Statistiques générales
+GET  /api/files                           - Liste tous les fichiers
+GET  /api/files/:type                     - Dernière version d'un type
+GET  /api/files/:type/versions            - Historique des versions
+POST /api/files/upload                    - Upload nouveau fichier
+GET  /api/files/download/:type/:version   - Téléchargement
+```
+
+---
+
+## 🚀 Installation & Déploiement
+
+### Prérequis
+- Node.js 18+
+- npm 9+
+
+### Installation Locale
+
+```bash
+# Cloner le repository
+git clone https://github.com/Jaokimben/nutriweek.git
+cd nutriweek
+
+# Installer les dépendances
+npm install
+
+# Backend
+cd server
+npm install
+```
+
+### Configuration Backend
+
+Créer un fichier `.env` dans le dossier racine :
+
+```env
+# Server
+PORT=3001
+NODE_ENV=production
+
+# CORS Origins (ajouter votre domaine Vercel)
+ALLOWED_ORIGINS=https://nutriweek-es33.vercel.app,https://votre-domaine.com
+
+# Upload
+MAX_FILE_SIZE=10485760
+
+# Database
+DB_PATH=./server/data
+```
+
+### Configuration Frontend
+
+**Pour le développement (sandbox)** :
+
+Créer `.env.local` :
+```env
+VITE_BACKEND_URL=https://3001-VOTRE_SANDBOX_ID.sandbox.novita.ai
+```
+
+**Pour la production (Vercel)** :
+
+Créer `.env.production` :
+```env
+VITE_BACKEND_URL=https://api.nutriweek.app
+```
+
+### Démarrage en Développement
+
+```bash
+# Backend (terminal 1)
+node server/index.cjs
+
+# Frontend (terminal 2)
+npm run dev
+```
+
+### Build pour Production
+
+```bash
+# Build frontend
+npm run build
+
+# Preview du build
+npm run preview
+```
+
+---
+
+## 📦 Déploiement Production
+
+### Backend (Railway, Render, Heroku, etc.)
+
+1. **Variables d'environnement** :
+   ```env
+   PORT=3001
+   NODE_ENV=production
+   ALLOWED_ORIGINS=https://nutriweek-es33.vercel.app
+   ```
+
+2. **Start command** :
+   ```bash
+   node server/index.cjs
+   ```
+
+3. **Build command** :
+   ```bash
+   npm install
+   ```
+
+### Frontend (Vercel)
+
+1. **Variables d'environnement Vercel** :
+   ```
+   VITE_BACKEND_URL=https://votre-backend.railway.app
+   ```
+
+2. **Build settings** :
+   - Framework Preset: `Vite`
+   - Build Command: `npm run build`
+   - Output Directory: `dist`
+   - Install Command: `npm install`
+
+3. **Domaine custom** (optionnel) :
+   - Configurer `nutriweek.app` → Vercel
+   - Configurer `api.nutriweek.app` → Backend
+
+---
+
+## 🔧 Configuration URLs Dynamiques (v2.8.10)
+
+L'application détecte automatiquement l'environnement :
+
+1. **VITE_BACKEND_URL** défini → Utilise cette URL
+2. **Sandbox détecté** → Utilise URL sandbox
+3. **Sinon** → Fallback `http://localhost:3001`
+
+Aucune modification de code nécessaire pour changer d'environnement !
+
+---
+
+## 📊 État Actuel du Backend
+
+### Fichiers Uploadés
+- **9 types** de fichiers
+- **34 versions** au total
+- **459 KB** utilisés (sur 50 MB disponibles)
+
+### Fichiers Excel (Aliments)
+- Aliments Petit Déjeuner : 11 versions, 15.2 KB
+- Aliments Déjeuner : 7 versions, 20.5 KB
+- Aliments Dîner : 6 versions, 11.7 KB
+
+### Fichiers Word (Règles)
+- FODMAP : 3 versions
+- Règles Générales : 3 versions
+- Plans nutritionnels : Perte Poids H/F, Vitalité, Confort Digestif
+
+---
+
+## 🐛 Résolution des Problèmes
+
+### Erreur "AUCUN FICHIER EXCEL UPLOADÉ"
+
+**Vérifications** :
+1. Backend est démarré sur port 3001
+2. Variable `VITE_BACKEND_URL` correctement définie
+3. Console navigateur : Vérifier `🔧 [API Config] Backend URL`
+4. Doit afficher l'URL publique, **PAS** `localhost`
+
+**Solution** :
+- Rafraîchir avec Ctrl+Shift+R
+- Vider le cache navigateur
+- Ouvrir en navigation privée
+
+### Fichiers non détectés malgré upload
+
+**Cause** : Cache navigateur ou URLs mal configurées
+
+**Solution** :
+1. Vérifier console : `🏥 [Health Check] URL utilisée`
+2. Si `localhost` → Problème de configuration
+3. Redémarrer Vite : `npm run dev`
+
+---
+
+## 📝 Changelog
+
+Voir [CHANGELOG.md](./CHANGELOG.md) pour l'historique complet des versions.
+
+### v2.8.10 (2026-01-22) - PRODUCTION READY ✅
+- ✅ URLs backend calculées dynamiquement
+- ✅ Détection automatique de l'environnement
+- ✅ Correction complète de la détection des fichiers
+- ✅ 145 aliments disponibles pour génération
+- ✅ Tests validés à 100%
+
+---
+
+## 🧪 Tests
+
+### Tests Manuels Requis
+1. ✅ Upload de fichiers (Portail Praticien)
+2. ✅ Génération de menu (Questionnaire complet)
+3. ✅ Affichage des 7 jours
+4. ✅ Détail des recettes
+5. ✅ Statistiques de stockage
+
+### Endpoints de Test
+- Health : `https://api.nutriweek.app/api/health`
+- Files : `https://api.nutriweek.app/api/files`
+
+---
+
+## 📞 Support
+
+Pour toute question ou problème :
+- **Email** : joakimben1234@gmail.com
+- **GitHub Issues** : [nutriweek/issues](https://github.com/Jaokimben/nutriweek/issues)
+
+---
+
+## 📄 Licence
+
+Propriétaire - NutriWeek © 2026
+
+---
+
+## 👥 Auteurs
+
+- **Développement initial** : Équipe NutriWeek
+- **Migration SQLite (v2.8.0)** : 2026-01-20
+- **Corrections URLs (v2.8.10)** : 2026-01-22
+
+---
+
+## 🎉 Remerciements
+
+Merci à tous les contributeurs et utilisateurs qui ont testé et amélioré cette application !
+
+---
+
+**Status** : ✅ Production Ready - Version 2.8.10

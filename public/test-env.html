@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Test Variables Environnement</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 40px;
+            background: #1e1e1e;
+            color: #d4d4d4;
+        }
+        .box {
+            background: #2d2d2d;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border-left: 4px solid #007acc;
+        }
+        .success { border-left-color: #89d185; }
+        .error { border-left-color: #f48771; }
+        pre { background: #1e1e1e; padding: 15px; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Variables d'Environnement Vite</h1>
+    
+    <div id="result"></div>
+
+    <script type="module">
+        const result = document.getElementById('result');
+        
+        // Lire les variables d'environnement
+        const backendUrl = import.meta.env.VITE_BACKEND_URL;
+        const mode = import.meta.env.MODE;
+        const dev = import.meta.env.DEV;
+        const allEnv = import.meta.env;
+        
+        let html = '<div class="box">';
+        html += '<h2>📊 Variables d\'environnement Vite:</h2>';
+        html += '<pre>' + JSON.stringify(allEnv, null, 2) + '</pre>';
+        html += '</div>';
+        
+        // Vérifier VITE_BACKEND_URL
+        if (backendUrl && backendUrl.includes('sandbox.novita.ai')) {
+            html += '<div class="box success">';
+            html += '<h2>✅ VITE_BACKEND_URL est correctement défini</h2>';
+            html += '<p><strong>Valeur:</strong> ' + backendUrl + '</p>';
+            html += '<p>Le frontend devrait maintenant pouvoir joindre le backend.</p>';
+            html += '</div>';
+        } else if (backendUrl) {
+            html += '<div class="box error">';
+            html += '<h2>⚠️ VITE_BACKEND_URL défini mais valeur incorrecte</h2>';
+            html += '<p><strong>Valeur actuelle:</strong> ' + backendUrl + '</p>';
+            html += '<p><strong>Valeur attendue:</strong> https://3001-i3apeogi3krbe5bmmtels-5185f4aa.sandbox.novita.ai</p>';
+            html += '</div>';
+        } else {
+            html += '<div class="box error">';
+            html += '<h2>❌ VITE_BACKEND_URL NON DÉFINI</h2>';
+            html += '<p>Le fichier .env.local n\'a pas été chargé par Vite.</p>';
+            html += '<p><strong>Solutions:</strong></p>';
+            html += '<ol>';
+            html += '<li>Vérifier que .env.local existe à la racine du projet</li>';
+            html += '<li>Redémarrer complètement Vite</li>';
+            html += '<li>Supprimer le cache: rm -rf node_modules/.vite</li>';
+            html += '</ol>';
+            html += '</div>';
+        }
+        
+        // Test de connexion
+        html += '<div class="box">';
+        html += '<h2>🌐 Test de Connexion Backend</h2>';
+        html += '<p id="testStatus">Test en cours...</p>';
+        html += '</div>';
+        
+        result.innerHTML = html;
+        
+        // Tester la connexion
+        const testUrl = backendUrl || 'http://localhost:3001';
+        fetch(`${testUrl}/api/health`)
+            .then(r => r.json())
+            .then(data => {
+                document.getElementById('testStatus').innerHTML = 
+                    `<strong style="color: #89d185;">✅ Connexion réussie à ${testUrl}</strong><br>` +
+                    `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+            })
+            .catch(err => {
+                document.getElementById('testStatus').innerHTML = 
+                    `<strong style="color: #f48771;">❌ Échec de connexion à ${testUrl}</strong><br>` +
+                    `<p>Erreur: ${err.message}</p>`;
+            });
+    </script>
+</body>
+</html>

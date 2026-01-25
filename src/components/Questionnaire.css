@@ -264,6 +264,12 @@
   background: white;
 }
 
+.radio-label.selected {
+  border-color: var(--accent-primary);
+  background: linear-gradient(135deg, rgba(76, 175, 80, 0.08), rgba(33, 150, 243, 0.08));
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);
+}
+
 .radio-label:hover {
   border-color: var(--accent-primary);
   background: rgba(76, 175, 80, 0.05);
@@ -288,6 +294,26 @@
 .radio-label input[type="radio"]:checked + span {
   color: var(--accent-primary);
   font-weight: 700;
+}
+
+/* Required field indicator */
+.required {
+  color: #e53e3e;
+  font-weight: 700;
+  font-size: 1.2rem;
+  margin-left: 0.25rem;
+}
+
+.field-note {
+  font-size: 0.8rem;
+  color: #666;
+  margin: -0.25rem 0 0.75rem;
+  font-style: italic;
+  text-align: center;
+}
+
+.dark-mode .field-note {
+  color: #999;
 }
 
 .checkbox-list {

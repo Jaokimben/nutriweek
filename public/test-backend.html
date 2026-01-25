@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Backend Configuration</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            color: #333;
+        }
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s ease;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        .result {
+            background: #f8f9fa;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+        .success {
+            border-left-color: #28a745;
+            background: #d4edda;
+        }
+        .error {
+            border-left-color: #dc3545;
+            background: #f8d7da;
+        }
+        .warning {
+            border-left-color: #ffc107;
+            background: #fff3cd;
+        }
+        pre {
+            background: #2d2d2d;
+            color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 13px;
+        }
+        .status-icon {
+            font-size: 24px;
+            margin-right: 10px;
+        }
+        .test-section {
+            margin: 30px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #dee2e6;
+        }
+        th {
+            background: #667eea;
+            color: white;
+            font-weight: bold;
+        }
+        tr:hover {
+            background: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test de Configuration Backend</h1>
+        <p class="subtitle">Diagnostic complet de la connexion Frontend ↔ Backend</p>
+        
+        <button onclick="runFullTest()" id="testBtn">▶️ Lancer les Tests</button>
+        
+        <div id="results"></div>
+    </div>
+
+    <script>
+        async function runFullTest() {
+            const results = document.getElementById('results');
+            const btn = document.getElementById('testBtn');
+            
+            btn.disabled = true;
+            btn.textContent = '⏳ Tests en cours...';
+            results.innerHTML = '<div class="result warning"><span class="status-icon">⏳</span>Tests en cours...</div>';
+            
+            let html = '';
+            
+            try {
+                // TEST 1: URL Backend Configuration
+                html += '<div class="test-section">';
+                html += '<h2>📡 Test 1: Configuration de l\'URL Backend</h2>';
+                
+                // On ne peut pas accéder à import.meta.env directement ici
+                // Mais on peut tester l'URL réelle utilisée
+                const testUrls = [
+                    'http://localhost:3001',
+                    'https://3001-i3apeogi3krbe5bmmtels-5185f4aa.sandbox.novita.ai'
+                ];
+                
+                html += '<table>';
+                html += '<tr><th>URL Testée</th><th>Status</th><th>Temps</th></tr>';
+                
+                let workingUrl = null;
+                
+                for (const url of testUrls) {
+                    const startTime = Date.now();
+                    try {
+                        const response = await fetch(`${url}/api/health`, {
+                            method: 'GET',
+                            headers: { 'Content-Type': 'application/json' }
+                        });
+                        const duration = Date.now() - startTime;
+                        
+                        if (response.ok) {
+                            const data = await response.json();
+                            html += `<tr style="background: #d4edda;">
+                                <td><strong>${url}</strong></td>
+                                <td>✅ OK (${response.status})</td>
+                                <td>${duration}ms</td>
+                            </tr>`;
+                            workingUrl = url;
+                        } else {
+                            html += `<tr style="background: #f8d7da;">
+                                <td>${url}</td>
+                                <td>❌ Erreur ${response.status}</td>
+                                <td>${duration}ms</td>
+                            </tr>`;
+                        }
+                    } catch (error) {
+                        const duration = Date.now() - startTime;
+                        html += `<tr style="background: #f8d7da;">
+                            <td>${url}</td>
+                            <td>❌ ${error.message}</td>
+                            <td>${duration}ms</td>
+                        </tr>`;
+                    }
+                }
+                html += '</table>';
+                
+                if (!workingUrl) {
+                    html += '<div class="result error"><span class="status-icon">❌</span><strong>AUCUNE URL BACKEND NE FONCTIONNE</strong></div>';
+                    results.innerHTML = html;
+                    btn.disabled = false;
+                    btn.textContent = '🔄 Relancer les Tests';
+                    return;
+                }
+                
+                html += `<div class="result success"><span class="status-icon">✅</span><strong>URL Backend fonctionnelle:</strong> ${workingUrl}</div>`;
+                html += '</div>';
+                
+                // TEST 2: API Files
+                html += '<div class="test-section">';
+                html += '<h2>📁 Test 2: Récupération des Fichiers</h2>';
+                
+                try {
+                    const filesResponse = await fetch(`${workingUrl}/api/files`);
+                    const filesData = await filesResponse.json();
+                    
+                    if (filesData.success && filesData.files) {
+                        const fileTypes = Object.keys(filesData.files);
+                        const fileCount = fileTypes.length;
+                        
+                        html += `<div class="result success">
+                            <span class="status-icon">✅</span>
+                            <strong>${fileCount} types de fichiers détectés</strong>
+                        </div>`;
+                        
+                        html += '<table>';
+                        html += '<tr><th>Type</th><th>Nom du Fichier</th><th>Taille</th><th>Versions</th><th>Date Upload</th></tr>';
+                        
+                        let excelCount = 0;
+                        const excelFiles = ['alimentsPetitDej', 'alimentsDejeuner', 'alimentsDiner'];
+                        
+                        fileTypes.forEach(type => {
+                            const file = filesData.files[type];
+                            if (file.current) {
+                                const isExcel = excelFiles.includes(type);
+                                if (isExcel) excelCount++;
+                                
+                                const size = (file.current.size / 1024).toFixed(2);
+                                const date = new Date(file.current.uploadedAt).toLocaleString('fr-FR');
+                                
+                                html += `<tr ${isExcel ? 'style="background: #d4edda;"' : ''}>
+                                    <td><strong>${type}</strong> ${isExcel ? '📊' : '📄'}</td>
+                                    <td>${file.current.originalName}</td>
+                                    <td>${size} KB</td>
+                                    <td>${file.totalVersions}</td>
+                                    <td>${date}</td>
+                                </tr>`;
+                            }
+                        });
+                        html += '</table>';
+                        
+                        if (excelCount === 3) {
+                            html += `<div class="result success">
+                                <span class="status-icon">🎉</span>
+                                <strong>PARFAIT ! Les 3 fichiers Excel sont présents</strong>
+                                <ul>
+                                    <li>✅ alimentsPetitDej</li>
+                                    <li>✅ alimentsDejeuner</li>
+                                    <li>✅ alimentsDiner</li>
+                                </ul>
+                            </div>`;
+                        } else {
+                            html += `<div class="result warning">
+                                <span class="status-icon">⚠️</span>
+                                <strong>Seulement ${excelCount}/3 fichiers Excel détectés</strong>
+                            </div>`;
+                        }
+                        
+                    } else {
+                        html += '<div class="result error"><span class="status-icon">❌</span><strong>Aucun fichier trouvé</strong></div>';
+                    }
+                } catch (error) {
+                    html += `<div class="result error"><span class="status-icon">❌</span><strong>Erreur:</strong> ${error.message}</div>`;
+                }
+                
+                html += '</div>';
+                
+                // TEST 3: Résumé
+                html += '<div class="test-section">';
+                html += '<h2>📋 Résumé & Diagnostic</h2>';
+                
+                if (workingUrl === 'https://3001-i3apeogi3krbe5bmmtels-5185f4aa.sandbox.novita.ai') {
+                    html += `<div class="result success">
+                        <span class="status-icon">✅</span>
+                        <strong>Configuration CORRECTE</strong>
+                        <p>Le frontend utilise l'URL publique du backend. Les fichiers devraient être détectés dans l'application.</p>
+                    </div>`;
+                } else if (workingUrl === 'http://localhost:3001') {
+                    html += `<div class="result error">
+                        <span class="status-icon">❌</span>
+                        <strong>PROBLÈME: Frontend utilise localhost</strong>
+                        <p>Le fichier <code>.env.local</code> n'a pas été chargé ou Vite n'a pas été redémarré.</p>
+                        <p><strong>Solution:</strong></p>
+                        <ol>
+                            <li>Vérifier que <code>.env.local</code> existe avec <code>VITE_BACKEND_URL=https://3001-i3apeogi3krbe5bmmtels-5185f4aa.sandbox.novita.ai</code></li>
+                            <li>Redémarrer Vite complètement</li>
+                            <li>Vider le cache navigateur (Ctrl+Shift+Del)</li>
+                            <li>Rafraîchir avec Ctrl+Shift+R</li>
+                        </ol>
+                    </div>`;
+                }
+                
+                html += '</div>';
+                
+            } catch (error) {
+                html += `<div class="result error">
+                    <span class="status-icon">💥</span>
+                    <strong>Erreur Critique:</strong>
+                    <pre>${error.stack}</pre>
+                </div>`;
+            }
+            
+            results.innerHTML = html;
+            btn.disabled = false;
+            btn.textContent = '🔄 Relancer les Tests';
+        }
+    </script>
+</body>
+</html>
