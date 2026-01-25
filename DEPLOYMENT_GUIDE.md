@@ -1,197 +1,411 @@
-# 🚀 Guide de Déploiement Vercel - NutriWeek
+# 🚀 Guide de Déploiement Production - NutriWeek v2.8.10
 
-## 📋 Prérequis
-
-- ✅ Code poussé sur GitHub : https://github.com/Jaokimben/nutriweek
-- ✅ Fichiers de configuration Vercel en place
-- ✅ Application fonctionnelle localement
-- 🔑 Compte Vercel (gratuit)
+**Date**: 2026-01-22  
+**Version**: 2.8.10  
+**Status**: ✅ PRODUCTION READY
 
 ---
 
-## 🎯 Méthode Recommandée : Import depuis GitHub
+## ✅ Checklist Préparation
 
-### Étape 1 : Connexion à Vercel
-
-1. Allez sur **https://vercel.com**
-2. Cliquez sur **"Sign Up"** ou **"Log In"**
-3. Choisissez **"Continue with GitHub"** pour lier votre compte GitHub
-
-### Étape 2 : Importer le Projet
-
-1. Une fois connecté, cliquez sur **"Add New..."** → **"Project"**
-2. Autorisez Vercel à accéder à vos repositories GitHub
-3. Trouvez **"Jaokimben/nutriweek"** dans la liste
-4. Cliquez sur **"Import"**
-
-### Étape 3 : Configuration du Projet
-
-Vercel va détecter automatiquement :
-- ✅ Framework : **Vite**
-- ✅ Build Command : `npm run build`
-- ✅ Output Directory : `dist`
-- ✅ Install Command : `npm install`
-
-**⚠️ Vous n'avez RIEN à modifier !** La configuration est déjà optimale.
-
-### Étape 4 : Déploiement
-
-1. Cliquez sur **"Deploy"**
-2. Attendez 2-3 minutes pendant le build
-3. 🎉 Votre application est en ligne !
-
-### Étape 5 : Obtenir l'URL
-
-Après le déploiement, vous obtiendrez :
-- **URL de production** : `https://nutriweek-[hash].vercel.app`
-- **URL personnalisée possible** : Configurable dans les paramètres
+- [x] Code mergé sur `main`
+- [x] Tag `v2.8.10` créé
+- [x] CHANGELOG.md à jour
+- [x] README.md avec instructions
+- [x] Build production testé (1.58 MB, gzip: 429 KB)
+- [ ] Push vers GitHub
+- [ ] Déploiement backend
+- [ ] Déploiement frontend
 
 ---
 
-## 🔄 Déploiement Automatique
+## 📦 Contenu de la Release
 
-Maintenant, **chaque fois que vous pushez sur GitHub** :
-- ✨ Vercel détecte automatiquement les changements
-- 🔨 Lance un nouveau build
-- 🚀 Déploie la nouvelle version
-- 📧 Vous envoie une notification par email
+### Backend
+- **Technologie**: Node.js 18+ + Express + SQLite
+- **Fichiers**: `server/` (index.cjs, database.cjs, routes/files.cjs)
+- **Base de données**: `server/data/files.db` (45 KB)
+- **Uploads**: `server/uploads/versions/` (34 fichiers, 459 KB)
 
-**C'est du CI/CD automatique ! 🎯**
+### Frontend
+- **Build**: `dist/` (1.58 MB non compressé, 429 KB gzip)
+- **Fichiers**: index.html + assets (CSS 100 KB, JS 1.58 MB)
 
 ---
 
-## 🛠️ Méthode Alternative : Vercel CLI
+## 🔧 Déploiement Backend
 
-Si vous préférez déployer depuis la ligne de commande :
+### Option 1: Railway (Recommandé)
 
+**1. Créer un nouveau projet Railway**
 ```bash
-# 1. Installer Vercel CLI (déjà installé dans le projet)
-npm install -g vercel
+# Via Railway CLI
+railway login
+railway init
+railway up
+```
 
-# 2. Se connecter
-vercel login
+**2. Variables d'environnement Railway**
+```env
+PORT=3001
+NODE_ENV=production
+ALLOWED_ORIGINS=https://nutriweek-es33.vercel.app
+MAX_FILE_SIZE=10485760
+```
 
-# 3. Déployer
-vercel --prod
+**3. Configuration Railway**
+- **Root Directory**: `/`
+- **Build Command**: `npm install`
+- **Start Command**: `node server/index.cjs`
+- **Watch Paths**: `server/**`
 
-# 4. Suivre les instructions interactives
+**4. Volume persistant (pour uploads)**
+- Créer un volume `/data`
+- Monter sur `/app/server/data`
+- Créer un volume `/uploads`
+- Monter sur `/app/server/uploads`
+
+---
+
+### Option 2: Render
+
+**1. Créer un Web Service**
+- Repository: `https://github.com/Jaokimben/nutriweek`
+- Branch: `main`
+- Root Directory: `./`
+
+**2. Configuration Build**
+```bash
+# Build Command
+npm install
+
+# Start Command
+node server/index.cjs
+```
+
+**3. Variables d'environnement**
+```env
+PORT=3001
+NODE_ENV=production
+ALLOWED_ORIGINS=https://nutriweek-es33.vercel.app
+```
+
+**4. Persistent Disk**
+- Mount Path: `/opt/render/project/src/server/data`
+- Size: 1 GB (minimum)
+
+---
+
+### Option 3: VPS (DigitalOcean, Linode, etc.)
+
+**1. Setup serveur**
+```bash
+# Installer Node.js 18+
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+sudo apt-get install -y nodejs
+
+# Cloner le repo
+git clone https://github.com/Jaokimben/nutriweek.git
+cd nutriweek
+git checkout v2.8.10
+
+# Installer les dépendances
+npm install
+```
+
+**2. Configuration PM2**
+```bash
+# Installer PM2
+npm install -g pm2
+
+# Créer fichier ecosystem
+cat > ecosystem.config.cjs << 'EOF'
+module.exports = {
+  apps: [{
+    name: 'nutriweek-backend',
+    script: 'server/index.cjs',
+    instances: 1,
+    autorestart: true,
+    watch: false,
+    max_memory_restart: '1G',
+    env: {
+      NODE_ENV: 'production',
+      PORT: 3001,
+      ALLOWED_ORIGINS: 'https://nutriweek-es33.vercel.app'
+    }
+  }]
+};
+EOF
+
+# Démarrer
+pm2 start ecosystem.config.cjs
+pm2 save
+pm2 startup
+```
+
+**3. Nginx (reverse proxy)**
+```nginx
+server {
+    listen 80;
+    server_name api.nutriweek.app;
+
+    location / {
+        proxy_pass http://localhost:3001;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+```
+
+**4. SSL avec Certbot**
+```bash
+sudo certbot --nginx -d api.nutriweek.app
 ```
 
 ---
 
-## 📊 Vérifications Post-Déploiement
+## 🌐 Déploiement Frontend (Vercel)
 
-### ✅ Checklist
+### Via GitHub (Recommandé)
 
-- [ ] L'application se charge correctement
-- [ ] Les 7 étapes du questionnaire fonctionnent
-- [ ] L'auto-avancement fonctionne (étapes 1, 3, 6, 7)
-- [ ] Les inputs affichent le texte correctement
-- [ ] Les morphotypes affichent les descriptions
-- [ ] La génération de menu fonctionne
-- [ ] Le design responsive fonctionne sur mobile
+**1. Connecter le repository**
+- Aller sur https://vercel.com
+- **Import Project** → GitHub
+- Sélectionner `Jaokimben/nutriweek`
 
-### 🐛 Problèmes Courants
+**2. Configuration Vercel**
+```
+Framework Preset: Vite
+Root Directory: ./
+Build Command: npm run build
+Output Directory: dist
+Install Command: npm install
+```
 
-**1. Build échoue avec erreur Node version**
-- Solution : Vercel utilise Node 18+ par défaut, compatible avec notre projet
+**3. Variables d'environnement Vercel**
+```env
+VITE_BACKEND_URL=https://votre-backend.railway.app
+# OU
+VITE_BACKEND_URL=https://api.nutriweek.app
+```
 
-**2. Page blanche après déploiement**
-- Vérifiez la console du navigateur (F12)
-- Vérifiez les logs Vercel dans le dashboard
-
-**3. Routes ne fonctionnent pas**
-- Le fichier `vercel.json` gère déjà les rewrites
-- Toutes les routes pointent vers `/index.html`
-
----
-
-## 🎨 Personnalisation du Domaine
-
-### Option 1 : Sous-domaine Vercel (Gratuit)
-1. Allez dans **Settings** → **Domains**
-2. Ajoutez un alias : `nutriweek.vercel.app`
-
-### Option 2 : Domaine personnalisé
-1. Achetez un domaine (ex: nutriweek.com)
-2. Dans Vercel : **Settings** → **Domains**
-3. Ajoutez votre domaine
-4. Suivez les instructions DNS
+**4. Déployer**
+- Cliquer sur **Deploy**
+- Attendre le build (~2-3 minutes)
+- Récupérer l'URL de déploiement
 
 ---
 
-## 📈 Monitoring et Analytics
+### Via CLI Vercel
 
-### Métriques disponibles dans Vercel :
+```bash
+# Installer Vercel CLI
+npm install -g vercel
 
-- **Performance** : Core Web Vitals
-- **Trafic** : Nombre de visiteurs
-- **Builds** : Historique des déploiements
-- **Logs** : Erreurs et warnings
+# Login
+vercel login
 
-Accédez-y dans : **Dashboard** → **Analytics**
+# Déployer
+cd /home/user/webapp
+vercel --prod
 
----
+# Configurer variables d'environnement
+vercel env add VITE_BACKEND_URL production
+# Entrer: https://votre-backend.railway.app
 
-## 🔐 Variables d'Environnement
-
-Si vous ajoutez des APIs externes plus tard :
-
-1. Allez dans **Settings** → **Environment Variables**
-2. Ajoutez vos variables (ex: `VITE_API_KEY`)
-3. Redéployez pour appliquer
-
----
-
-## 📱 Test Multi-Appareils
-
-Après déploiement, testez sur :
-- 📱 iPhone (Safari)
-- 📱 Android (Chrome)
-- 💻 Desktop (Chrome, Firefox, Safari)
-- 📲 Tablette (iPad)
-
-URL de test : Votre URL Vercel
+# Redéployer avec les nouvelles variables
+vercel --prod
+```
 
 ---
 
-## 🚀 Prochaines Étapes
+## 🔗 Configuration DNS (Optionnel)
 
-Une fois déployé :
+### Domaine Custom
 
-1. ✅ Testez l'application sur tous les appareils
-2. 📊 Activez Vercel Analytics (gratuit)
-3. 🔍 Configurez un domaine personnalisé (optionnel)
-4. 📧 Partagez l'URL avec vos utilisateurs
-5. 🎯 Collectez les retours utilisateurs
+**Frontend**: `nutriweek.app`
+1. Vercel Dashboard → Domains
+2. Ajouter `nutriweek.app`
+3. Configurer DNS:
+   ```
+   Type: A
+   Name: @
+   Value: 76.76.21.21
+   
+   Type: CNAME
+   Name: www
+   Value: cname.vercel-dns.com
+   ```
+
+**Backend**: `api.nutriweek.app`
+1. Railway/Render Dashboard → Custom Domain
+2. Ajouter `api.nutriweek.app`
+3. Configurer DNS:
+   ```
+   Type: CNAME
+   Name: api
+   Value: votre-app.railway.app
+   ```
 
 ---
 
-## 🆘 Support
+## ✅ Tests Post-Déploiement
 
-**Documentation Vercel :**
-- https://vercel.com/docs
+### Backend
 
-**Notre Repository GitHub :**
-- https://github.com/Jaokimben/nutriweek
+```bash
+# Health check
+curl https://api.nutriweek.app/api/health
 
-**Statut Actuel :**
-- ✅ Code prêt pour production
-- ✅ Configuration optimisée
-- ✅ Build testé localement
-- 🟢 Prêt à déployer !
+# Attendu:
+{
+  "status": "ok",
+  "message": "NutriWeek Backend API is running",
+  "timestamp": "2026-01-22T...",
+  "uptime": ...,
+  "version": "1.0.0"
+}
+
+# Liste des fichiers
+curl https://api.nutriweek.app/api/files
+
+# Attendu:
+{
+  "success": true,
+  "files": {
+    "alimentsPetitDej": {...},
+    "alimentsDejeuner": {...},
+    ...
+  }
+}
+```
+
+### Frontend
+
+1. **Ouvrir** https://nutriweek.app (ou votre URL Vercel)
+2. **Console** (F12) : Vérifier
+   ```
+   🔧 [getApiBaseUrl] Utilisation VITE_BACKEND_URL: https://api.nutriweek.app
+   🏥 [Health Check] URL utilisée: https://api.nutriweek.app/api/health
+   ✅ Backend santé: {status: "ok", ...}
+   ```
+
+3. **Portail Praticien**
+   - Statistiques: 9 fichiers, 459 KB
+   - Liste des fichiers visible
+
+4. **Génération de Menu**
+   - Remplir questionnaire
+   - Générer menu
+   - Vérifier 7 jours affichés
 
 ---
 
-## 🎉 Félicitations !
+## 🐛 Troubleshooting
 
-Votre application **NutriWeek** est maintenant prête pour le monde ! 🌍
+### Erreur CORS
 
-Après le déploiement, vous aurez :
-- 🌐 Une URL publique et sécurisée (HTTPS)
-- 🚀 Des performances optimales (CDN mondial)
-- 🔄 Des mises à jour automatiques
-- 📊 Des analytics détaillés
-- ⚡ Un temps de chargement ultra-rapide
+**Symptôme**: `Access-Control-Allow-Origin` error
 
-**Bonne chance avec votre lancement ! 🎯**
+**Solution**:
+1. Backend: Vérifier `ALLOWED_ORIGINS` contient l'URL frontend
+2. Ajouter dans `.env`:
+   ```env
+   ALLOWED_ORIGINS=https://nutriweek.app,https://nutriweek-es33.vercel.app
+   ```
+
+### Backend ne démarre pas
+
+**Vérifier**:
+```bash
+# Logs Railway
+railway logs
+
+# Logs Render
+# Via dashboard
+
+# Logs PM2
+pm2 logs nutriweek-backend
+```
+
+### Frontend affiche "AUCUN FICHIER"
+
+**Cause**: `VITE_BACKEND_URL` mal configuré
+
+**Solution**:
+1. Vercel Dashboard → Settings → Environment Variables
+2. Vérifier `VITE_BACKEND_URL` = URL correcte
+3. Redéployer : `vercel --prod`
+
+---
+
+## 📊 Monitoring
+
+### Backend
+- **Uptime**: https://uptimerobot.com (gratuit)
+- **Logs**: Railway/Render dashboard
+- **Alertes**: Email si down
+
+### Frontend
+- **Analytics**: Vercel Analytics (gratuit)
+- **Performance**: Lighthouse CI
+- **Erreurs**: Sentry (optionnel)
+
+---
+
+## 🔄 Mises à Jour Futures
+
+```bash
+# Sur votre machine locale
+git checkout main
+git pull origin main
+
+# Développement
+git checkout develop
+# ... faire les modifications ...
+git add -A
+git commit -m "feat: nouvelle fonctionnalité"
+
+# Tests
+npm run build
+npm run preview
+
+# Merge vers main
+git checkout main
+git merge develop --no-ff
+git tag -a v2.8.11 -m "Description"
+
+# Push
+git push origin main --tags
+
+# Vercel/Railway redéploient automatiquement
+```
+
+---
+
+## 📞 Support
+
+**Email**: joakimben1234@gmail.com  
+**GitHub**: https://github.com/Jaokimben/nutriweek/issues
+
+---
+
+## ✅ Checklist Finale
+
+- [ ] Backend déployé et accessible (https://api.nutriweek.app)
+- [ ] Frontend déployé (https://nutriweek.app)
+- [ ] Variables d'environnement configurées
+- [ ] Tests health check passent
+- [ ] Tests génération menu fonctionnent
+- [ ] DNS configurés (si domaine custom)
+- [ ] Monitoring activé
+- [ ] Documentation à jour
+
+---
+
+**Status**: ✅ Prêt pour push GitHub et déploiement
+
+**Prochaine étape**: `git push origin main --tags`
